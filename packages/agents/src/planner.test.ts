@@ -104,3 +104,10 @@ test("claude brain falls back to the heuristic on bad JSON, API errors and rejec
   assert.equal(rejected.value.pick, "baseline");
   assert.equal(rejected.source, "heuristic");
 });
+
+test("planTour adds a travel day before a leg too long to drive on a show day", () => {
+  const offers = [offerFor("berlin", "Berlin", "DE", 400, 52.52, 13.4), offerFor("paris", "Paris", "FR", 420, 48.86, 2.35)];
+  const plan = planTour({ band, offers, cities: world.cities, wantedShows: 2, windowDays: 21, capacityScale: 1 });
+  assert.equal(plan.length, 2);
+  assert.ok(plan[1].day - plan[0].day >= 2, `Berlin to Paris gets a day in between: days ${plan.map((p) => p.day)}`);
+});

@@ -2,7 +2,7 @@
   "name": "@greenroom/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Greenroom dashboard: tour route, show cards with threshold progress, live agent feed, wallet buy/refund, band track record.",
+  "description": "Greenroom dashboard for the band: approvals (venues, route, replacement shows), tour route with drive times, show health, venue finder, route planner, live agent feed, wallet buy/refund.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@anchor-lang/core": "^1.2.1",
+    "@greenroom/agents": "*",
+    "@greenroom/world": "*",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",

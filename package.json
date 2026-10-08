@@ -19,6 +19,7 @@
     "sync:idl": "node -e \"const fs=require('fs');for(const d of ['packages/sdk/idl','packages/web/src/idl']){fs.mkdirSync(d,{recursive:true});fs.copyFileSync('target/idl/greenroom.json',d+'/greenroom.json');fs.copyFileSync('target/types/greenroom.ts',d+'/greenroom.ts');}console.log('IDL synced')\"",
     "demo": "node scripts/demo-local.mjs",
     "demo:fast": "node scripts/demo-local.mjs --fast",
+    "demo:approve": "node scripts/demo-local.mjs --fast --keep --approve",
     "demo:devnet": "npm run demo -w @greenroom/agents -- --rpc https://api.devnet.solana.com",
     "qa:dry": "tsx qa/src/run.ts --no-loop"
   },

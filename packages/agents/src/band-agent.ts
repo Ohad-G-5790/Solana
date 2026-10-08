@@ -1,10 +1,14 @@
 import { PublicKey, type Keypair } from "@solana/web3.js";
 import type { Band, City, CrewProfile } from "@greenroom/world";
 import { bandPda, type GreenroomClient } from "@greenroom/sdk";
+import { formatMinutes } from "@greenroom/world/geo";
+import { buildRoute, buildVenueChoices, type AlternativeOption, type ApprovalRequest } from "./approvals.ts";
 import type { Brain } from "./brain.ts";
 import type { MessageBus } from "./bus.ts";
 import { describePlan, planTour, type PlannedShow, type VenueOffer } from "./planner.ts";
 import type { ShowProposedData, TourRequest } from "./venue-agent.ts";
+
+const lamportsToSol = (l: number) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 3 })} SOL`;
 
 export interface TourBrief {
   countries: string[];
@@ -26,6 +30,10 @@ export interface BookedShow extends PlannedShow {
   show: PublicKey;
   date: number;
   thresholdDeadline: number;
+  /** Demo-clock unix seconds when sales opened. */
+  salesOpenAt: number;
+  /** The cancelled show this one replaces. */
+  replaces?: string;
 }
 
 export interface CrewOffer {
@@ -70,6 +78,7 @@ export class BandAgent {
       genre: this.band.genre,
       draw: this.band.draw,
       countries: brief.countries,
+      wantedShows: brief.wantedShows,
       windowDays: brief.windowDays,
       targetPriceLamports: this.band.targetPriceLamports,
       trackRecord: {
@@ -162,34 +171,167 @@ export class BandAgent {
           bandBps: p.bandBps,
           venueBps: p.venueBps,
         });
-        const booked: BookedShow = { ...p, show, date, thresholdDeadline };
+        const booked: BookedShow = { ...p, show, date, thresholdDeadline, salesOpenAt };
         this.booked.push(booked);
-        this.bus.publish<ShowProposedData>({
-          kind: "show.proposed",
-          from: this.id,
-          to: `venue:${p.venueId}`,
-          text: `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${p.ticketPriceLamports} lamports, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`,
-          tx: psig,
-          data: {
-            show: show.toBase58(),
-            venuePubkey: p.venuePubkey,
-            venueId: p.venueId,
-            city: p.city,
-            day: p.day,
-            capacity: p.capacity,
-            ticketPriceLamports: p.ticketPriceLamports,
-            venueBps: p.venueBps,
-            bandBps: p.bandBps,
-            thresholdBps: p.thresholdBps,
-            bandAuthority: this.keypair.publicKey.toBase58(),
-            bandName: this.band.name,
-          },
-        });
+        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${p.ticketPriceLamports} lamports, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`);
       } catch (e) {
         this.bus.publish({ kind: "note", from: this.id, text: `could not propose ${p.city}: ${(e as Error).message.slice(0, 160)}` });
       }
     }
     return { tour, tourId };
+  }
+
+  private announce(b: BookedShow, tx: string, text: string): void {
+    this.bus.publish<ShowProposedData>({
+      kind: "show.proposed",
+      from: this.id,
+      to: `venue:${b.venueId}`,
+      text,
+      tx,
+      data: {
+        show: b.show.toBase58(),
+        venuePubkey: b.venuePubkey,
+        venueId: b.venueId,
+        venueName: b.venueName,
+        city: b.city,
+        day: b.day,
+        capacity: b.capacity,
+        ticketPriceLamports: b.ticketPriceLamports,
+        venueBps: b.venueBps,
+        bandBps: b.bandBps,
+        thresholdBps: b.thresholdBps,
+        bandAuthority: this.keypair.publicKey.toBase58(),
+        bandName: this.band.name,
+        salesOpenAt: b.salesOpenAt,
+        replaces: b.replaces,
+      },
+    });
+  }
+
+  // ---------- questions for the band ----------
+
+  /** Step 1: which venues the band is willing to play. Recommends the planner's picks plus backups. */
+  venuesRequest(brief: TourBrief, offers: VenueOffer[]): Omit<ApprovalRequest, "mode"> {
+    const draft = planTour({
+      band: this.band,
+      offers,
+      cities: this.cities,
+      wantedShows: brief.wantedShows,
+      windowDays: brief.windowDays,
+      startCity: brief.startCity,
+      thresholdBps: brief.thresholdBps,
+      capacityScale: brief.capacityScale,
+      minCapacity: brief.minCapacity,
+    });
+    const home = this.cities.find((c) => c.name === this.band.homeCity);
+    const choices = buildVenueChoices(this.band, offers, draft, home, brief.wantedShows);
+    const recommended = choices.filter((c) => c.recommended).map((c) => c.venueId);
+    return {
+      id: "venues",
+      title: "Approve venues",
+      payload: {
+        step: "venues",
+        homeCity: this.band.homeCity,
+        wantedShows: brief.wantedShows,
+        offers: choices,
+        planning: {
+          band: { genre: this.band.genre, draw: this.band.draw, targetPriceLamports: this.band.targetPriceLamports, homeCity: this.band.homeCity },
+          windowDays: brief.windowDays,
+          thresholdBps: brief.thresholdBps,
+          capacityScale: brief.capacityScale,
+          minCapacity: brief.minCapacity,
+        },
+      },
+      recommended: { step: "venues", approve: true, venueIds: recommended },
+    };
+  }
+
+  /** Step 2: the itinerary. Nothing is on-chain until this is approved. */
+  routeRequest(plan: PlannedShow[], offers: VenueOffer[], round: number): { request: Omit<ApprovalRequest, "mode">; text: string } {
+    const { stops, summary } = buildRoute(plan, offers);
+    const text =
+      `Route${round > 1 ? ` (re-plan ${round})` : ""}: ${stops.map((s) => s.city).join(" → ")}. ` +
+      `${summary.shows} shows in ${summary.days} days, ${summary.km} km by road, longest drive ${formatMinutes(summary.longestLegMinutes)}` +
+      `${summary.travelDayLegs ? ` (${summary.travelDayLegs === 1 ? "1 leg needs" : `${summary.travelDayLegs} legs need`} a travel day)` : ""}. ` +
+      `Your share at sellout: ${lamportsToSol(summary.bandAtSelloutLamports)}. Approve it and I book the shows on-chain.`;
+    return {
+      request: {
+        id: `route-${round}`,
+        title: round > 1 ? `Approve the route (re-plan ${round})` : "Approve the route",
+        payload: { step: "route", round, stops, summary },
+        recommended: { step: "route", approve: true, dropVenueIds: [] },
+      },
+      text,
+    };
+  }
+
+  /** Step 3 (when a show is cancelled): replacement options. */
+  alternativeRequest(cancelled: BookedShow, ticketsSold: number, required: number, options: AlternativeOption[]): { request: Omit<ApprovalRequest, "mode">; text: string } {
+    const best = options[0];
+    return {
+      request: {
+        id: `alt-${cancelled.show.toBase58().slice(0, 8)}`,
+        title: `Replace ${cancelled.city}?`,
+        payload: {
+          step: "alternative",
+          show: cancelled.show.toBase58(),
+          city: cancelled.city,
+          venueId: cancelled.venueId,
+          venueName: cancelled.venueName ?? cancelled.venueId,
+          day: cancelled.day,
+          capacity: cancelled.capacity,
+          ticketsSold,
+          required,
+          options,
+        },
+        recommended: { step: "alternative", approve: true, optionId: best.id },
+      },
+      text: `${cancelled.city} missed its threshold (${ticketsSold}/${required})${ticketsSold > 0 ? " and every fan is being refunded" : "; nobody had bought yet"}. ${options.length} way${options.length > 1 ? "s" : ""} to save the date; I recommend: ${best.reason}`,
+    };
+  }
+
+  /** Propose the replacement show the band picked. Its demo clock starts now. */
+  async bookReplacement(brief: TourBrief, tour: PublicKey, cancelled: BookedShow, o: AlternativeOption, salesOpenAt: number): Promise<BookedShow | null> {
+    const deadlineAfter = Math.max(10, Math.round(brief.deadlineAfterSec * 0.75));
+    const thresholdDeadline = salesOpenAt + deadlineAfter;
+    const date = thresholdDeadline + Math.max(10, brief.showAfterSec - brief.deadlineAfterSec);
+    try {
+      const { show, sig } = await this.client.proposeShow(this.keypair, tour, new PublicKey(o.venuePubkey), {
+        date,
+        ticketPriceLamports: o.ticketPriceLamports,
+        capacity: o.capacity,
+        thresholdBps: o.thresholdBps,
+        thresholdDeadline,
+        bandBps: o.bandBps,
+        venueBps: o.venueBps,
+      });
+      const booked: BookedShow = {
+        city: o.city,
+        country: o.country,
+        venueId: o.venueId,
+        venueName: o.venueName,
+        venuePubkey: o.venuePubkey,
+        day: o.day,
+        capacity: o.capacity,
+        ticketPriceLamports: o.ticketPriceLamports,
+        thresholdBps: o.thresholdBps,
+        bandBps: o.bandBps,
+        venueBps: o.venueBps,
+        score: 0,
+        distanceFromPrevKm: o.driveInKm,
+        show,
+        date,
+        thresholdDeadline,
+        salesOpenAt,
+        replaces: cancelled.show.toBase58(),
+      };
+      this.booked.push(booked);
+      this.announce(booked, sig, `Replacement for ${cancelled.city}: proposed ${o.venueName}, ${o.city}, day ${o.day}: ${o.capacity} tickets, confirms at ${o.required}, ${o.venueBps / 100}% to the venue.`);
+      return booked;
+    } catch (e) {
+      this.bus.publish({ kind: "note", from: this.id, text: `could not propose the replacement in ${o.city}: ${(e as Error).message.slice(0, 160)}` });
+      return null;
+    }
   }
 
   /** Pick crew from the offers for one confirmed show and add them as payees. */

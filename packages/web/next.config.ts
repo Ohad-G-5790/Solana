@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
   assetPrefix: basePath || undefined,
   trailingSlash: isExport,
   images: { unoptimized: true },
+  // Pure TypeScript modules shared with the agents (planner, approvals, geo).
+  transpilePackages: ["@greenroom/agents", "@greenroom/world"],
   outputFileTracingIncludes: isExport ? undefined : { "/api/**": ["../../data/**"] },
   turbopack: {},
 };

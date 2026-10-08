@@ -1,8 +1,8 @@
 export * from "./types.ts";
+export * from "./geo.ts";
 export { Rng } from "./rng.ts";
 export {
   DEFAULT_VENUES_PATH,
-  distanceKm,
   fansForCity,
   generateBands,
   generateCrew,
