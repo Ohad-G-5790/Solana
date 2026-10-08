@@ -1,14 +1,23 @@
 "use client";
 
 import { PublicKey } from "@solana/web3.js";
-import { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { explorerUrl } from "@/lib/config";
 import { sol } from "@/lib/format";
 import { bandPda, fetchBand, type BandAccount } from "@/lib/greenroom";
 import { getRun, type RunSummary } from "@/lib/run";
 
-export default function BandPage({ params }: { params: Promise<{ authority?: string[] }> }) {
-  const { authority } = use(params);
+export default function BandPage() {
+  return (
+    <Suspense fallback={<p className="muted">Loading…</p>}>
+      <BandView />
+    </Suspense>
+  );
+}
+
+function BandView() {
+  const authority = useSearchParams().get("authority");
   const [run, setRun] = useState<RunSummary | null>(null);
   const [band, setBand] = useState<BandAccount | null | undefined>(undefined);
   const [profile, setProfile] = useState<string>("");
@@ -19,7 +28,7 @@ export default function BandPage({ params }: { params: Promise<{ authority?: str
       try {
         const r = await getRun();
         setRun(r);
-        const auth = authority?.[0] ?? r?.band.authority;
+        const auth = authority ?? r?.band.authority;
         if (!auth) {
           setBand(null);
           return;

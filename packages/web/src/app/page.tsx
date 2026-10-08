@@ -96,7 +96,7 @@ export default function TourPage() {
             {run.partial ? " · run in progress" : ""}
           </p>
         </div>
-        <Link href={`/band/${run.band.authority}`} className="btn outline">
+        <Link href={`/band?authority=${run.band.authority}`} className="btn outline">
           Track record
         </Link>
       </div>

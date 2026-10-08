@@ -3,15 +3,24 @@
 import { useAnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { Progress, StateBadge } from "@/components/ShowCard";
 import { explorerUrl } from "@/lib/config";
 import { demoDate, short, sol, timeLeft } from "@/lib/format";
 import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, vaultPda, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
 import { getRun, type RunShow } from "@/lib/run";
 
-export default function ShowPage({ params }: { params: Promise<{ address: string }> }) {
-  const { address } = use(params);
+export default function ShowPage() {
+  return (
+    <Suspense fallback={<p className="muted">Loading…</p>}>
+      <ShowView />
+    </Suspense>
+  );
+}
+
+function ShowView() {
+  const address = useSearchParams().get("address") ?? "";
   const wallet = useAnchorWallet();
   const { publicKey } = useWallet();
   const [acct, setAcct] = useState<ShowAccount | null | undefined>(undefined);
@@ -24,6 +33,10 @@ export default function ShowPage({ params }: { params: Promise<{ address: string
   const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string } | null>(null);
 
   const reload = async () => {
+    if (!address) {
+      setAcct(null);
+      return;
+    }
     try {
       const a = await fetchShow(address);
       setAcct(a);

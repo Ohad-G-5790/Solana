@@ -1,0 +1,49 @@
+name: pages
+
+# Builds the dashboard as a static site and publishes it to GitHub Pages at
+# https://<owner>.github.io/<repo>/ . It reads live account state from devnet
+# and the bundled run in packages/web/public/demo.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Build static dashboard
+        run: npm run build:static -w @greenroom/web
+        env:
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_PUBLIC_RPC_URL: https://api.devnet.solana.com
+          NEXT_PUBLIC_CLUSTER: devnet
+          NEXT_PUBLIC_PROGRAM_ID: 4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

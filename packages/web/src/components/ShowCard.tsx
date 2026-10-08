@@ -29,7 +29,7 @@ export function ShowCard({ run, acct, now }: { run: RunShow; acct: ShowAccount |
   const deadline = acct ? Number(acct.thresholdDeadline) : run.thresholdDeadline;
   const date = acct ? Number(acct.date) : run.date;
   return (
-    <Link href={`/show/${run.show}`} className="card" style={{ display: "block" }}>
+    <Link href={`/show?address=${run.show}`} className="card" style={{ display: "block" }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
         <h3>{run.city}</h3>
         <StateBadge state={state} />

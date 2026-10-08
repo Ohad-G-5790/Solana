@@ -82,7 +82,9 @@ docs/                   kickoff, spec, plan, QA rubric, design system, demo scri
 
 ## Hosting the dashboard
 
-The dashboard is a standard Next.js app in `packages/web`. On Vercel: import the repo, set the root directory to `packages/web`, and set `NEXT_PUBLIC_RPC_URL`, `NEXT_PUBLIC_CLUSTER=devnet` and `NEXT_PUBLIC_PROGRAM_ID`. Without a `data/runs` folder it serves the recorded run bundled in `packages/web/public/demo` and reads live account state from the configured RPC. To publish a devnet run instead, copy that run's `summary.json` and `transcript.jsonl` over the bundled ones.
+The dashboard is published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`: https://ohad-g-5790.github.io/Solana/ . That build is a static export (`npm run build:static -w @greenroom/web`) that reads live account state from devnet and the recorded run bundled in `packages/web/public/demo`. To publish a new devnet run, copy its `summary.json` and `transcript.jsonl` over the bundled ones and push.
+
+The same app also runs as a Node server (`npm run dev` / `next build`) with API routes that read `data/runs`; on Vercel set the root directory to `packages/web` and the `NEXT_PUBLIC_*` variables from `.env.example`.
 
 ## Windows note
 

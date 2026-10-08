@@ -311,7 +311,7 @@ async function runTour(brief: TourBrief, d: TourDeps) {
         hubEmptyNoted = true;
         bus.publish({ kind: "note", from: "orchestrator", text: `Hub wallet is down to ${(hubBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL; fans stop buying. Fund ${d.hub.toBase58()} to continue.` });
       }
-      r = await crank.run(live.filter((b) => !done.has(b.show.toBase58())).map((b) => b.show), chainNow + Math.round(d.tickMs / 1000), accounts);
+      r = await crank.run(live.filter((b) => !done.has(b.show.toBase58())).map((b) => b.show), chainNow, accounts);
       failures = 0;
     } catch (e) {
       failures++;

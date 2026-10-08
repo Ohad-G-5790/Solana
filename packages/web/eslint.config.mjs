@@ -5,7 +5,7 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "next-env.d.ts", "src/idl/**"]),
+  globalIgnores([".next/**", "out/**", "next-env.d.ts", "src/idl/**", "scripts/**"]),
   {
     rules: {
       // The dashboard polls the chain and the transcript on an interval and
