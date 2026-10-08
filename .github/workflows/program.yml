@@ -22,7 +22,9 @@ jobs:
     timeout-minutes: 40
     container:
       image: quay.io/ottersec/anchor:v1.2.1
-      options: --user root
+      # Agave 4.x's validator asserts io_uring support; the default Docker
+      # seccomp profile blocks those syscalls, so the test job needs it relaxed.
+      options: --user root --security-opt seccomp=unconfined
     env:
       HOME: /root
     steps:
