@@ -34,6 +34,6 @@ Venue-side first (agent + calendar integration), then band onboarding through th
 
 ## Links
 - Repository: https://github.com/Ohad-G-5790/Solana
-- Demo dashboard: (hosted URL)
+- Demo dashboard: https://ohad-g-5790.github.io/Solana/ (GitHub Pages, static export reading devnet)
 - Program on devnet: 4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8 (deployed 2026-10-08, slot 508938533; upgrade authority 3Aon5LFqG7y9Q1fdqMhMDctxFwxFtvGcZvnTfseHvJcz)
 - Presentation video (2–3 min) and product demo video (≤3 min): (YouTube, unlisted)
