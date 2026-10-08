@@ -4,6 +4,8 @@
 
 Live: [dashboard](https://ohad-g-5790.github.io/Solana/) · [program on devnet](https://explorer.solana.com/address/4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8?cluster=devnet) · [source](https://github.com/Ohad-G-5790/Solana)
 
+[![ci](https://github.com/Ohad-G-5790/Solana/actions/workflows/ci.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/ci.yml) [![program](https://github.com/Ohad-G-5790/Solana/actions/workflows/program.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/program.yml) [![pages](https://github.com/Ohad-G-5790/Solana/actions/workflows/pages.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/pages.yml)
+
 Every band, venue, fan and crew member has an AI agent. A band's agent takes a brief ("November, Central Europe, eight shows, we draw 400"), negotiates with venue agents, plans a route that makes geographic sense, and opens ticket sales months early. Fans pay into an on-chain escrow per show. Each show carries a sell-through threshold and a deadline: hit it and the show is confirmed; miss it and every fan is refunded automatically. After the show date the escrow is split between the band, the venue and the crew the band hired. No booker, no promoter, no deposit risk, and the band's settled shows become a track record that venues can verify on-chain.
 
 Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 2026.
@@ -89,6 +91,10 @@ The dashboard is published to GitHub Pages by `.github/workflows/pages.yml` on e
 Honest note on the bundled run: as of 2026-10-08 it is a three-show devnet tour in which every show was cancelled and refunded, because the demo's hub wallet ran out of devnet SOL mid-sale. The cancellations and refunds are real transactions; a funded eight-show run with confirmed and settled shows replaces it as soon as the faucet allows (the full local run is what the videos show).
 
 The same app also runs as a Node server (`npm run dev` / `next build`) with API routes that read `data/runs`; on Vercel set the root directory to `packages/web` and the `NEXT_PUBLIC_*` variables from `.env.example`.
+
+## Continuous integration
+
+Three workflows run on every push to `main`: `ci` (type checks, unit tests, dashboard lint and build on Node), `program` (builds the Anchor program, runs the 13 integration tests and a full agents run on a Linux validator inside the official Anchor 1.2.1 image; the container needs `--security-opt seccomp=unconfined` because the Agave 4.x validator requires io_uring), and `pages` (publishes the static dashboard).
 
 ## Windows note
 
