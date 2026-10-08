@@ -50,6 +50,16 @@ if (state.stopped) {
 const loopNo = noLoop ? state.loops.length : state.loops.length + 1;
 console.log(`\nGreenroom QA bot — loop ${loopNo}${noLoop ? " (dry run)" : ""} of max ${rubric.maxLoops}; pass >= ${rubric.passScore}\n`);
 
+/** Reports are committed; keep machine-specific paths out of them. */
+const home = process.env.USERPROFILE ?? process.env.HOME ?? "";
+const variants = (dir: string) => [dir, dir.replace(/\\/g, "/"), dir.replace(/\\/g, "\\\\")].filter((v) => v.length > 3);
+function scrub(text: string): string {
+  let out = text;
+  for (const v of variants(root)) out = out.split(v).join("<repo>");
+  if (home) for (const v of variants(home)) out = out.split(v).join("<home>");
+  return out;
+}
+
 const results: CheckResult[] = [];
 for (const c of CHECKS) {
   if (skip.has(c.id) || (only && c.component !== only)) continue;
@@ -63,7 +73,7 @@ for (const c of CHECKS) {
   }
   const durationMs = Date.now() - t0;
   console.log(r.ok ? `ok (${(durationMs / 1000).toFixed(1)}s)` : `FAIL (${(durationMs / 1000).toFixed(1)}s)`);
-  results.push({ id: c.id, component: c.component, title: c.title, ok: r.ok, critical: c.critical, detail: r.detail, command: c.command, durationMs });
+  results.push({ id: c.id, component: c.component, title: c.title, ok: r.ok, critical: c.critical, detail: scrub(r.detail), command: c.command, durationMs });
 }
 
 interface ComponentScore {
