@@ -36,11 +36,12 @@ jobs:
       - name: Validator smoke test
         run: |
           mkdir -p /tmp/ledger-smoke
-          (timeout 40 solana-test-validator --ledger /tmp/ledger-smoke --bind-address 127.0.0.1 --rpc-port 8899 --reset --quiet > /tmp/validator.log 2>&1; echo "validator exit: $?" >> /tmp/validator.log) &
-          for i in $(seq 1 30); do sleep 1; if curl -s -X POST -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' http://127.0.0.1:8899 | grep -q ok; then echo "validator healthy after ${i}s"; break; fi; done
-          tail -40 /tmp/validator.log
+          (timeout 100 solana-test-validator --ledger /tmp/ledger-smoke --bind-address 127.0.0.1 --rpc-port 8899 --reset --quiet > /tmp/validator.log 2>&1; echo "validator exit: $?" >> /tmp/validator.log) &
+          for i in $(seq 1 90); do sleep 1; if curl -s -X POST -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' http://127.0.0.1:8899 | grep -q ok; then echo "validator healthy after ${i}s"; break; fi; done
+          echo "--- stdout ---"; tail -20 /tmp/validator.log
+          echo "--- ledger logs ---"; tail -30 /tmp/ledger-smoke/test-ledger-log.txt 2>/dev/null || true; tail -30 /tmp/ledger-smoke/validator.log 2>/dev/null || true
           pkill -f solana-test-validator || true
-          sleep 2
+          sleep 3
       - name: Dev wallet
         run: |
           mkdir -p ~/.config/solana

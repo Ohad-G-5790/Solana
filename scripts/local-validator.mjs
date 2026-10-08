@@ -99,6 +99,14 @@ export async function startValidator({ rpcPort = Number(process.env.GREENROOM_RP
   child.on("exit", (code, signal) => {
     if (!stopping) {
       console.error(`[validator] exited early (code ${code}, signal ${signal}) with args: ${args.join(" ")}\n${err}`);
+      // The validator writes its startup errors to files inside the ledger directory.
+      for (const name of ["test-ledger-log.txt", "validator.log"]) {
+        const p = join(ledger, name);
+        if (existsSync(p)) {
+          const text = readFileSync(p, "utf8");
+          console.error(`--- ${name} (tail) ---\n${text.slice(-3000)}`);
+        }
+      }
       process.exit(1);
     }
   });
