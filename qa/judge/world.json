@@ -1,0 +1,12 @@
+{
+  "score": 8.5,
+  "notes": "Honest, well-labelled seed data: a file-level disclaimer, a per-venue source (51 of 136 openly marked 'model knowledge'), notes, website and geo_precision on every record; 136 venues in 35 cities with at least three per city; a seeded mulberry32 RNG with SHA-256-derived wallet seeds makes venues, bands, crew and fans fully deterministic (verified by the test); fan counts scale with city population via fansForCity, which is what now produces natural cancellations in the demo; the loader API (loadVenueFile, generateWorld, distanceKm, fansForCity, typed World/Venue/Band/CrewProfile/FanProfile) is small and ergonomic. A REAL_BAND_BLOCKLIST now skips known real acts, but it is hand-picked and still misses combinations flagged last time (Hungry Ghosts) and others the word banks can form (Lost Horizon); loadVenueFile still validates only the two top-level arrays; and the README's '60 fans per city' is a base, not a per-city count.",
+  "issues": [
+    "packages/world/src/names.ts:38-45: the blocklist omits real acts the banks can still form, e.g. 'Hungry Ghosts' (flagged in the previous review) and 'Lost Horizon'; either extend it or restrict patterns to the less collision-prone 'X of Y Street' / 'X Y Club' / 'Y & X' forms",
+    "packages/world/src/generate.ts:37-43: loadVenueFile validates only that venues and cities are arrays; no per-record check of lat/lng range, capacity > 0, genres, or that each venue's city exists in cities (the QA check does this, the loader should too)",
+    "packages/world/src/generate.ts:48: the slug regex uses raw combining characters instead of \\u0300-\\u036f (hard to read, easy to mangle on save)",
+    "README.md:15 says '100 crew and 60 fans per city'; fansForCity scales the base by sqrt(population) (Berlin about 116, Salzburg about 24 at base 60); say 'about 60 fans per city, scaled by population'",
+    "packages/world/src/cli.ts writes data/world.json but nothing reads it (the dashboard reads venues.json via /api/world); either document it as a debugging dump or remove the script",
+    "data/venues.json: 51 of 136 capacities are 'model knowledge'; labelled, but the larger halls would benefit from a cited source"
+  ]
+}

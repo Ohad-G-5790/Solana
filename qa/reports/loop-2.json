@@ -1,0 +1,276 @@
+{
+  "loop": 2,
+  "at": "2026-10-08T20:24:05.110Z",
+  "overall": 9.15,
+  "passed": true,
+  "passScore": 8.5,
+  "components": [
+    {
+      "id": "program",
+      "title": "On-chain program",
+      "weight": 0.25,
+      "automated": 10,
+      "judge": 8.5,
+      "judgeNotes": "Clean one-file-per-instruction layout with a readable five-state machine; every authority is a Signer bound by has_one or seeds+stored bump, no init_if_needed, all lamport/bps math is checked, the vault is a system PDA pre-funded with a rent float so PDA-signed system transfers never break rent, settle_show checks each remaining account against the stored payee list in order and gives rounding dust to the band, and all 12 events are emitted. The test file exercises every instruction with 20+ error-code assertions including float/rent accounting, split rounding and PayeeMismatch. Gaps: buy_ticket does not enforce the threshold deadline, so an under-sold OnSale show can still be rescued after its deadline until someone cranks; reject_show has no error-path test and the check_threshold TooEarly assertion is skipped by the test timeline; a few small inconsistencies (unchecked multiply in threshold_met, misleading error label on the ticket/show has_one, vault float and Show rent never reclaimable). Most valuable fix: require now < threshold_deadline in buy_ticket while OnSale (Confirmed may keep selling until the date) and add reject_show Unauthorized/InvalidState tests.",
+      "score": 9.4,
+      "checks": [
+        {
+          "id": "program-build",
+          "component": "program",
+          "title": "anchor build succeeds (SBPF v0, platform-tools v1.54)",
+          "ok": true,
+          "critical": true,
+          "detail": "\n> greenroom@0.1.0 build:program\n> anchor build --tools-version v1.54 --arch v0 && npm run sync:idl\n\n\n> greenroom@0.1.0 sync:idl\n> node -e \"const fs=require('fs');for(const d of ['packages/sdk/idl','packages/web/src/idl']){fs.mkdirSync(d,{recursive:true});fs.copyFileSync('target/idl/greenroom.json',d+'/greenroom.json');fs.copyFileSync('target/types/greenroom.ts',d+'/greenroom.ts');}console.log('IDL synced')\"\n\nIDL synced\n    Finished `release` profile [optimized] target(s) in 0.34s\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s\n     Running unittests src\\lib.rs (L:\\Solana Project\\target\\debug\\deps\\greenroom-a45644b96fb9a794.exe)\n",
+          "command": "npm run build:program",
+          "durationMs": 2200
+        },
+        {
+          "id": "program-clippy",
+          "component": "program",
+          "title": "cargo clippy reports no errors",
+          "ok": true,
+          "detail": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.28s\n",
+          "command": "cargo clippy -p greenroom --no-deps -- -D warnings -A unexpected_cfgs",
+          "durationMs": 457
+        },
+        {
+          "id": "program-tests",
+          "component": "program",
+          "title": "integration tests pass on a local validator",
+          "ok": true,
+          "critical": true,
+          "detail": "13 passing, 0 failing\n… sells tickets into escrow, for self and on behalf of others (3023ms)\n    ✔ confirms a show as soon as the threshold is met, from any wallet (1966ms)\n    ✔ adds a crew payee out of the band's share (1017ms)\n    ✔ settles after the show date and splits the escrow (53123ms)\n    ✔ cancels an under-sold show after the deadline and refunds every ticket (1969ms)\n\n\n  13 passing (1m)\n\n(node:26900) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///L:/Solana%20Project/tests/greenroom.ts is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to \\\\?\\L:\\Solana Project\\package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n",
+          "command": "npm run test:program",
+          "durationMs": 85349
+        },
+        {
+          "id": "program-error-paths",
+          "component": "program",
+          "title": "every instruction has a happy-path and an error-path test",
+          "ok": true,
+          "detail": "missing: none; error-path assertions: 28",
+          "durationMs": 2
+        },
+        {
+          "id": "program-safety",
+          "component": "program",
+          "title": "no init_if_needed, checked math on lamports, PDA-signed transfers",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 4
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "title": "Agents",
+      "weight": 0.25,
+      "automated": 10,
+      "judge": 7.6,
+      "judgeNotes": "Well-structured: a message bus whose transcript doubles as the dashboard feed, a brain that always computes the heuristic first and validates any model answer before an instruction is built (it holds no keys), a planner with best-offer-per-city scoring, nearest-neighbour + 2-opt routing, rest days after every third show and venue availability, and a crank limited to the three permissionless instructions with payees taken from the stored account. The latest run (2026-10-08T20-03-28) booked 8/8 shows on a sane 1627 km route, sold 188 tickets, hired 16 crew and settled everything. Weaknesses: every show sold out (25/25) so the product's headline path, threshold miss -> cancellation -> automatic refunds, never happens in the demo; negotiation is a single round with no counter-offers and in heuristic mode a venue rejection is structurally impossible because the band copies the venue's own ask; ClaudeBrain's parsing and fallback have no unit test; and validate() leaves minPriceLamports/offeredCapacity unchecked for type and sign. Most valuable fix: tune the fan sim or brief (e.g. one or two cities with low taste or fewer fans, or a larger capacityScale) so the default demo shows at least one cancellation with refunds, and assert it in the e2e check.",
+      "score": 9,
+      "checks": [
+        {
+          "id": "agents-typecheck",
+          "component": "agents",
+          "title": "agents and sdk packages type-check",
+          "ok": true,
+          "critical": true,
+          "detail": "\n> @greenroom/sdk@0.1.0 typecheck\n> tsc --noEmit -p tsconfig.json\n\n\n> @greenroom/agents@0.1.0 typecheck\n> tsc --noEmit -p tsconfig.json\n\n",
+          "command": "npm run typecheck -w @greenroom/sdk -w @greenroom/agents",
+          "durationMs": 3025
+        },
+        {
+          "id": "agents-unit",
+          "component": "agents",
+          "title": "planner, brain and bus unit tests pass",
+          "ok": true,
+          "detail": "…--test src/*.test.ts\n\n✔ scoreOffer prefers fitting capacity and lower share (0.8794ms)\n✔ planTour orders cities geographically and respects rest days (1.8996ms)\n✔ venueAvailability is deterministic and leaves free days (0.6941ms)\n✔ heuristic brain returns the heuristic answer (0.1956ms)\n✔ bus collects targeted messages and logs everything (50.2102ms)\n✔ claude brain uses a valid model answer (0.8293ms)\n✔ claude brain falls back to the heuristic on bad JSON, API errors and rejected answers (0.374ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 193.3467\n",
+          "command": "npm test -w @greenroom/agents",
+          "durationMs": 703
+        },
+        {
+          "id": "agents-e2e",
+          "component": "agents",
+          "title": "end-to-end demo on a local validator: shows booked, tickets sold, at least one cancellation fully refunded, settlements done",
+          "ok": true,
+          "critical": true,
+          "detail": "{\"proposed\":8,\"accepted\":8,\"rejected\":0,\"confirmed\":6,\"cancelled\":2,\"refunded\":8,\"settled\":6,\"ticketsSold\":164,\"crewHired\":12,\"messages\":339,\"brain\":\"heuristic\"}\n",
+          "command": "node scripts/demo-local.mjs --fast",
+          "durationMs": 136772
+        },
+        {
+          "id": "agents-guardrails",
+          "component": "agents",
+          "title": "LLM answers are validated and never sign; heuristic path has no network dependency",
+          "ok": true,
+          "detail": "brain validates model output and holds no keys",
+          "durationMs": 1
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard",
+      "weight": 0.2,
+      "automated": 10,
+      "judge": 8.2,
+      "judgeNotes": "High fidelity to DESIGN.md: the tokens in globals.css match the spec exactly (near-black surfaces, single #1ed760 accent, silver text, heavy/medium shadows, inset input border), buttons are 9999px pills with uppercase 1.4px tracking, inputs are 500px pills, badges are 2px capitalised 10.5px, cards are borderless with hover lift and medium shadow, type stays in the 10-24px range, and the sidebar collapses to a scrollable top nav under 896px. Show cards and the show page make threshold, deadline and state clear (sold/need, threshold tick on the progress bar, chain-clock countdowns, split and crew labels), the feed polls the transcript every 2 s with tx explorer links, and buy, refund and the check-threshold crank are wired to a real wallet with localnet-aware explorer URLs. Weaknesses: the static-host fallback run does not exist so a hosted build shows 'No tour yet'; the show page stays on 'Loading...' forever when RPC is unreachable; November flavour dates sit beside second-level countdowns without a demo-clock label; accent green is used as a background on the settled badge and brand dot; tables have no overflow wrapper for phone width. Most valuable fix: bundle a recorded run into public/demo and render RPC errors on the show page instead of the loading state.",
+      "score": 9.3,
+      "checks": [
+        {
+          "id": "web-build",
+          "component": "dashboard",
+          "title": "next build succeeds",
+          "ok": true,
+          "critical": true,
+          "detail": "\n> @greenroom/web@0.1.0 build\n> next build\n\n\u001b[1m\u001b[38;2;173;127;168m▲ Next.js 16.4.0\u001b[39m\u001b[22m (Turbopack)\n- Environments: .env.local\n\u001b[32m\u001b[1m✓\u001b[22m\u001b[39m Running next.config.ts took 26ms\n\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Creating an optimized production build ...\n\u001b[32m\u001b[1m✓\u001b[22m\u001b[39m Compiled successfully in 330ms\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Running TypeScript ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Finished TypeScript in 1690ms ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Collecting page data using 11 workers ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (0/6) ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (1/6) \r\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (2/6) \r\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (4/6) \r\n\u001b[32m\u001b[1m✓\u001b[22m\u001b[39m Generating static pages using 11 workers (6/6) in 690ms\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Finalizing page optimization ...\n\n\u001b[4mRoute (app)\u001b[24m\n┌ ○ /\n├ ○ /_not-found\n├ ƒ /api/feed\n├ ƒ /api/run\n├ ƒ /api/world\n├ ƒ /band/[[...authority]]\n├ ○ /feed\n├ ƒ /show/[address]\n└ ○ /venues\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+          "command": "npm run build -w @greenroom/web",
+          "durationMs": 5365
+        },
+        {
+          "id": "web-typecheck",
+          "component": "dashboard",
+          "title": "web package type-checks and lints",
+          "ok": true,
+          "detail": "\n> @greenroom/web@0.1.0 typecheck\n> tsc --noEmit -p tsconfig.json\n\n\n> @greenroom/web@0.1.0 lint\n> eslint .\n\n",
+          "command": "npm run typecheck -w @greenroom/web && npm run lint -w @greenroom/web",
+          "durationMs": 4708
+        },
+        {
+          "id": "web-design-tokens",
+          "component": "dashboard",
+          "title": "design tokens follow docs/DESIGN.md (near-black surfaces, #1ed760 accent, pill radius)",
+          "ok": true,
+          "detail": "all tokens present",
+          "durationMs": 3
+        },
+        {
+          "id": "web-wallet-flows",
+          "component": "dashboard",
+          "title": "wallet buy and refund flows are wired",
+          "ok": true,
+          "detail": "buyTicket, refundTicket and explorer links present",
+          "durationMs": 3
+        }
+      ]
+    },
+    {
+      "id": "world",
+      "title": "Seed world",
+      "weight": 0.1,
+      "automated": 10,
+      "judge": 8.4,
+      "judgeNotes": "Honest, well-labelled seed data: a file-level disclaimer, a per-venue source (51 of 136 openly marked 'model knowledge'), notes, website and geo_precision on every record; 136 venues in 35 cities with at least three per city; a seeded mulberry32 RNG with SHA-256-derived wallet seeds makes venues, bands, crew and fans fully deterministic (verified by the test); band names come from word banks and the default 100 contain no real band I recognise; fan counts scale with city population; the loader API (loadVenueFile, generateWorld, distanceKm, fansForCity, typed World/Venue/Band/CrewProfile/FanProfile) is small and ergonomic. Weaknesses: the word banks can form real band names with other seeds and there is no blocklist; loadVenueFile only checks the two top-level arrays; the README's '60 fans per city' is a base scaled by population; data/world.json is written by the CLI but read by nothing. Most valuable fix: add a blocklist of known real-band combinations in generateBands and a per-record schema check in loadVenueFile.",
+      "score": 9.4,
+      "checks": [
+        {
+          "id": "world-data",
+          "component": "world",
+          "title": "venues.json is valid: >= 2 venues per city, coordinates in range, real-venue disclaimer",
+          "ok": true,
+          "critical": true,
+          "detail": "35 cities, 136 venues; short: none; out of range: 0",
+          "durationMs": 0
+        },
+        {
+          "id": "world-tests",
+          "component": "world",
+          "title": "world generator tests pass (100 unique bands, 100 crew per city, deterministic)",
+          "ok": true,
+          "detail": "\n> @greenroom/world@0.1.0 test\n> tsx --test src/*.test.ts\n\n✔ rng is deterministic (0.9989ms)\n✔ distance Berlin to Prague is roughly 280 km (0.2521ms)\n✔ world generates the requested scale with unique bands (53.6395ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 217.5859\n",
+          "command": "npm test -w @greenroom/world",
+          "durationMs": 754
+        },
+        {
+          "id": "world-no-real-bands",
+          "component": "world",
+          "title": "generated band names are invented (word-bank combinations only)",
+          "ok": true,
+          "detail": "names are generated from word banks",
+          "durationMs": 0
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "title": "Docs and submission",
+      "weight": 0.1,
+      "automated": 10,
+      "judge": 6.5,
+      "judgeNotes": "The README sells the product in one paragraph, the 'what is in the box' table, quick start, 'how a tour happens' and the Windows note are clear and honest about toolchain pain, and architecture, spec, plan, rubric, design system and demo script all exist. The honesty problems are material: the README states the program is deployed on devnet at 4KSa...SUT8 and that the demo runs on devnet, but devnet getAccountInfo for that id returns null; the quick start tells users to copy .env.example to .env although nothing loads a .env file; the dashboard step cannot work as written because demo:fast stops the validator and packages/web/.env.local is never created; and 01-program-spec.md is still the 'Roadie' spec with a different buy_ticket signature, error list and account fields. Most valuable fix: run deploy:devnet now or reword every devnet claim, then bring the spec and the quick start in line with the code.",
+      "score": 8.6,
+      "checks": [
+        {
+          "id": "docs-readme",
+          "component": "docs",
+          "title": "README has a one-paragraph pitch, quick start, architecture and demo sections",
+          "ok": true,
+          "critical": true,
+          "detail": "ok (7014 chars)",
+          "durationMs": 1
+        },
+        {
+          "id": "docs-set",
+          "component": "docs",
+          "title": "spec, plan, rubric, design and demo script exist",
+          "ok": true,
+          "detail": "all present",
+          "durationMs": 0
+        },
+        {
+          "id": "docs-env-example",
+          "component": "docs",
+          "title": ".env.example documents every variable used",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 0
+        }
+      ]
+    },
+    {
+      "id": "devex",
+      "title": "Developer experience",
+      "weight": 0.1,
+      "automated": 10,
+      "judge": 7.3,
+      "judgeNotes": "Setup is genuinely one command on both OSes, scripts/local-validator.mjs hides the Windows 1.18 / SBPF-v0 workaround cleanly with isWin branches everywhere, root `npm test` runs the program tests plus every workspace, Cargo.lock and package-lock.json exist, .env.example documents every variable, .gitignore covers env files, ledgers and runs, and no secrets are present (packages/web/.env.local holds only public localnet values and is ignored). Weaknesses: the repository has zero commits so every file is untracked and 'lockfiles committed', the README's git clone and 'report committed' are not yet true; the documented path to the Claude brain does not work because .env is never loaded; the dashboard needs `--keep` plus a hand-made .env.local that no script creates; deploy:devnet has not been run; and there are leftovers (empty migrations/, inline `node -e` sync:idl). Most valuable fix: make the first commit with both lockfiles, add `node --env-file=.env` (or dotenv) so .env.example -> .env works, and have setup.* copy packages/web/.env.local.example into place.",
+      "score": 8.9,
+      "checks": [
+        {
+          "id": "devex-scripts",
+          "component": "devex",
+          "title": "root scripts: build:program, test:program, demo, deploy:devnet, qa",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 1
+        },
+        {
+          "id": "devex-lockfiles",
+          "component": "devex",
+          "title": "Cargo.lock and package-lock.json are present and not ignored",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 0
+        },
+        {
+          "id": "devex-no-secrets",
+          "component": "devex",
+          "title": "no API keys or private keys committed",
+          "ok": true,
+          "critical": true,
+          "detail": "clean",
+          "durationMs": 14
+        },
+        {
+          "id": "devex-setup-doc",
+          "component": "devex",
+          "title": "setup script exists for Windows and Unix",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "passScore": 8.5,
+  "maxLoops": 5,
+  "automatedWeight": 0.6,
+  "judgeWeight": 0.4,
+  "components": [
+    {
+      "id": "program",
+      "title": "On-chain program",
+      "weight": 0.25,
+      "judge": "State machine clarity, constraint correctness against the Solana security checklist (signers, has_one, PDA seeds, checked math, no init_if_needed, PDA-signed transfers), event coverage, code organisation, error-path test coverage."
+    },
+    {
+      "id": "agents",
+      "title": "Agents",
+      "weight": 0.25,
+      "judge": "Negotiation quality and realism, route sanity (geographic order, rest days, availability), safety guardrails (LLM output validated, never signs outside allowed instructions), transcript readability, heuristic fallback completeness."
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard",
+      "weight": 0.2,
+      "judge": "Fidelity to docs/DESIGN.md (near-black surfaces, single green accent, pill buttons, compact type), clarity of threshold/deadline/state per show, live feed usefulness, explorer links, wallet buy and refund flows, phone width."
+    },
+    {
+      "id": "world",
+      "title": "Seed world",
+      "weight": 0.1,
+      "judge": "Realism and honest labelling of approximations, no real band names, deterministic generation, loader API ergonomics."
+    },
+    {
+      "id": "docs",
+      "title": "Docs and submission",
+      "weight": 0.1,
+      "judge": "A judge understands the product in 60 seconds from the README; setup instructions are complete and honest; architecture, spec, plan and demo script present; no claimed features that do not exist."
+    },
+    {
+      "id": "devex",
+      "title": "Developer experience",
+      "weight": 0.1,
+      "judge": "One-command setup and demo, scripts work on Windows and Unix, structure and naming, lockfiles committed, no secrets."
+    }
+  ]
+}

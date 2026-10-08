@@ -1,0 +1,14 @@
+{
+  "score": 8.6,
+  "notes": "High fidelity to DESIGN.md: the tokens in globals.css match the spec (near-black surfaces, single #1ed760 accent, silver text, heavy/medium shadows, inset input border), buttons are 9999px pills with uppercase 1.4px tracking, inputs are 500px pills, badges 2px capitalised 10.5px, cards borderless with hover lift, type stays in the 10-24px range, and the sidebar collapses to a scrollable top nav under 896px with the wallet button kept on one line. Show cards and the show page make threshold, deadline and state clear (sold/need, threshold tick, chain-clock countdowns, split and crew labels), the feed polls the transcript every 2 s with tx explorer links, buy/refund/check-threshold are wired to a real wallet, server-data.ts prefers the newest run folder, and the previous blockers are fixed: a recorded run is bundled in public/demo and the show and band pages now render an 'RPC unreachable' message instead of hanging. Remaining: the bundled localnet run's explorer links go to devnet on a hosted build (dead links until the devnet deploy), the home page swallows RPC errors silently, flavour dates sit beside second-level countdowns without a 'demo clock' label, accent green is used as a background on the settled badge and brand dot, and tables have no overflow wrapper.",
+  "issues": [
+    "packages/web/src/lib/config.ts:1-3 with public/demo/summary.json: the bundled run was recorded on localnet (cluster http://127.0.0.1:8899) but a hosted build defaults to devnet, so every 'show account', 'vault' and 'tx' explorer link in the recorded feed opens a not-found page and the wallet buy flow cannot work until the program is deployed; label the recorded run as a replay and hide or re-target its links",
+    "packages/web/src/app/page.tsx:26-31: when fetchShows throws (validator stopped, wrong cluster) the home page silently falls back to the summary states with no notice, unlike the show and band pages",
+    "packages/web/src/lib/format.ts:27-30 and components/ShowCard.tsx:38, show/[address]/page.tsx:86: 'day 0 · Nov 3' flavour dates are shown next to 'deadline 32s' with no 'demo clock' label",
+    "packages/web/src/app/globals.css:275-278,103-109: accent green used as a background (.badge.settled, .brand .dot); DESIGN.md says functional only, never decorative/background",
+    "packages/web/src/app/globals.css:331-348: .table has no overflow-x wrapper; long venue names and programme lists on the venues page can push phone width",
+    "packages/web/src/app/show/[address]/page.tsx:143-153: a wallet that already holds a ticket cannot buy more (one Ticket PDA per wallet) and the UI gives no explanation",
+    "packages/web/src/components/Feed.tsx:38: raw agent ids (venue:lido-berlin) are shown as the sender; a display name would read better",
+    "packages/web/src/app/globals.css:21: SpotifyMixUI/CircularSp are proprietary and not shipped, so the page renders in Helvetica/Arial"
+  ]
+}

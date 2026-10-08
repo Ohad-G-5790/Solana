@@ -1,0 +1,13 @@
+{
+  "score": 8.6,
+  "notes": "A judge gets the product in one paragraph, the 'what is in the box' table, quick start, 'how a tour happens', repository layout, QA gate and Windows note are clear, and the honesty problems from the last review are fixed: the README no longer claims a live devnet deployment (status 'pending funding', explained in the Devnet section and tracked in docs/06-submission.md), the .env flow is real (cli.ts loads it) and the `--keep` + .env.local dashboard flow is documented and scripted, and docs/01-program-spec.md now matches the code field for field (Greenroom, buy_ticket(quantity, beneficiary), the SalesClosed rule, the full error list, a test-coverage section I checked against tests/greenroom.ts). Submission copy, presentation and demo scripts, architecture, plan, rubric and design system are all present, plus LICENSE and CLAUDE.md. Remaining honesty nits: README:14 still says the agents demo runs 'on localnet and devnet' although the program has never been deployed there, the '60 fans per city' phrasing, docs/02-plan.md and docs/00-kickoff.md still describe the LLM adapter as the Claude Code CLI with no API key, and the only QA report in the repo predates the fixes and shows a FAIL.",
+  "issues": [
+    "README.md:14: agents status 'end-to-end demo on localnet and devnet' is not yet true; the program is not deployed on devnet (docs/06-submission.md:38) so no devnet run exists; say 'localnet; devnet once deployed'",
+    "README.md:15: '60 fans per city' is a population-scaled base (packages/world/src/generate.ts:118-122), not a per-city count",
+    "docs/02-plan.md:13,28: describe the LLM adapter as the 'Claude Code CLI'; the code uses the Anthropic Messages API with ANTHROPIC_API_KEY (packages/agents/src/brain.ts:111-116, README:47)",
+    "docs/00-kickoff.md:17: 'No API key, Claude subscription only. Agents call Claude through the local Claude Code CLI' contradicts the README; mark the row as superseded or add the later decision",
+    "docs/02-plan.md:25-29: milestone 'done means' lines include 'deployed to devnet' and 'deployed (Vercel) against devnet', neither of which has happened; keep as plan but add status so the plan does not read as a claim",
+    "qa/reports/latest.md and qa/reports/loop-1.json: the only QA report in the repo predates the fixes (loop 1, 6.50 FAIL with clippy, program tests and e2e failing); README:79 points judges at it, so re-run the bot before submission",
+    "docs/06-submission.md:36-40 and README.md:24: repository, dashboard and video links and 'git clone <this repo>' are placeholders (expected before submission, but they need filling once the repo is public)"
+  ]
+}

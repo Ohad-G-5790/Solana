@@ -1,0 +1,14 @@
+{
+  "score": 7.8,
+  "notes": "Setup is one command on both OSes and the scripts now also create packages/web/.env.local; scripts/local-validator.mjs hides the Windows 1.18 / SBPF-v0 workaround cleanly, root `npm test` runs the program tests plus every workspace, demo-local.mjs supports --keep, the agents CLI loads <repo>/.env without a dependency, a GitHub Actions workflow runs the Node-side typecheck/tests/lint/build, LICENSE and CLAUDE.md exist, Cargo.lock and package-lock.json exist, .env/.env.local/data/runs are ignored, QA reports are tracked, and no secrets are present (packages/web/.env.local holds only public localnet values). The hard gap is unchanged and scored as such: the repository has zero commits, so 'lockfiles committed' and the README's git clone are not yet true, and deploy:devnet has never run (the wallet holds 0.025 SOL against ~2.5 needed). Smaller leftovers: the empty migrations/ scaffold, the inline `node -e` sync:idl, no root qa:quick alias, an unexplained .local/ folder, and a stale failing QA report.",
+  "issues": [
+    "git: no commits at all (`git log` -> 'does not have any commits yet'); everything is untracked, so Cargo.lock and package-lock.json are not actually committed and `git clone` in README.md:24 has nothing to clone",
+    "deploy:devnet has not been executed (program absent on devnet, wallet 0.025 SOL vs ~2.5 SOL needed); .env.example and packages/web/src/lib/config.ts still default the dashboard to devnet, so a fresh checkout without .env.local points at a cluster where the program does not exist",
+    "qa/reports/latest.md is the loop-1 report from before the fixes (6.50 FAIL: clippy, program tests, e2e); it is now tracked in git, so it will be the first thing a judge sees under 'QA gate' unless the bot is re-run",
+    "migrations/ is an empty Anchor scaffold leftover",
+    "package.json:19: sync:idl is an inline `node -e` one-liner; move it to scripts/sync-idl.mjs",
+    "package.json: qa has qa:quick but the root exposes only `qa`; add `qa:quick` so the fast loop is discoverable",
+    ".github/workflows/ci.yml: covers Node packages only; the program build and integration tests are not in CI (acknowledged in the file, but a Linux job with solana-test-validator would catch Rust regressions)",
+    ".local/ holds wallet QR PNGs outside the documented layout (ignored, but unexplained)"
+  ]
+}

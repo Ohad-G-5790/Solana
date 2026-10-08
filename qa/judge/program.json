@@ -1,0 +1,12 @@
+{
+  "score": 9.0,
+  "notes": "One file per instruction, an explicit five-state machine, every authority a Signer bound by has_one or seeds+stored bump, no init_if_needed, checked lamport/bps math, a system-PDA vault with a rent float so PDA-signed transfers never break rent, settlement that checks each remaining account against the stored payee list in order, and all 12 events emitted. The previous blocking gap is closed: buy_ticket.rs:42-44 refuses purchases on an OnSale show once threshold_deadline has passed (SalesClosed), so an undecided show cannot be rescued late, and the clippy range lint is fixed. tests/greenroom.ts now covers 13 cases with about 25 error-code assertions including reject_show from a stranger (244-251), a real check_threshold TooEarly before deadline2 (298-300), the late-purchase SalesClosed path (383), rent/float accounting, split rounding and PayeeMismatch, with waits on the chain clock. Remaining items are small: an unchecked multiply in threshold_met, a misleading error label on the ticket/show has_one, no way to reclaim the vault float or Show rent after a terminal state, and a few untested error codes.",
+  "issues": [
+    "programs/greenroom/src/state.rs:113-114: threshold_met uses unchecked `*` (safe by value range and overflow-checks=true, but inconsistent with the checked-math rule); use checked_mul or u128 like settle_show::share",
+    "programs/greenroom/src/instructions/refund_ticket.rs:21: `has_one = show @ ErrorCode::PayeeMismatch` reports a misleading error for a ticket/show mismatch; use InvalidState or a dedicated TicketMismatch code",
+    "programs/greenroom/src/instructions/propose_show.rs:98-110: no instruction reclaims the vault rent float or the Show account rent after Settled/Cancelled (about 0.0035 SOL per show locked forever); a close_show for terminal states would fix it",
+    "tests/greenroom.ts: untested error codes: TooManyPayees (5th payee), InvalidPrice (zero price), TextLength for venue/tour/label, and reject_show on a non-Proposed show (InvalidState)",
+    "tests/greenroom.ts:297-300: the TooEarly assertion depends on the preceding ~30 transactions finishing before T0+40 on the 1.18 validator; the explicit chainNow < deadline2 check makes a slip visible but the test is timing-fragile (use a later deadline2 or a dedicated show)",
+    "programs/greenroom/src/instructions/settle_show.rs:16-19: has_one on band_profile/venue_profile uses the Unauthorized label although no signer is involved; a mismatch is an account-wiring error, not an authorization one"
+  ]
+}

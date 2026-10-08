@@ -1,0 +1,62 @@
+{
+  "runId": "2026-10-08T20-37-29-239Z",
+  "cluster": "https://api.devnet.solana.com",
+  "band": {
+    "id": "cinema-of-royal-street",
+    "name": "Cinema of Royal Street",
+    "authority": "6MmxuASTJPWLxJhUhDi3xtQT7cTJGxNnncrfjXrXFVGZ",
+    "profile": "4YsyPCFzwTxYRdzM4a6fPNx9DhwdD52eMK615AC3HM38"
+  },
+  "tour": "CYaYAfJLe3amYXKX9gDera8Gi9iB9kNpTEjpsZ3jbqz2",
+  "shows": [
+    {
+      "show": "3zJBK5P3VHXfmaSUTYrTn3CbLbhH1yFsZZEovQ8yAhkA",
+      "city": "Berlin",
+      "venue": "lido-berlin",
+      "day": 0,
+      "capacity": 26,
+      "ticketsSold": 2,
+      "state": "cancelled",
+      "date": 1791492003,
+      "thresholdDeadline": 1791491928,
+      "payees": []
+    },
+    {
+      "show": "pYDJhwJ7V4vcDNYfUMXqhsDANj9ST76tUGiEvMwtfbx",
+      "city": "Hamburg",
+      "venue": "molotow-hamburg",
+      "day": 1,
+      "capacity": 20,
+      "ticketsSold": 8,
+      "state": "cancelled",
+      "date": 1791492005,
+      "thresholdDeadline": 1791491929,
+      "payees": []
+    },
+    {
+      "show": "AK9uJPK1jEgXYccDNT24xuvxp1iwXvmVMuFpknGsYJ4G",
+      "city": "Cologne",
+      "venue": "gebaeude-9-cologne",
+      "day": 3,
+      "capacity": 25,
+      "ticketsSold": 7,
+      "state": "cancelled",
+      "date": 1791492009,
+      "thresholdDeadline": 1791491931,
+      "payees": []
+    }
+  ],
+  "stats": {
+    "proposed": 3,
+    "accepted": 3,
+    "rejected": 0,
+    "confirmed": 0,
+    "cancelled": 3,
+    "refunded": 9,
+    "settled": 0,
+    "ticketsSold": 17,
+    "crewHired": 0,
+    "messages": 59,
+    "brain": "heuristic"
+  }
+}

@@ -1,0 +1,270 @@
+{
+  "loop": 1,
+  "at": "2026-10-08T20:11:50.234Z",
+  "overall": 6.5,
+  "passed": false,
+  "passScore": 8.5,
+  "components": [
+    {
+      "id": "program",
+      "title": "On-chain program",
+      "weight": 0.25,
+      "automated": 3,
+      "judge": null,
+      "score": 3,
+      "checks": [
+        {
+          "id": "program-build",
+          "component": "program",
+          "title": "anchor build succeeds (SBPF v0, platform-tools v1.54)",
+          "ok": true,
+          "critical": true,
+          "detail": "\n> greenroom@0.1.0 build:program\n> anchor build --tools-version v1.54 --arch v0 && npm run sync:idl\n\n\n> greenroom@0.1.0 sync:idl\n> node -e \"const fs=require('fs');for(const d of ['packages/sdk/idl','packages/web/src/idl']){fs.mkdirSync(d,{recursive:true});fs.copyFileSync('target/idl/greenroom.json',d+'/greenroom.json');fs.copyFileSync('target/types/greenroom.ts',d+'/greenroom.ts');}console.log('IDL synced')\"\n\nIDL synced\n    Finished `release` profile [optimized] target(s) in 0.50s\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s\n     Running unittests src\\lib.rs (L:\\Solana Project\\target\\debug\\deps\\greenroom-a45644b96fb9a794.exe)\n",
+          "command": "npm run build:program",
+          "durationMs": 2712
+        },
+        {
+          "id": "program-clippy",
+          "component": "program",
+          "title": "cargo clippy reports no errors",
+          "ok": false,
+          "detail": "…ce v6.1.1\n    Checking solana-sysvar v3.1.1\n    Checking solana-stake-interface v2.0.2\n   Compiling anchor-attribute-error v1.2.1\n   Compiling anchor-attribute-constant v1.2.1\n   Compiling anchor-attribute-program v1.2.1\n   Compiling anchor-derive-accounts v1.2.1\n   Compiling anchor-attribute-event v1.2.1\n   Compiling anchor-derive-serde v1.2.1\n   Compiling anchor-attribute-account v1.2.1\n    Checking anchor-lang-error v1.2.1\n    Checking anchor-lang v1.2.1\n    Checking greenroom v0.1.0 (L:\\Solana Project\\programs\\greenroom)\nerror: manual `RangeInclusive::contains` implementation\n  --> programs\\greenroom\\src\\instructions\\buy_ticket.rs:41:9\n   |\n41 |         quantity >= 1 && quantity <= MAX_TICKETS_PER_PURCHASE,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `(1..=MAX_TICKETS_PER_PURCHASE).contains(&quantity)`\n   |\n   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_range_contains\n   = note: `-D clippy::manual-range-contains` implied by `-D warnings`\n   = help: to override `-D warnings` add `#[allow(clippy::manual_range_contains)]`\n\nerror: could not compile `greenroom` (lib) due to 1 previous error\n",
+          "command": "cargo clippy -p greenroom --no-deps -- -D warnings -A unexpected_cfgs",
+          "durationMs": 27797
+        },
+        {
+          "id": "program-tests",
+          "component": "program",
+          "title": "integration tests pass on a local validator",
+          "ok": false,
+          "critical": true,
+          "detail": "12 passing, 1 failing\n…\n\n  1) greenroom\n       settles after the show date and splits the escrow:\n\n      expected PayeeMismatch, got TooEarly\n      + expected - actual\n\n      -TooEarly\n      +PayeeMismatch\n      \n      at expectAnchorError (tests\\greenroom.ts:27:52)\n      at processTicksAndRejections (node:internal/process/task_queues:104:5)\n      at Context.<anonymous> (tests\\greenroom.ts:332:5)\n\n\n\n(node:28292) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///L:/Solana%20Project/tests/greenroom.ts is not specified and it doesn't parse as CommonJS.\nReparsing as ES module because module syntax was detected. This incurs a performance overhead.\nTo eliminate this warning, add \"type\": \"module\" to \\\\?\\L:\\Solana Project\\package.json.\n(Use `node --trace-warnings ...` to show where the warning was created)\n",
+          "command": "npm run test:program",
+          "durationMs": 83142
+        },
+        {
+          "id": "program-error-paths",
+          "component": "program",
+          "title": "every instruction has a happy-path and an error-path test",
+          "ok": true,
+          "detail": "missing: none; error-path assertions: 26",
+          "durationMs": 1
+        },
+        {
+          "id": "program-safety",
+          "component": "program",
+          "title": "no init_if_needed, checked math on lamports, PDA-signed transfers",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 3
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "title": "Agents",
+      "weight": 0.25,
+      "automated": 3,
+      "judge": null,
+      "score": 3,
+      "checks": [
+        {
+          "id": "agents-typecheck",
+          "component": "agents",
+          "title": "agents and sdk packages type-check",
+          "ok": true,
+          "critical": true,
+          "detail": "\n> @greenroom/sdk@0.1.0 typecheck\n> tsc --noEmit -p tsconfig.json\n\n\n> @greenroom/agents@0.1.0 typecheck\n> tsc --noEmit -p tsconfig.json\n\n",
+          "command": "npm run typecheck -w @greenroom/sdk -w @greenroom/agents",
+          "durationMs": 3414
+        },
+        {
+          "id": "agents-unit",
+          "component": "agents",
+          "title": "planner, brain and bus unit tests pass",
+          "ok": true,
+          "detail": "\n> @greenroom/agents@0.1.0 test\n> tsx --test src/*.test.ts\n\n✔ scoreOffer prefers fitting capacity and lower share (0.9412ms)\n✔ planTour orders cities geographically and respects rest days (0.9693ms)\n✔ venueAvailability is deterministic and leaves free days (0.7114ms)\n✔ heuristic brain returns the heuristic answer (0.1847ms)\n✔ bus collects targeted messages and logs everything (55.2459ms)\nℹ tests 5\nℹ suites 0\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 287.3742\n",
+          "command": "npm test -w @greenroom/agents",
+          "durationMs": 879
+        },
+        {
+          "id": "agents-e2e",
+          "component": "agents",
+          "title": "end-to-end demo on a local validator: shows booked, tickets sold, a cancellation refunded, settlements done",
+          "ok": false,
+          "critical": true,
+          "detail": "…vaQbi9DRwMhjJqtWj7kddCH3D9i1k,BfD1NQ5XNg5VM4WTaG7BLuhmPxhcT6i85AWQfAiNSCuH,6dwhz9oxSbSLQMHE7kmFLRaKsPi9Bpyz9u2GkY85Jjw2,EmMoUCZBLh4GZjsSyr9u2VR54ArE5EsdMuCd2rRR3vBV,6n8x9qWoZf4GtqWyEpftxxwxWYzpembNdUrmBFTQ6zjd: Too many inputs provided; max 100\r\n    at Connection.getMultipleAccountsInfoAndContext (L:\\Solana Project\\node_modules\\@solana\\web3.js\\src\\connection.ts:3708:13)\r\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\r\n    at async Connection.getMultipleAccountsInfo (L:\\Solana Project\\node_modules\\@solana\\web3.js\\src\\connection.ts:3723:17)\r\n    at async runDemo (L:\\Solana Project\\packages\\agents\\src\\orchestrator.ts:122:17)\r\n    at async <anonymous> (L:\\Solana Project\\packages\\agents\\src\\cli.ts:25:17) {\r\n  code: -32602,\r\n  data: undefined\r\n}\r\n\r\nNode.js v24.18.0\r\nnpm error Lifecycle script `demo` failed with error:\nnpm error code 1\nnpm error path L:\\Solana Project\\packages\\agents\nnpm error workspace @greenroom/agents@0.1.0\nnpm error location L:\\Solana Project\\packages\\agents\nnpm error command failed\nnpm error command C:\\WINDOWS\\system32\\cmd.exe /d /s /c tsx src/cli.ts --rpc http://127.0.0.1:8899 --wallet C:\\Users\\sonof\\.config\\solana\\id.json --fast\n",
+          "command": "node scripts/demo-local.mjs --fast",
+          "durationMs": 5590
+        },
+        {
+          "id": "agents-guardrails",
+          "component": "agents",
+          "title": "LLM answers are validated and never sign; heuristic path has no network dependency",
+          "ok": true,
+          "detail": "brain validates model output and holds no keys",
+          "durationMs": 0
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "title": "Dashboard",
+      "weight": 0.2,
+      "automated": 10,
+      "judge": null,
+      "score": 10,
+      "checks": [
+        {
+          "id": "web-build",
+          "component": "dashboard",
+          "title": "next build succeeds",
+          "ok": true,
+          "critical": true,
+          "detail": "\n> @greenroom/web@0.1.0 build\n> next build\n\n\u001b[1m\u001b[38;2;173;127;168m▲ Next.js 16.4.0\u001b[39m\u001b[22m (Turbopack)\n- Environments: .env.local\n\u001b[32m\u001b[1m✓\u001b[22m\u001b[39m Running next.config.ts took 26ms\n\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Creating an optimized production build ...\n\u001b[32m\u001b[1m✓\u001b[22m\u001b[39m Compiled successfully in 593ms\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Running TypeScript ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Finished TypeScript in 2.8s ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Collecting page data using 11 workers ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (0/6) ...\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (1/6) \r\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (2/6) \r\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Generating static pages using 11 workers (4/6) \r\n\u001b[32m\u001b[1m✓\u001b[22m\u001b[39m Generating static pages using 11 workers (6/6) in 735ms\n\u001b[37m\u001b[1m \u001b[22m\u001b[39m Finalizing page optimization ...\n\n\u001b[4mRoute (app)\u001b[24m\n┌ ○ /\n├ ○ /_not-found\n├ ƒ /api/feed\n├ ƒ /api/run\n├ ƒ /api/world\n├ ƒ /band/[[...authority]]\n├ ○ /feed\n├ ƒ /show/[address]\n└ ○ /venues\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+          "command": "npm run build -w @greenroom/web",
+          "durationMs": 6776
+        },
+        {
+          "id": "web-typecheck",
+          "component": "dashboard",
+          "title": "web package type-checks and lints",
+          "ok": true,
+          "detail": "\n> @greenroom/web@0.1.0 typecheck\n> tsc --noEmit -p tsconfig.json\n\n\n> @greenroom/web@0.1.0 lint\n> eslint .\n\n",
+          "command": "npm run typecheck -w @greenroom/web && npm run lint -w @greenroom/web",
+          "durationMs": 5085
+        },
+        {
+          "id": "web-design-tokens",
+          "component": "dashboard",
+          "title": "design tokens follow docs/DESIGN.md (near-black surfaces, #1ed760 accent, pill radius)",
+          "ok": true,
+          "detail": "all tokens present",
+          "durationMs": 4
+        },
+        {
+          "id": "web-wallet-flows",
+          "component": "dashboard",
+          "title": "wallet buy and refund flows are wired",
+          "ok": true,
+          "detail": "buyTicket, refundTicket and explorer links present",
+          "durationMs": 3
+        }
+      ]
+    },
+    {
+      "id": "world",
+      "title": "Seed world",
+      "weight": 0.1,
+      "automated": 10,
+      "judge": null,
+      "score": 10,
+      "checks": [
+        {
+          "id": "world-data",
+          "component": "world",
+          "title": "venues.json is valid: >= 2 venues per city, coordinates in range, real-venue disclaimer",
+          "ok": true,
+          "critical": true,
+          "detail": "35 cities, 136 venues; short: none; out of range: 0",
+          "durationMs": 1
+        },
+        {
+          "id": "world-tests",
+          "component": "world",
+          "title": "world generator tests pass (100 unique bands, 100 crew per city, deterministic)",
+          "ok": true,
+          "detail": "\n> @greenroom/world@0.1.0 test\n> tsx --test src/*.test.ts\n\n✔ rng is deterministic (1.04ms)\n✔ distance Berlin to Prague is roughly 280 km (0.2714ms)\n✔ world generates the requested scale with unique bands (55.069ms)\nℹ tests 3\nℹ suites 0\nℹ pass 3\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 202.5702\n",
+          "command": "npm test -w @greenroom/world",
+          "durationMs": 727
+        },
+        {
+          "id": "world-no-real-bands",
+          "component": "world",
+          "title": "generated band names are invented (word-bank combinations only)",
+          "ok": true,
+          "detail": "names are generated from word banks",
+          "durationMs": 0
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "title": "Docs and submission",
+      "weight": 0.1,
+      "automated": 10,
+      "judge": null,
+      "score": 10,
+      "checks": [
+        {
+          "id": "docs-readme",
+          "component": "docs",
+          "title": "README has a one-paragraph pitch, quick start, architecture and demo sections",
+          "ok": true,
+          "critical": true,
+          "detail": "ok (6241 chars)",
+          "durationMs": 1
+        },
+        {
+          "id": "docs-set",
+          "component": "docs",
+          "title": "spec, plan, rubric, design and demo script exist",
+          "ok": true,
+          "detail": "all present",
+          "durationMs": 0
+        },
+        {
+          "id": "docs-env-example",
+          "component": "docs",
+          "title": ".env.example documents every variable used",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 0
+        }
+      ]
+    },
+    {
+      "id": "devex",
+      "title": "Developer experience",
+      "weight": 0.1,
+      "automated": 10,
+      "judge": null,
+      "score": 10,
+      "checks": [
+        {
+          "id": "devex-scripts",
+          "component": "devex",
+          "title": "root scripts: build:program, test:program, demo, deploy:devnet, qa",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 0
+        },
+        {
+          "id": "devex-lockfiles",
+          "component": "devex",
+          "title": "Cargo.lock and package-lock.json are present and not ignored",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 1
+        },
+        {
+          "id": "devex-no-secrets",
+          "component": "devex",
+          "title": "no API keys or private keys committed",
+          "ok": true,
+          "critical": true,
+          "detail": "clean",
+          "durationMs": 13
+        },
+        {
+          "id": "devex-setup-doc",
+          "component": "devex",
+          "title": "setup script exists for Windows and Unix",
+          "ok": true,
+          "detail": "ok",
+          "durationMs": 0
+        }
+      ]
+    }
+  ]
+}

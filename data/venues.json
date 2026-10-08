@@ -1,0 +1,2633 @@
+{
+  "disclaimer": "Good-faith, approximate seed data for a hackathon demo. Venues are real and believed to be operating as of generation, but capacities are rough standing figures compiled from third-party listings and model knowledge (see each record's 'source'), genres are loose tags, and coordinates come from OpenStreetMap Nominatim (geo_precision 'venue') or the city centre (geo_precision 'city'). Verify before relying on any value for real bookings.",
+  "generated": "2026-10-08",
+  "cities": [
+    {
+      "name": "Berlin",
+      "country": "DE",
+      "lat": 52.52,
+      "lng": 13.405,
+      "population": 3750000
+    },
+    {
+      "name": "Hamburg",
+      "country": "DE",
+      "lat": 53.5511,
+      "lng": 9.9937,
+      "population": 1900000
+    },
+    {
+      "name": "Munich",
+      "country": "DE",
+      "lat": 48.1351,
+      "lng": 11.582,
+      "population": 1510000
+    },
+    {
+      "name": "Cologne",
+      "country": "DE",
+      "lat": 50.9375,
+      "lng": 6.9603,
+      "population": 1090000
+    },
+    {
+      "name": "Frankfurt",
+      "country": "DE",
+      "lat": 50.1109,
+      "lng": 8.6821,
+      "population": 770000
+    },
+    {
+      "name": "Leipzig",
+      "country": "DE",
+      "lat": 51.3397,
+      "lng": 12.3731,
+      "population": 620000
+    },
+    {
+      "name": "Stuttgart",
+      "country": "DE",
+      "lat": 48.7758,
+      "lng": 9.1829,
+      "population": 630000
+    },
+    {
+      "name": "Düsseldorf",
+      "country": "DE",
+      "lat": 51.2277,
+      "lng": 6.7735,
+      "population": 630000
+    },
+    {
+      "name": "Dresden",
+      "country": "DE",
+      "lat": 51.0504,
+      "lng": 13.7373,
+      "population": 560000
+    },
+    {
+      "name": "Hannover",
+      "country": "DE",
+      "lat": 52.3759,
+      "lng": 9.732,
+      "population": 540000
+    },
+    {
+      "name": "Nuremberg",
+      "country": "DE",
+      "lat": 49.4521,
+      "lng": 11.0767,
+      "population": 520000
+    },
+    {
+      "name": "Vienna",
+      "country": "AT",
+      "lat": 48.2082,
+      "lng": 16.3738,
+      "population": 2000000
+    },
+    {
+      "name": "Graz",
+      "country": "AT",
+      "lat": 47.0707,
+      "lng": 15.4395,
+      "population": 300000
+    },
+    {
+      "name": "Linz",
+      "country": "AT",
+      "lat": 48.3069,
+      "lng": 14.2858,
+      "population": 210000
+    },
+    {
+      "name": "Salzburg",
+      "country": "AT",
+      "lat": 47.8095,
+      "lng": 13.055,
+      "population": 155000
+    },
+    {
+      "name": "Innsbruck",
+      "country": "AT",
+      "lat": 47.2692,
+      "lng": 11.4041,
+      "population": 130000
+    },
+    {
+      "name": "Paris",
+      "country": "FR",
+      "lat": 48.8566,
+      "lng": 2.3522,
+      "population": 2100000
+    },
+    {
+      "name": "Lyon",
+      "country": "FR",
+      "lat": 45.764,
+      "lng": 4.8357,
+      "population": 520000
+    },
+    {
+      "name": "Marseille",
+      "country": "FR",
+      "lat": 43.2965,
+      "lng": 5.3698,
+      "population": 870000
+    },
+    {
+      "name": "Toulouse",
+      "country": "FR",
+      "lat": 43.6047,
+      "lng": 1.4442,
+      "population": 500000
+    },
+    {
+      "name": "Bordeaux",
+      "country": "FR",
+      "lat": 44.8378,
+      "lng": -0.5792,
+      "population": 260000
+    },
+    {
+      "name": "Lille",
+      "country": "FR",
+      "lat": 50.6292,
+      "lng": 3.0573,
+      "population": 235000
+    },
+    {
+      "name": "Nantes",
+      "country": "FR",
+      "lat": 47.2184,
+      "lng": -1.5536,
+      "population": 320000
+    },
+    {
+      "name": "Strasbourg",
+      "country": "FR",
+      "lat": 48.5734,
+      "lng": 7.7521,
+      "population": 290000
+    },
+    {
+      "name": "Warsaw",
+      "country": "PL",
+      "lat": 52.2297,
+      "lng": 21.0122,
+      "population": 1860000
+    },
+    {
+      "name": "Kraków",
+      "country": "PL",
+      "lat": 50.0647,
+      "lng": 19.945,
+      "population": 800000
+    },
+    {
+      "name": "Wrocław",
+      "country": "PL",
+      "lat": 51.1079,
+      "lng": 17.0385,
+      "population": 670000
+    },
+    {
+      "name": "Poznań",
+      "country": "PL",
+      "lat": 52.4064,
+      "lng": 16.9252,
+      "population": 540000
+    },
+    {
+      "name": "Gdańsk",
+      "country": "PL",
+      "lat": 54.352,
+      "lng": 18.6466,
+      "population": 480000
+    },
+    {
+      "name": "Łódź",
+      "country": "PL",
+      "lat": 51.7592,
+      "lng": 19.456,
+      "population": 650000
+    },
+    {
+      "name": "Katowice",
+      "country": "PL",
+      "lat": 50.2649,
+      "lng": 19.0238,
+      "population": 280000
+    },
+    {
+      "name": "Prague",
+      "country": "CZ",
+      "lat": 50.0755,
+      "lng": 14.4378,
+      "population": 1350000
+    },
+    {
+      "name": "Brno",
+      "country": "CZ",
+      "lat": 49.1951,
+      "lng": 16.6068,
+      "population": 400000
+    },
+    {
+      "name": "Ostrava",
+      "country": "CZ",
+      "lat": 49.8209,
+      "lng": 18.2625,
+      "population": 280000
+    },
+    {
+      "name": "Plzeň",
+      "country": "CZ",
+      "lat": 49.7475,
+      "lng": 13.3776,
+      "population": 180000
+    }
+  ],
+  "venues": [
+    {
+      "id": "so36-berlin",
+      "name": "SO36",
+      "city": "Berlin",
+      "country": "DE",
+      "capacity": 800,
+      "lat": 52.50039,
+      "lng": 13.42216,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "rock",
+        "indie"
+      ],
+      "website": "https://www.so36.de",
+      "notes": "Legendary Kreuzberg punk club since 1978.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "huxleys-neue-welt-berlin",
+      "name": "Huxleys Neue Welt",
+      "city": "Berlin",
+      "country": "DE",
+      "capacity": 1600,
+      "lat": 52.48687,
+      "lng": 13.42232,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "metal"
+      ],
+      "website": "https://www.huxleysneuewelt.com",
+      "source": "https://www.showgraphers.com/venue/huxleys-neue-welt-berlin-germany"
+    },
+    {
+      "id": "columbiahalle-berlin",
+      "name": "Columbiahalle",
+      "city": "Berlin",
+      "country": "DE",
+      "capacity": 3500,
+      "lat": 52.48474,
+      "lng": 13.39255,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "hiphop"
+      ],
+      "website": "https://www.columbiahalle.berlin",
+      "notes": "Halle 3,500; smaller Columbia Theater (~1,200) next door.",
+      "source": "https://www.berlintourism.org/live-music-venues-berlin/"
+    },
+    {
+      "id": "lido-berlin",
+      "name": "Lido",
+      "city": "Berlin",
+      "country": "DE",
+      "capacity": 600,
+      "lat": 52.49922,
+      "lng": 13.44507,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.lido-berlin.de",
+      "source": "https://www.showgraphers.com/venue/lido-berlin-germany"
+    },
+    {
+      "id": "astra-kulturhaus-berlin",
+      "name": "Astra Kulturhaus",
+      "city": "Berlin",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 52.50738,
+      "lng": 13.45189,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "electronic"
+      ],
+      "website": "https://www.astra-berlin.de",
+      "notes": "On the RAW-Gelände; sources range 1,500-2,000.",
+      "source": "https://www.berlintourism.org/live-music-venues-berlin/"
+    },
+    {
+      "id": "grosse-freiheit-36-hamburg",
+      "name": "Große Freiheit 36",
+      "city": "Hamburg",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 53.55111,
+      "lng": 9.95808,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.grossefreiheit36.de",
+      "source": "https://www.songkick.com/concerts/43128077-abschlach-at-grosse-freiheit-36"
+    },
+    {
+      "id": "docks-hamburg",
+      "name": "Docks",
+      "city": "Hamburg",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 53.54926,
+      "lng": 9.96455,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "hiphop",
+        "electronic"
+      ],
+      "website": "https://www.docks-prinzenbar.de",
+      "notes": "Wikipedia gives 1,250-1,500.",
+      "source": "https://en.wikipedia.org/wiki/Docks_(nightclub)"
+    },
+    {
+      "id": "molotow-hamburg",
+      "name": "Molotow",
+      "city": "Hamburg",
+      "country": "DE",
+      "capacity": 400,
+      "lat": 53.54969,
+      "lng": 9.95954,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "punk",
+        "rock"
+      ],
+      "website": "https://www.molotowclub.com",
+      "notes": "Moved to a new St. Pauli location in 2025; capacity figures vary widely (350-850).",
+      "source": "https://en.wikipedia.org/wiki/Molotow_Club"
+    },
+    {
+      "id": "uebel-und-gefaehrlich-hamburg",
+      "name": "Uebel & Gefährlich",
+      "city": "Hamburg",
+      "country": "DE",
+      "capacity": 1000,
+      "lat": 53.55655,
+      "lng": 9.97042,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://www.uebelundgefaehrlich.com",
+      "notes": "Club inside the Feldstraße flak bunker.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "backstage-werk-munich",
+      "name": "Backstage Werk",
+      "city": "Munich",
+      "country": "DE",
+      "capacity": 1320,
+      "lat": 48.14498,
+      "lng": 11.52197,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://backstage.eu",
+      "notes": "Largest room of the Backstage complex (also Halle ~800, Club ~300).",
+      "source": "https://karlobag.eu/en/venues/concert-hall/germany/munich/backstage-werk-hmeub/"
+    },
+    {
+      "id": "muffathalle-munich",
+      "name": "Muffathalle",
+      "city": "Munich",
+      "country": "DE",
+      "capacity": 1200,
+      "lat": 48.13305,
+      "lng": 11.58945,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "jazz"
+      ],
+      "website": "https://www.muffatwerk.de",
+      "notes": "Sources range 1,200-1,500.",
+      "source": "https://secretmuenchen.com/live-musik-locations-muenchen/"
+    },
+    {
+      "id": "tonhalle-munich",
+      "name": "TonHalle München",
+      "city": "Munich",
+      "country": "DE",
+      "capacity": 2000,
+      "lat": 48.12391,
+      "lng": 11.60691,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "hiphop"
+      ],
+      "website": "https://www.tonhalle-muenchen.de",
+      "source": "https://secretmuenchen.com/live-musik-locations-muenchen/"
+    },
+    {
+      "id": "strom-munich",
+      "name": "Strom",
+      "city": "Munich",
+      "country": "DE",
+      "capacity": 400,
+      "lat": 48.12492,
+      "lng": 11.54907,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.strom-muc.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "live-music-hall-cologne",
+      "name": "Live Music Hall",
+      "city": "Cologne",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 50.94932,
+      "lng": 6.90948,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.livemusichall.de",
+      "source": "https://www.showgraphers.com/venue/live-music-hall-cologne-germany"
+    },
+    {
+      "id": "carlswerk-victoria-cologne",
+      "name": "Carlswerk Victoria",
+      "city": "Cologne",
+      "country": "DE",
+      "capacity": 1600,
+      "lat": 50.96494,
+      "lng": 7.01254,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "pop"
+      ],
+      "website": "https://www.carlswerk-victoria.de",
+      "source": "https://www.showgraphers.com/venue/carlswerk-victoria-cologne-germany"
+    },
+    {
+      "id": "gebaeude-9-cologne",
+      "name": "Gebäude 9",
+      "city": "Cologne",
+      "country": "DE",
+      "capacity": 500,
+      "lat": 50.94907,
+      "lng": 6.98568,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "punk",
+        "rock"
+      ],
+      "website": "https://www.gebaeude9.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "e-werk-cologne",
+      "name": "E-Werk",
+      "city": "Cologne",
+      "country": "DE",
+      "capacity": 2000,
+      "lat": 50.96962,
+      "lng": 7.0166,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "electronic"
+      ],
+      "website": "https://www.e-werk-cologne.com",
+      "source": "https://musewiki.org/Cologne_E-Werk"
+    },
+    {
+      "id": "batschkapp-frankfurt",
+      "name": "Batschkapp",
+      "city": "Frankfurt",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 50.13506,
+      "lng": 8.7388,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.batschkapp.de",
+      "source": "https://europenightlife.com/germany/frankfurt/batschkapp-live-music-frankfurt"
+    },
+    {
+      "id": "zoom-frankfurt",
+      "name": "Zoom Frankfurt",
+      "city": "Frankfurt",
+      "country": "DE",
+      "capacity": 1800,
+      "lat": 50.12174,
+      "lng": 8.75066,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "pop"
+      ],
+      "website": "https://www.zoomfrankfurt.com",
+      "notes": "Main hall 1,800; Club room ~500. Opened 2022 in the former Cocoon Club.",
+      "source": "https://www.eventlocations.com/de/venues/zoom-frankfurt-frankfurt-am-main"
+    },
+    {
+      "id": "das-bett-frankfurt",
+      "name": "Das Bett",
+      "city": "Frankfurt",
+      "country": "DE",
+      "capacity": 300,
+      "lat": 50.10369,
+      "lng": 8.61851,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "punk"
+      ],
+      "website": "https://www.bett-club.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "nachtleben-frankfurt",
+      "name": "Nachtleben",
+      "city": "Frankfurt",
+      "country": "DE",
+      "capacity": 250,
+      "lat": 50.11409,
+      "lng": 8.68759,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.nachtleben.net",
+      "notes": "Basement club, sister venue of Batschkapp.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "taeubchenthal-leipzig",
+      "name": "Täubchenthal",
+      "city": "Leipzig",
+      "country": "DE",
+      "capacity": 1200,
+      "lat": 51.32461,
+      "lng": 12.33041,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "pop"
+      ],
+      "website": "https://www.taeubchenthal.com",
+      "source": "https://www.songkick.com/concerts/42663679-kapelle-petra-at-taubchenthal"
+    },
+    {
+      "id": "haus-auensee-leipzig",
+      "name": "Haus Auensee",
+      "city": "Leipzig",
+      "country": "DE",
+      "capacity": 2500,
+      "lat": 51.36975,
+      "lng": 12.31555,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.haus-auensee-leipzig.de",
+      "notes": "Songkick 2,500; some sources quote up to 3,600.",
+      "source": "https://www.songkick.com/concerts/42786653-heinz-rudolf-kunze-at-haus-auensee"
+    },
+    {
+      "id": "werk-2-leipzig",
+      "name": "Werk 2",
+      "city": "Leipzig",
+      "country": "DE",
+      "capacity": 1000,
+      "lat": 51.31005,
+      "lng": 12.37137,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "punk"
+      ],
+      "website": "https://www.werk-2.de",
+      "notes": "Halle A of the Kulturfabrik.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "conne-island-leipzig",
+      "name": "Conne Island",
+      "city": "Leipzig",
+      "country": "DE",
+      "capacity": 800,
+      "lat": 51.30233,
+      "lng": 12.37453,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "hiphop",
+        "indie"
+      ],
+      "website": "https://www.conne-island.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "lka-longhorn-stuttgart",
+      "name": "LKA Longhorn",
+      "city": "Stuttgart",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 48.76728,
+      "lng": 9.25177,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.lka-longhorn.de",
+      "source": "https://en.wikipedia.org/wiki/LKA_Longhorn"
+    },
+    {
+      "id": "im-wizemann-stuttgart",
+      "name": "Im Wizemann",
+      "city": "Stuttgart",
+      "country": "DE",
+      "capacity": 1300,
+      "lat": 48.80799,
+      "lng": 9.20033,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.imwizemann.de",
+      "notes": "Halle 1,300 standing; Club ~550.",
+      "source": "https://v2.neumannmueller.com/fileadmin/content/seitenbaum/Downloads/Projektblaetter/PPT_Locationbl%C3%A4tter_DE/Im_Wizemann_DE.pdf"
+    },
+    {
+      "id": "wagenhallen-stuttgart",
+      "name": "Wagenhallen",
+      "city": "Stuttgart",
+      "country": "DE",
+      "capacity": 2100,
+      "lat": 48.79972,
+      "lng": 9.18591,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "pop"
+      ],
+      "website": "https://www.wagenhallen.de",
+      "source": "https://rausgegangen.de/locations/wagenhallen-stuttgart-1/"
+    },
+    {
+      "id": "goldmarks-stuttgart",
+      "name": "Goldmark's",
+      "city": "Stuttgart",
+      "country": "DE",
+      "capacity": 300,
+      "lat": 48.77675,
+      "lng": 9.18298,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "punk",
+        "indie"
+      ],
+      "website": "https://www.goldmarks.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "zakk-duesseldorf",
+      "name": "zakk",
+      "city": "Düsseldorf",
+      "country": "DE",
+      "capacity": 800,
+      "lat": 51.21679,
+      "lng": 6.8105,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "hiphop"
+      ],
+      "website": "https://www.zakk.de",
+      "source": "https://www.bandsintown.com/v/10002735"
+    },
+    {
+      "id": "stahlwerk-duesseldorf",
+      "name": "Stahlwerk",
+      "city": "Düsseldorf",
+      "country": "DE",
+      "capacity": 1500,
+      "lat": 51.21421,
+      "lng": 6.8181,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "electronic",
+        "metal"
+      ],
+      "website": "https://www.stahlwerk.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "capitol-theater-duesseldorf",
+      "name": "Capitol Theater",
+      "city": "Düsseldorf",
+      "country": "DE",
+      "capacity": 1250,
+      "lat": 51.22385,
+      "lng": 6.8006,
+      "geo_precision": "venue",
+      "genres": [
+        "pop",
+        "rock"
+      ],
+      "website": "https://www.capitol-theater.de",
+      "notes": "Großer Saal 1,250 (mostly seated); Kleiner Saal ~400.",
+      "source": "https://www.regioactive.de/clubs-locations/15879/duesseldorf"
+    },
+    {
+      "id": "pitcher-duesseldorf",
+      "name": "Pitcher",
+      "city": "Düsseldorf",
+      "country": "DE",
+      "capacity": 220,
+      "lat": 51.21097,
+      "lng": 6.78547,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "rock",
+        "metal"
+      ],
+      "website": "https://www.pitcher-duesseldorf.de",
+      "source": "https://www.bandsintown.com/v/10006312-pitcher"
+    },
+    {
+      "id": "alter-schlachthof-dresden",
+      "name": "Alter Schlachthof",
+      "city": "Dresden",
+      "country": "DE",
+      "capacity": 1000,
+      "lat": 51.06967,
+      "lng": 13.73406,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "hiphop"
+      ],
+      "website": "https://www.alter-schlachthof.de",
+      "notes": "Songkick lists 1,000; other sources quote up to ~1,500 standing.",
+      "source": "https://songkick.com/concerts/43217899-lafee-at-alter-schlachthof"
+    },
+    {
+      "id": "beatpol-dresden",
+      "name": "Beatpol",
+      "city": "Dresden",
+      "country": "DE",
+      "capacity": 500,
+      "lat": 51.06504,
+      "lng": 13.67497,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "punk"
+      ],
+      "website": "https://www.beatpol.de",
+      "source": "https://www.regioactive.de/location/dresden/beatpol-yXBf39pS50"
+    },
+    {
+      "id": "tante-ju-dresden",
+      "name": "Tante JU",
+      "city": "Dresden",
+      "country": "DE",
+      "capacity": 500,
+      "lat": 51.09004,
+      "lng": 13.76938,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "folk"
+      ],
+      "website": "https://www.tanteju.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "reithalle-strasse-e-dresden",
+      "name": "Reithalle Straße E",
+      "city": "Dresden",
+      "country": "DE",
+      "capacity": 2500,
+      "lat": 51.08559,
+      "lng": 13.76446,
+      "geo_precision": "venue",
+      "genres": [
+        "metal",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.strasse-e.de",
+      "source": "model knowledge"
+    },
+    {
+      "id": "capitol-hannover",
+      "name": "Capitol Hannover",
+      "city": "Hannover",
+      "country": "DE",
+      "capacity": 1800,
+      "lat": 52.36846,
+      "lng": 9.72037,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "metal"
+      ],
+      "website": "https://www.capitol-hannover.de",
+      "source": "https://en.wikipedia.org/wiki/Capitol_(Hanover)"
+    },
+    {
+      "id": "pavillon-hannover",
+      "name": "Kulturzentrum Pavillon",
+      "city": "Hannover",
+      "country": "DE",
+      "capacity": 800,
+      "lat": 52.38031,
+      "lng": 9.74527,
+      "geo_precision": "venue",
+      "genres": [
+        "folk",
+        "jazz",
+        "indie"
+      ],
+      "website": "https://www.pavillon-hannover.de",
+      "notes": "Songkick 800; MIZ database lists 1,200.",
+      "source": "https://songkick.com/venues/57101-kulturzentrum-pavillon"
+    },
+    {
+      "id": "musikzentrum-hannover",
+      "name": "Musikzentrum Hannover",
+      "city": "Hannover",
+      "country": "DE",
+      "capacity": 500,
+      "lat": 52.39288,
+      "lng": 9.72531,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.musikzentrum-hannover.de",
+      "source": "https://hannover-living.de/en/location/musikzentrum"
+    },
+    {
+      "id": "faust-hannover",
+      "name": "Kulturzentrum Faust",
+      "city": "Hannover",
+      "country": "DE",
+      "capacity": 800,
+      "lat": 52.37661,
+      "lng": 9.71082,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "punk",
+        "hiphop"
+      ],
+      "website": "https://www.kulturzentrum-faust.de",
+      "notes": "Concerts mainly in the 60er-Jahre-Halle.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "hirsch-nuremberg",
+      "name": "Hirsch",
+      "city": "Nuremberg",
+      "country": "DE",
+      "capacity": 800,
+      "lat": 49.42638,
+      "lng": 11.07098,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.der-hirsch.de",
+      "source": "https://www.songkick.com/concerts/42851636-ccosmo-at-hirsch"
+    },
+    {
+      "id": "loewensaal-nuremberg",
+      "name": "Löwensaal",
+      "city": "Nuremberg",
+      "country": "DE",
+      "capacity": 1800,
+      "lat": 49.44923,
+      "lng": 11.14138,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.loewensaal.de",
+      "notes": "Near the Tiergarten in Zerzabelshof.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "z-bau-nuremberg",
+      "name": "Z-Bau",
+      "city": "Nuremberg",
+      "country": "DE",
+      "capacity": 500,
+      "lat": 49.43012,
+      "lng": 11.0942,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://z-bau.com",
+      "notes": "Saal; smaller Galerie room too.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "club-stereo-nuremberg",
+      "name": "Club Stereo",
+      "city": "Nuremberg",
+      "country": "DE",
+      "capacity": 200,
+      "lat": 49.44885,
+      "lng": 11.07872,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.club-stereo.net",
+      "source": "model knowledge"
+    },
+    {
+      "id": "arena-wien-vienna",
+      "name": "Arena Wien",
+      "city": "Vienna",
+      "country": "AT",
+      "capacity": 1000,
+      "lat": 48.18753,
+      "lng": 16.41276,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "metal",
+        "rock"
+      ],
+      "website": "https://www.arena.wien",
+      "notes": "Große Halle; sources range 935-1,500. Kleine Halle ~240-450, open-air ~3,000.",
+      "source": "https://www.setlist.fm/venue/arena-vienna-austria-63d63a33.html"
+    },
+    {
+      "id": "flex-vienna",
+      "name": "Flex",
+      "city": "Vienna",
+      "country": "AT",
+      "capacity": 1000,
+      "lat": 48.21778,
+      "lng": 16.37091,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "indie",
+        "rock"
+      ],
+      "website": "https://flex.at",
+      "notes": "Club on the Donaukanal; karlobag 1,000, model knowledge ~900.",
+      "source": "https://karlobag.eu/en/venues/rock-club/austria/vienna/flex-o82sq/"
+    },
+    {
+      "id": "wuk-vienna",
+      "name": "WUK",
+      "city": "Vienna",
+      "country": "AT",
+      "capacity": 550,
+      "lat": 48.22298,
+      "lng": 16.35151,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "folk"
+      ],
+      "website": "https://www.wuk.at",
+      "notes": "Main hall 550 standing; renovated 2021-2024.",
+      "source": "https://thevendry.com/venue/261593/wuk-wien-austria"
+    },
+    {
+      "id": "simm-city-vienna",
+      "name": "Simm City",
+      "city": "Vienna",
+      "country": "AT",
+      "capacity": 800,
+      "lat": 48.17392,
+      "lng": 16.41632,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.simmcity.at",
+      "source": "https://www.karlobag.eu/en/venues/event-center/austria/vienna/simm-city-festsaal-zentrum-p6mgw/"
+    },
+    {
+      "id": "orpheum-graz",
+      "name": "Orpheum Graz",
+      "city": "Graz",
+      "country": "AT",
+      "capacity": 1100,
+      "lat": 47.07231,
+      "lng": 15.42996,
+      "geo_precision": "venue",
+      "genres": [
+        "pop",
+        "rock",
+        "jazz"
+      ],
+      "website": "https://www.spielstaetten.at",
+      "notes": "Great Hall; plus Orpheum Extra.",
+      "source": "https://karlobag.eu/en/venues/concert-hall/austria/graz/orpheum-evsmn/"
+    },
+    {
+      "id": "ppc-graz",
+      "name": "PPC - Project Pop Culture",
+      "city": "Graz",
+      "country": "AT",
+      "capacity": 500,
+      "lat": 47.07588,
+      "lng": 15.43146,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "electronic"
+      ],
+      "website": "https://www.ppc.at",
+      "notes": "Capacity figure only from an aggregator; model knowledge suggests up to ~800.",
+      "source": "https://karlobag.eu/en/venues/sports-hall/austria/graz/ppc-project-pop-culture-typ9o/"
+    },
+    {
+      "id": "explosiv-graz",
+      "name": "Explosiv",
+      "city": "Graz",
+      "country": "AT",
+      "capacity": 350,
+      "lat": 47.07759,
+      "lng": 15.41769,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.explosiv.at",
+      "source": "https://www.reverbnation.com/venue/explosivgraz"
+    },
+    {
+      "id": "dom-im-berg-graz",
+      "name": "Dom im Berg",
+      "city": "Graz",
+      "country": "AT",
+      "capacity": 600,
+      "lat": 47.07347,
+      "lng": 15.43808,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "indie",
+        "hiphop"
+      ],
+      "website": "https://www.spielstaetten.at",
+      "notes": "Hall cut into the Schlossberg rock.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "posthof-linz",
+      "name": "Posthof",
+      "city": "Linz",
+      "country": "AT",
+      "capacity": 1200,
+      "lat": 48.31172,
+      "lng": 14.31166,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "jazz",
+        "indie"
+      ],
+      "website": "https://www.posthof.at",
+      "notes": "Großer Saal 1,200; Mittlerer Saal 900; Kleiner Saal 200.",
+      "source": "https://karlobag.eu/en/venues/concert-hall/austria/linz/posthof-great-hall-3q89m/"
+    },
+    {
+      "id": "stadtwerkstatt-linz",
+      "name": "Stadtwerkstatt",
+      "city": "Linz",
+      "country": "AT",
+      "capacity": 400,
+      "lat": 48.31018,
+      "lng": 14.28454,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "punk"
+      ],
+      "website": "https://stwst.at",
+      "source": "model knowledge"
+    },
+    {
+      "id": "kapu-linz",
+      "name": "KAPU",
+      "city": "Linz",
+      "country": "AT",
+      "capacity": 200,
+      "lat": 48.30073,
+      "lng": 14.28211,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "hiphop",
+        "metal"
+      ],
+      "website": "https://www.kapu.or.at",
+      "source": "model knowledge"
+    },
+    {
+      "id": "rockhouse-salzburg",
+      "name": "Rockhouse",
+      "city": "Salzburg",
+      "country": "AT",
+      "capacity": 350,
+      "lat": 47.80692,
+      "lng": 13.05893,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "indie"
+      ],
+      "website": "https://www.rockhouse.at",
+      "notes": "Hall 350 standing.",
+      "source": "https://www.salzburg.info/de/reiseinfos/salzburg-a-z/rockhouse-bar_az_10173"
+    },
+    {
+      "id": "republic-salzburg",
+      "name": "Republic",
+      "city": "Salzburg",
+      "country": "AT",
+      "capacity": 700,
+      "lat": 47.80114,
+      "lng": 13.03951,
+      "geo_precision": "venue",
+      "genres": [
+        "pop",
+        "electronic",
+        "indie"
+      ],
+      "website": "https://www.republic.at",
+      "notes": "Former Stadtkino; run by Szene Salzburg.",
+      "source": "https://visit-salzburg.net/sights/republic.htm"
+    },
+    {
+      "id": "argekultur-salzburg",
+      "name": "ARGEkultur",
+      "city": "Salzburg",
+      "country": "AT",
+      "capacity": 500,
+      "lat": 47.79398,
+      "lng": 13.05633,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "jazz",
+        "folk"
+      ],
+      "website": "https://www.argekultur.at",
+      "source": "model knowledge"
+    },
+    {
+      "id": "jazzit-salzburg",
+      "name": "Jazzit",
+      "city": "Salzburg",
+      "country": "AT",
+      "capacity": 200,
+      "lat": 47.81213,
+      "lng": 13.04166,
+      "geo_precision": "venue",
+      "genres": [
+        "jazz"
+      ],
+      "website": "https://www.jazzit.at",
+      "source": "model knowledge"
+    },
+    {
+      "id": "treibhaus-innsbruck",
+      "name": "Treibhaus",
+      "city": "Innsbruck",
+      "country": "AT",
+      "capacity": 500,
+      "lat": 47.26762,
+      "lng": 11.39637,
+      "geo_precision": "venue",
+      "genres": [
+        "jazz",
+        "folk",
+        "indie"
+      ],
+      "website": "https://www.treibhaus.at",
+      "source": "https://www.bandsintown.com/v/10006631-treibhaus"
+    },
+    {
+      "id": "music-hall-innsbruck",
+      "name": "Music Hall Innsbruck",
+      "city": "Innsbruck",
+      "country": "AT",
+      "capacity": 1300,
+      "lat": 47.26486,
+      "lng": 11.44149,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.music-hall.at",
+      "source": "https://karlobag.eu/en/venues/concert-hall/austria/innsbruck/music-hall-innsbruck-tavl6/"
+    },
+    {
+      "id": "pmk-innsbruck",
+      "name": "p.m.k",
+      "city": "Innsbruck",
+      "country": "AT",
+      "capacity": 250,
+      "lat": 47.26794,
+      "lng": 11.40226,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "indie",
+        "electronic"
+      ],
+      "website": "https://www.pmk.or.at",
+      "notes": "Platform of ~30 independent cultural initiatives.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "bataclan-paris",
+      "name": "Le Bataclan",
+      "city": "Paris",
+      "country": "FR",
+      "capacity": 1500,
+      "lat": 48.86304,
+      "lng": 2.37065,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "metal"
+      ],
+      "website": "https://www.bataclan.fr",
+      "notes": "~1,500 standing; licensed max 1,694.",
+      "source": "https://thrillzing.com/music-venues/bataclan-paris/"
+    },
+    {
+      "id": "la-cigale-paris",
+      "name": "La Cigale",
+      "city": "Paris",
+      "country": "FR",
+      "capacity": 1400,
+      "lat": 48.88248,
+      "lng": 2.34013,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "pop",
+        "rock"
+      ],
+      "website": "https://www.lacigale.fr",
+      "notes": "Sources range 1,000-1,477 depending on configuration.",
+      "source": "https://www.pariszigzag.fr/paris-au-quotidien/meilleures-salles-de-concerts-paris/"
+    },
+    {
+      "id": "elysee-montmartre-paris",
+      "name": "Élysée Montmartre",
+      "city": "Paris",
+      "country": "FR",
+      "capacity": 1380,
+      "lat": 48.88311,
+      "lng": 2.34342,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "hiphop",
+        "electronic"
+      ],
+      "website": "https://www.elysee-montmartre.com",
+      "source": "https://www.axs.com/category/cities/11227501/paris-fr?page=2"
+    },
+    {
+      "id": "la-maroquinerie-paris",
+      "name": "La Maroquinerie",
+      "city": "Paris",
+      "country": "FR",
+      "capacity": 500,
+      "lat": 48.86853,
+      "lng": 2.39206,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "folk"
+      ],
+      "website": "https://www.lamaroquinerie.fr",
+      "source": "https://www.infoconcert.com/salle/la-maroquinerie-5181/presentation"
+    },
+    {
+      "id": "le-trabendo-paris",
+      "name": "Le Trabendo",
+      "city": "Paris",
+      "country": "FR",
+      "capacity": 700,
+      "lat": 48.89421,
+      "lng": 2.39318,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "hiphop",
+        "metal"
+      ],
+      "website": "https://www.letrabendo.net",
+      "notes": "Parc de la Villette; 700 (some listings 900 standing).",
+      "source": "https://en.wikipedia.org/wiki/Le_Trabendo"
+    },
+    {
+      "id": "transbordeur-lyon",
+      "name": "Le Transbordeur",
+      "city": "Lyon",
+      "country": "FR",
+      "capacity": 1800,
+      "lat": 45.78404,
+      "lng": 4.86079,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://www.transbordeur.fr",
+      "notes": "In Villeurbanne, adjacent to Lyon. Club Transbo ~600.",
+      "source": "https://karlobag.eu/en/venues/concert-hall/france/villeurbanne/transbordeur-de-lyon-8vlhd/"
+    },
+    {
+      "id": "ninkasi-kao-lyon",
+      "name": "Ninkasi Kao",
+      "city": "Lyon",
+      "country": "FR",
+      "capacity": 700,
+      "lat": 45.72804,
+      "lng": 4.83058,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "hiphop",
+        "electronic"
+      ],
+      "website": "https://www.ninkasi.fr",
+      "source": "https://www.lyon.fr/node/28660"
+    },
+    {
+      "id": "le-sucre-lyon",
+      "name": "Le Sucre",
+      "city": "Lyon",
+      "country": "FR",
+      "capacity": 650,
+      "lat": 45.73664,
+      "lng": 4.81501,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "indie"
+      ],
+      "website": "https://www.le-sucre.eu",
+      "notes": "Rooftop club at La Sucrière, Confluence.",
+      "source": "https://hirespace.com/Venues/Lyon/99857/Le-Sucre"
+    },
+    {
+      "id": "marche-gare-lyon",
+      "name": "Le Marché Gare",
+      "city": "Lyon",
+      "country": "FR",
+      "capacity": 400,
+      "lat": 45.74135,
+      "lng": 4.82264,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "punk"
+      ],
+      "website": "https://www.marchegare.fr",
+      "notes": "Reopened Oct 2022 after renovation.",
+      "source": "https://7alyon.substack.com/p/le-marche-gare-a-lyon-reouverture"
+    },
+    {
+      "id": "le-moulin-marseille",
+      "name": "Le Moulin",
+      "city": "Marseille",
+      "country": "FR",
+      "capacity": 1500,
+      "lat": 43.31862,
+      "lng": 5.407,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.lemoulin.org",
+      "notes": "Grande salle 1,500 incl. balcony; Club ~350.",
+      "source": "https://www.frequence-sud.fr/art-56692-sortir_a_marseille_ou_voir_un_concert___marseille"
+    },
+    {
+      "id": "espace-julien-marseille",
+      "name": "Espace Julien",
+      "city": "Marseille",
+      "country": "FR",
+      "capacity": 1000,
+      "lat": 43.29431,
+      "lng": 5.38343,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "hiphop",
+        "folk"
+      ],
+      "website": "https://www.espace-julien.com",
+      "source": "https://www.infoconcert.com/salle/espace-julien-a-marseille-168/presentation"
+    },
+    {
+      "id": "cabaret-aleatoire-marseille",
+      "name": "Cabaret Aléatoire",
+      "city": "Marseille",
+      "country": "FR",
+      "capacity": 900,
+      "lat": 43.31022,
+      "lng": 5.39096,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "hiphop",
+        "indie"
+      ],
+      "website": "https://www.cabaret-aleatoire.com",
+      "notes": "At the Friche la Belle de Mai.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "le-makeda-marseille",
+      "name": "Le Makeda",
+      "city": "Marseille",
+      "country": "FR",
+      "capacity": 270,
+      "lat": 43.29323,
+      "lng": 5.39173,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.lemakeda.com",
+      "source": "https://tablejourney.com/france/marseille/nightlife/live-music/"
+    },
+    {
+      "id": "le-bikini-toulouse",
+      "name": "Le Bikini",
+      "city": "Toulouse",
+      "country": "FR",
+      "capacity": 1500,
+      "lat": 43.54795,
+      "lng": 1.48568,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://www.lebikini.com",
+      "notes": "In Ramonville-Saint-Agne (south of Toulouse); modular 200-1,500.",
+      "source": "https://www.toulouse-tourisme.com/?p=13050"
+    },
+    {
+      "id": "le-metronum-toulouse",
+      "name": "Le Metronum",
+      "city": "Toulouse",
+      "country": "FR",
+      "capacity": 600,
+      "lat": 43.64151,
+      "lng": 1.4506,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "hiphop"
+      ],
+      "website": "https://metronum.toulouse.fr",
+      "source": "https://www.toulouse-tourisme.com/activite/le-metronum/"
+    },
+    {
+      "id": "le-rex-toulouse",
+      "name": "Le Rex",
+      "city": "Toulouse",
+      "country": "FR",
+      "capacity": 400,
+      "lat": 43.61195,
+      "lng": 1.43833,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.lerextoulouse.com",
+      "source": "https://xceed.me/en/toulouse/club/le-rex-de-toulouse"
+    },
+    {
+      "id": "connexion-live-toulouse",
+      "name": "Connexion Live",
+      "city": "Toulouse",
+      "country": "FR",
+      "capacity": 500,
+      "lat": 43.60557,
+      "lng": 1.45047,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://www.connexionlive.fr",
+      "notes": "Capacity unconfirmed (~500).",
+      "source": "model knowledge"
+    },
+    {
+      "id": "rock-school-barbey-bordeaux",
+      "name": "Rock School Barbey",
+      "city": "Bordeaux",
+      "country": "FR",
+      "capacity": 700,
+      "lat": 44.82693,
+      "lng": -0.56321,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "punk",
+        "metal"
+      ],
+      "website": "https://www.rockschool-barbey.com",
+      "source": "https://www.bordeaux-tourism.co.uk/sports-and-leisure-facilities/rock-school-barbey.html"
+    },
+    {
+      "id": "krakatoa-bordeaux",
+      "name": "Krakatoa",
+      "city": "Bordeaux",
+      "country": "FR",
+      "capacity": 1200,
+      "lat": 44.82366,
+      "lng": -0.62488,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "electronic"
+      ],
+      "website": "https://www.krakatoa.org",
+      "notes": "In Mérignac, Bordeaux metro.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "rocher-de-palmer-bordeaux",
+      "name": "Le Rocher de Palmer",
+      "city": "Bordeaux",
+      "country": "FR",
+      "capacity": 1200,
+      "lat": 44.86231,
+      "lng": -0.52436,
+      "geo_precision": "venue",
+      "genres": [
+        "folk",
+        "jazz",
+        "hiphop"
+      ],
+      "website": "https://lerocherdepalmer.fr",
+      "notes": "In Cenon, Bordeaux metro; largest hall ~1,200.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "iboat-bordeaux",
+      "name": "I.Boat",
+      "city": "Bordeaux",
+      "country": "FR",
+      "capacity": 500,
+      "lat": 44.86595,
+      "lng": -0.55917,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "indie"
+      ],
+      "website": "https://www.iboat.eu",
+      "notes": "Concert venue on a moored ship.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "aeronef-lille",
+      "name": "L'Aéronef",
+      "city": "Lille",
+      "country": "FR",
+      "capacity": 1850,
+      "lat": 50.63684,
+      "lng": 3.0739,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "hiphop"
+      ],
+      "website": "https://www.aeronef.fr",
+      "notes": "Euralille; club room ~450.",
+      "source": "https://www.citizenkid.com/sortie/l-aeronef-lille-a103546"
+    },
+    {
+      "id": "le-splendid-lille",
+      "name": "Le Splendid",
+      "city": "Lille",
+      "country": "FR",
+      "capacity": 900,
+      "lat": 50.62343,
+      "lng": 3.09069,
+      "geo_precision": "venue",
+      "genres": [
+        "pop",
+        "rock",
+        "hiphop"
+      ],
+      "website": "https://www.le-splendid.com",
+      "notes": "Former cinema; 900 total incl. 500 seats.",
+      "source": "https://songkick.com/fr/venues/33270-le-splendid"
+    },
+    {
+      "id": "le-grand-mix-lille",
+      "name": "Le Grand Mix",
+      "city": "Lille",
+      "country": "FR",
+      "capacity": 650,
+      "lat": 50.72489,
+      "lng": 3.1549,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://www.legrandmix.com",
+      "notes": "In Tourcoing, Lille metro; club room ~300.",
+      "source": "https://en.lilletourism.com/get-out/the-best-addresses/entertainment/le-grand-mix-tourcoing-en-4431393"
+    },
+    {
+      "id": "stereolux-nantes",
+      "name": "Stereolux",
+      "city": "Nantes",
+      "country": "FR",
+      "capacity": 1200,
+      "lat": 47.20509,
+      "lng": -1.56354,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://stereolux.org",
+      "notes": "Salle Maxi 1,200; Salle Micro smaller.",
+      "source": "https://www.songkick.com/concerts/43132720-miki-at-stereolux"
+    },
+    {
+      "id": "le-ferrailleur-nantes",
+      "name": "Le Ferrailleur",
+      "city": "Nantes",
+      "country": "FR",
+      "capacity": 300,
+      "lat": 47.20058,
+      "lng": -1.57365,
+      "geo_precision": "venue",
+      "genres": [
+        "metal",
+        "punk",
+        "rock"
+      ],
+      "website": "https://www.leferrailleur.fr",
+      "notes": "Hangar à Bananes, Île de Nantes.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "warehouse-nantes",
+      "name": "Warehouse",
+      "city": "Nantes",
+      "country": "FR",
+      "capacity": 1500,
+      "lat": 47.20129,
+      "lng": -1.57285,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic"
+      ],
+      "website": "https://www.warehouse-nantes.fr",
+      "source": "model knowledge"
+    },
+    {
+      "id": "lieu-unique-nantes",
+      "name": "Le Lieu Unique",
+      "city": "Nantes",
+      "country": "FR",
+      "capacity": 800,
+      "lat": 47.2153,
+      "lng": -1.54561,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "jazz"
+      ],
+      "website": "https://www.lelieuunique.com",
+      "notes": "Concerts in the Grand Atelier.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "la-laiterie-strasbourg",
+      "name": "La Laiterie",
+      "city": "Strasbourg",
+      "country": "FR",
+      "capacity": 900,
+      "lat": 48.57595,
+      "lng": 7.72907,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "hiphop"
+      ],
+      "website": "https://www.artefact.org",
+      "notes": "Grande salle ~900; Club ~300. Rental listings quote up to 1,300.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "molodoi-strasbourg",
+      "name": "Le Molodoï",
+      "city": "Strasbourg",
+      "country": "FR",
+      "capacity": 500,
+      "lat": 48.57558,
+      "lng": 7.72933,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.molodoi.net",
+      "source": "model knowledge"
+    },
+    {
+      "id": "espace-django-strasbourg",
+      "name": "Espace Django",
+      "city": "Strasbourg",
+      "country": "FR",
+      "capacity": 300,
+      "lat": 48.5462,
+      "lng": 7.76737,
+      "geo_precision": "venue",
+      "genres": [
+        "folk",
+        "hiphop",
+        "jazz"
+      ],
+      "website": "https://www.espacedjango.eu",
+      "source": "model knowledge"
+    },
+    {
+      "id": "stodola-warsaw",
+      "name": "Klub Stodoła",
+      "city": "Warsaw",
+      "country": "PL",
+      "capacity": 2000,
+      "lat": 52.21157,
+      "lng": 21.01002,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.stodola.pl",
+      "notes": "City guide quotes ~2,200 per concert.",
+      "source": "https://pik.warszawa.pl/miejsca/klub-stodola/"
+    },
+    {
+      "id": "progresja-warsaw",
+      "name": "Progresja",
+      "city": "Warsaw",
+      "country": "PL",
+      "capacity": 2000,
+      "lat": 52.22469,
+      "lng": 20.9279,
+      "geo_precision": "venue",
+      "genres": [
+        "metal",
+        "rock",
+        "punk"
+      ],
+      "website": "https://www.progresja.com",
+      "source": "https://pik.warszawa.pl/miejsca/klub-progresja"
+    },
+    {
+      "id": "proxima-warsaw",
+      "name": "Klub Proxima",
+      "city": "Warsaw",
+      "country": "PL",
+      "capacity": 800,
+      "lat": 52.21263,
+      "lng": 20.98719,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "hiphop"
+      ],
+      "website": "https://www.proxima.waw.pl",
+      "notes": "University of Warsaw student club.",
+      "source": "https://songkick.com/de/venues/59825-klub-proxima"
+    },
+    {
+      "id": "palladium-warsaw",
+      "name": "Palladium",
+      "city": "Warsaw",
+      "country": "PL",
+      "capacity": 1000,
+      "lat": 52.23272,
+      "lng": 21.01176,
+      "geo_precision": "venue",
+      "genres": [
+        "pop",
+        "rock",
+        "indie"
+      ],
+      "website": "https://www.palladium.art.pl",
+      "notes": "620 seated theatre layout; up to ~1,500 standing per aggregators.",
+      "source": "https://pik.warszawa.pl/miejsca/palladium-teatr-klub/"
+    },
+    {
+      "id": "klub-studio-krakow",
+      "name": "Klub Studio",
+      "city": "Kraków",
+      "country": "PL",
+      "capacity": 1500,
+      "lat": 50.06803,
+      "lng": 19.90824,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.klubstudio.pl",
+      "notes": "On the AGH campus.",
+      "source": "https://www.inyourpocket.com/poland/krakow/venues/klub-studio"
+    },
+    {
+      "id": "kwadrat-krakow",
+      "name": "Klub Kwadrat",
+      "city": "Kraków",
+      "country": "PL",
+      "capacity": 950,
+      "lat": 50.08383,
+      "lng": 19.99602,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.kwadrat.krakow.pl",
+      "source": "https://karlobag.eu/en/venues/rock-club/poland/krakow/klub-kwadrat-6o7om/"
+    },
+    {
+      "id": "hype-park-krakow",
+      "name": "Hype Park",
+      "city": "Kraków",
+      "country": "PL",
+      "capacity": 900,
+      "lat": 50.07797,
+      "lng": 19.94243,
+      "geo_precision": "venue",
+      "genres": [
+        "metal",
+        "rock",
+        "electronic"
+      ],
+      "website": "https://hypepark.pl",
+      "notes": "Year-round hall since 2025.",
+      "source": "https://inyourpocket.com/poland/krakow/venues/hype-park"
+    },
+    {
+      "id": "forty-kleparz-krakow",
+      "name": "Forty Kleparz",
+      "city": "Kraków",
+      "country": "PL",
+      "capacity": 500,
+      "lat": 50.0748,
+      "lng": 19.93772,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.fortykleparz.pl",
+      "notes": "Club in 19th-century fort.",
+      "source": "https://inyourpocket.com/poland/krakow/venues/hype-park"
+    },
+    {
+      "id": "a2-wroclaw",
+      "name": "A2 Centrum Koncertowe",
+      "city": "Wrocław",
+      "country": "PL",
+      "capacity": 1600,
+      "lat": 51.1085,
+      "lng": 17.00172,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.a2.pl",
+      "source": "https://goout.net/pl/a2-centrum-koncertowe/vzejsb/"
+    },
+    {
+      "id": "stary-klasztor-wroclaw",
+      "name": "Stary Klasztor",
+      "city": "Wrocław",
+      "country": "PL",
+      "capacity": 400,
+      "lat": 51.11014,
+      "lng": 17.03942,
+      "geo_precision": "venue",
+      "genres": [
+        "folk",
+        "rock",
+        "jazz"
+      ],
+      "website": "https://www.staryklasztor.com.pl",
+      "notes": "Sala Gotycka in a former Dominican convent.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "firlej-wroclaw",
+      "name": "Firlej",
+      "city": "Wrocław",
+      "country": "PL",
+      "capacity": 500,
+      "lat": 51.10229,
+      "lng": 17.01443,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "jazz",
+        "electronic"
+      ],
+      "website": "https://www.firlej.wroc.pl",
+      "notes": "Municipal arts centre (Strefa Kultury Wrocław).",
+      "source": "model knowledge"
+    },
+    {
+      "id": "lykend-wroclaw",
+      "name": "Klub Łykend",
+      "city": "Wrocław",
+      "country": "PL",
+      "capacity": 400,
+      "lat": 51.10419,
+      "lng": 17.0299,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "punk",
+        "metal"
+      ],
+      "website": "https://www.lykend.pl",
+      "source": "model knowledge"
+    },
+    {
+      "id": "tama-poznan",
+      "name": "Tama",
+      "city": "Poznań",
+      "country": "PL",
+      "capacity": 900,
+      "lat": 52.40253,
+      "lng": 16.92235,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "hiphop",
+        "indie"
+      ],
+      "website": "https://www.tama.art.pl",
+      "source": "https://visitpoznan.pl/en/tama-club-venue"
+    },
+    {
+      "id": "2progi-poznan",
+      "name": "2progi",
+      "city": "Poznań",
+      "country": "PL",
+      "capacity": 500,
+      "lat": 52.41494,
+      "lng": 16.92647,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.2progi.pl",
+      "source": "https://songkick.com/concerts/43163137-believe-at-2progi"
+    },
+    {
+      "id": "blue-note-poznan",
+      "name": "Blue Note",
+      "city": "Poznań",
+      "country": "PL",
+      "capacity": 400,
+      "lat": 52.40811,
+      "lng": 16.9194,
+      "geo_precision": "venue",
+      "genres": [
+        "jazz",
+        "folk"
+      ],
+      "website": "https://www.bluenote.poznan.pl",
+      "notes": "Jazz club in the CK Zamek cellars.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "u-bazyla-poznan",
+      "name": "Klub u Bazyla",
+      "city": "Poznań",
+      "country": "PL",
+      "capacity": 400,
+      "lat": 52.41683,
+      "lng": 16.9117,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "punk",
+        "metal"
+      ],
+      "website": "https://www.ubazyla.pl",
+      "source": "model knowledge"
+    },
+    {
+      "id": "b90-gdansk",
+      "name": "B90",
+      "city": "Gdańsk",
+      "country": "PL",
+      "capacity": 1500,
+      "lat": 54.36456,
+      "lng": 18.64847,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "electronic"
+      ],
+      "website": "https://www.b90.pl",
+      "notes": "Former shipyard hall.",
+      "source": "https://www.inyourpocket.com/poland/gdansk/venues/b90"
+    },
+    {
+      "id": "stary-manez-gdansk",
+      "name": "Stary Maneż",
+      "city": "Gdańsk",
+      "country": "PL",
+      "capacity": 1000,
+      "lat": 54.38068,
+      "lng": 18.58892,
+      "geo_precision": "venue",
+      "genres": [
+        "pop",
+        "rock",
+        "jazz"
+      ],
+      "website": "https://www.starymanez.pl",
+      "notes": "In the Garnizon complex, Wrzeszcz.",
+      "source": "https://pomorskie-prestige.eu/en/partners/garnizon-kultury"
+    },
+    {
+      "id": "klub-zak-gdansk",
+      "name": "Klub Żak",
+      "city": "Gdańsk",
+      "country": "PL",
+      "capacity": 300,
+      "lat": 54.387,
+      "lng": 18.59222,
+      "geo_precision": "venue",
+      "genres": [
+        "jazz",
+        "indie",
+        "folk"
+      ],
+      "website": "https://klubzak.com.pl",
+      "notes": "Sala Suwnicowa; capacity varies 200-700 by setup.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "wytwornia-lodz",
+      "name": "Klub Wytwórnia",
+      "city": "Łódź",
+      "country": "PL",
+      "capacity": 1200,
+      "lat": 51.75725,
+      "lng": 19.44246,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "jazz"
+      ],
+      "website": "https://www.wytwornia.pl",
+      "notes": "Largest hall ~1,200 (listing headline 1,600). On the old film-studio site.",
+      "source": "https://karlobag.eu/en/venues/event-center/poland/lodz/klub-wytwornia-v5xcz/"
+    },
+    {
+      "id": "magnetofon-lodz",
+      "name": "Magnetofon",
+      "city": "Łódź",
+      "country": "PL",
+      "capacity": 300,
+      "lat": 51.78356,
+      "lng": 19.45209,
+      "geo_precision": "venue",
+      "genres": [
+        "punk",
+        "rock",
+        "indie"
+      ],
+      "website": null,
+      "notes": "On the site of the former Luka club.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "scenografia-lodz",
+      "name": "Klub Scenografia",
+      "city": "Łódź",
+      "country": "PL",
+      "capacity": 400,
+      "lat": 51.77473,
+      "lng": 19.45217,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": null,
+      "source": "model knowledge"
+    },
+    {
+      "id": "mega-club-katowice",
+      "name": "Mega Club",
+      "city": "Katowice",
+      "country": "PL",
+      "capacity": 1000,
+      "lat": 50.26476,
+      "lng": 19.00606,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "hiphop"
+      ],
+      "website": "https://www.megaclub.pl",
+      "notes": "Running since 1993; reportedly moved larger shows to MCK/Spodek in 2018 - verify current venue.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "p23-katowice",
+      "name": "P23",
+      "city": "Katowice",
+      "country": "PL",
+      "capacity": 1500,
+      "lat": 50.25467,
+      "lng": 19.06119,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "hiphop",
+        "indie"
+      ],
+      "website": "https://www.p23.pl",
+      "notes": "Former porcelain-factory hall plus courtyard.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "krolestwo-katowice",
+      "name": "Królestwo",
+      "city": "Katowice",
+      "country": "PL",
+      "capacity": 300,
+      "lat": 50.26446,
+      "lng": 19.02338,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": null,
+      "source": "model knowledge"
+    },
+    {
+      "id": "nospr-katowice",
+      "name": "NOSPR",
+      "city": "Katowice",
+      "country": "PL",
+      "capacity": 1800,
+      "lat": 50.2639,
+      "lng": 19.02867,
+      "geo_precision": "venue",
+      "genres": [
+        "jazz",
+        "pop",
+        "folk"
+      ],
+      "website": "https://nospr.org.pl",
+      "notes": "Seated symphony hall that also books touring jazz/pop.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "lucerna-music-bar-prague",
+      "name": "Lucerna Music Bar",
+      "city": "Prague",
+      "country": "CZ",
+      "capacity": 800,
+      "lat": 50.08127,
+      "lng": 14.42532,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "pop"
+      ],
+      "website": "https://www.musicbar.cz",
+      "notes": "Sources range 800-1,000.",
+      "source": "https://www.karlobag.eu/en/venues/rock-club/czechia/prague/lucerna-music-bar-55x95/"
+    },
+    {
+      "id": "palac-akropolis-prague",
+      "name": "Palác Akropolis",
+      "city": "Prague",
+      "country": "CZ",
+      "capacity": 500,
+      "lat": 50.08236,
+      "lng": 14.44889,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "rock",
+        "folk"
+      ],
+      "website": "https://www.palacakropolis.cz",
+      "notes": "Velký sál ~500; whole building ~800.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "roxy-prague",
+      "name": "Roxy",
+      "city": "Prague",
+      "country": "CZ",
+      "capacity": 900,
+      "lat": 50.09072,
+      "lng": 14.42591,
+      "geo_precision": "venue",
+      "genres": [
+        "electronic",
+        "hiphop",
+        "indie"
+      ],
+      "website": "https://www.roxy.cz",
+      "notes": "Sources range 750-1,000.",
+      "source": "https://selection.cz/en/venues/roxy/"
+    },
+    {
+      "id": "meetfactory-prague",
+      "name": "MeetFactory",
+      "city": "Prague",
+      "country": "CZ",
+      "capacity": 750,
+      "lat": 50.05325,
+      "lng": 14.40818,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "rock"
+      ],
+      "website": "https://meetfactory.cz",
+      "notes": "Main hall 750; small hall 350.",
+      "source": "https://meetfactory.cz/en/pronajmy"
+    },
+    {
+      "id": "forum-karlin-prague",
+      "name": "Forum Karlín",
+      "city": "Prague",
+      "country": "CZ",
+      "capacity": 3000,
+      "lat": 50.09185,
+      "lng": 14.45488,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "pop",
+        "electronic"
+      ],
+      "website": "https://www.forumkarlin.cz",
+      "notes": "Up to 3,000 standing (some listings 3,800).",
+      "source": "https://prague.eu/cs/objevujte/forum-karlin/"
+    },
+    {
+      "id": "fleda-brno",
+      "name": "Fléda",
+      "city": "Brno",
+      "country": "CZ",
+      "capacity": 1000,
+      "lat": 49.20987,
+      "lng": 16.60334,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "electronic"
+      ],
+      "website": "https://www.fleda.cz",
+      "source": "https://inyourpocket.com/Brno/fleda_159419v"
+    },
+    {
+      "id": "sono-centrum-brno",
+      "name": "Sono Centrum",
+      "city": "Brno",
+      "country": "CZ",
+      "capacity": 1200,
+      "lat": 49.20944,
+      "lng": 16.58858,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": "https://www.sonocentrum.cz",
+      "notes": "1,200 standing / 650 seated.",
+      "source": "https://kongres-magazine.eu/?p=167898"
+    },
+    {
+      "id": "kabinet-muz-brno",
+      "name": "Kabinet múz",
+      "city": "Brno",
+      "country": "CZ",
+      "capacity": 230,
+      "lat": 49.19562,
+      "lng": 16.61248,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "folk",
+        "punk"
+      ],
+      "website": "https://www.kabinetmuz.cz",
+      "source": "https://openhousebrno.cz/en/kabinet-muz"
+    },
+    {
+      "id": "metro-music-bar-brno",
+      "name": "Metro Music Bar",
+      "city": "Brno",
+      "country": "CZ",
+      "capacity": 400,
+      "lat": 49.19472,
+      "lng": 16.61001,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.metromusic.cz",
+      "notes": "~250 concerts a year.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "gong-ostrava",
+      "name": "Multifunkční aula Gong",
+      "city": "Ostrava",
+      "country": "CZ",
+      "capacity": 1500,
+      "lat": 49.8191,
+      "lng": 18.27957,
+      "geo_precision": "venue",
+      "genres": [
+        "jazz",
+        "pop",
+        "rock"
+      ],
+      "website": "https://www.dolnivitkovice.cz",
+      "notes": "Converted gasholder; big hall ~1,500 seated.",
+      "source": "https://goout.net/cs/multifunkcna-aula-gong/vzqrw/"
+    },
+    {
+      "id": "barrak-ostrava",
+      "name": "Barrák Music Club",
+      "city": "Ostrava",
+      "country": "CZ",
+      "capacity": 600,
+      "lat": 49.83645,
+      "lng": 18.29607,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "punk"
+      ],
+      "website": "https://www.barrakclub.cz",
+      "source": "model knowledge"
+    },
+    {
+      "id": "rock-and-roll-garage-ostrava",
+      "name": "Rock and Roll Garage",
+      "city": "Ostrava",
+      "country": "CZ",
+      "capacity": 700,
+      "lat": 49.85427,
+      "lng": 18.18344,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal"
+      ],
+      "website": "https://www.garageclub.cz",
+      "notes": "Formerly Garage Club; Ostrava-Martinov. 600-700.",
+      "source": "https://www.songkick.com/venues/160128-rock-and-roll-garage"
+    },
+    {
+      "id": "papirna-plzen",
+      "name": "Papírna",
+      "city": "Plzeň",
+      "country": "CZ",
+      "capacity": 600,
+      "lat": 49.73615,
+      "lng": 13.38553,
+      "geo_precision": "venue",
+      "genres": [
+        "indie",
+        "electronic",
+        "hiphop"
+      ],
+      "website": "https://www.papirnaplzen.cz",
+      "notes": "Multi-use industrial venue.",
+      "source": "model knowledge"
+    },
+    {
+      "id": "andel-music-bar-plzen",
+      "name": "Anděl Music Bar",
+      "city": "Plzeň",
+      "country": "CZ",
+      "capacity": 300,
+      "lat": 49.74539,
+      "lng": 13.37728,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "indie",
+        "folk"
+      ],
+      "website": "https://www.andelcafe.cz",
+      "source": "model knowledge"
+    },
+    {
+      "id": "buena-vista-club-plzen",
+      "name": "Buena Vista Club",
+      "city": "Plzeň",
+      "country": "CZ",
+      "capacity": 400,
+      "lat": 49.74789,
+      "lng": 13.36895,
+      "geo_precision": "venue",
+      "genres": [
+        "hiphop",
+        "electronic",
+        "pop"
+      ],
+      "website": "https://www.buenavistaclub.cz",
+      "source": "model knowledge"
+    },
+    {
+      "id": "arena-pilsen-plzen",
+      "name": "Arena Pilsen",
+      "city": "Plzeň",
+      "country": "CZ",
+      "capacity": 800,
+      "lat": 49.76699,
+      "lng": 13.37253,
+      "geo_precision": "venue",
+      "genres": [
+        "rock",
+        "metal",
+        "pop"
+      ],
+      "website": null,
+      "notes": "Main hall up to 800 per listing; second stage ~150.",
+      "source": "https://goout.net/cs/arena-pilsen/vziqcd/"
+    }
+  ]
+}

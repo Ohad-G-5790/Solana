@@ -1,0 +1,22 @@
+{
+  "name": "@greenroom/world",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seed world for Greenroom: real venues, 100 generated bands, crew and fan populations per city (deterministic).",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.7.0"
+  }
+}

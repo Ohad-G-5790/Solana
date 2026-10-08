@@ -1,0 +1,27 @@
+{
+  "name": "@greenroom/agents",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Band, venue, fan and crew agents that negotiate and book a tour on the Greenroom program; message bus, pluggable brain (heuristic or Claude), crank, and the demo orchestrator.",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "demo": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.0",
+    "@greenroom/sdk": "*",
+    "@greenroom/world": "*",
+    "@solana/web3.js": "^1.98.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,1854 @@
+{
+  "address": "4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8",
+  "metadata": {
+    "name": "greenroom",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "accept_show",
+      "docs": [
+        "Venue agent accepts a proposed show; tickets go on sale."
+      ],
+      "discriminator": [
+        249,
+        64,
+        113,
+        20,
+        88,
+        192,
+        176,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "venue_authority",
+          "signer": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "show",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "add_payee",
+      "docs": [
+        "Band agent adds a crew/service payee, carving its share out of the band's split."
+      ],
+      "discriminator": [
+        248,
+        28,
+        137,
+        95,
+        9,
+        128,
+        223,
+        82
+      ],
+      "accounts": [
+        {
+          "name": "band_authority",
+          "signer": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "show",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "address",
+          "type": "pubkey"
+        },
+        {
+          "name": "bps",
+          "type": "u16"
+        },
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "buy_ticket",
+      "docs": [
+        "Pay for tickets into the show's escrow. `beneficiary` receives any refund."
+      ],
+      "discriminator": [
+        11,
+        24,
+        17,
+        193,
+        168,
+        116,
+        164,
+        169
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "Pays the tickets and the ticket account rent. May be a fan's own wallet",
+            "or a hub wallet buying on behalf of `beneficiary`."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "show",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "show"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  105,
+                  99,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "show"
+              },
+              {
+                "kind": "arg",
+                "path": "beneficiary"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "quantity",
+          "type": "u16"
+        },
+        {
+          "name": "beneficiary",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "check_threshold",
+      "docs": [
+        "Permissionless: confirm the show once the threshold is met, or cancel it",
+        "once the deadline passed without reaching it."
+      ],
+      "discriminator": [
+        225,
+        18,
+        237,
+        20,
+        171,
+        51,
+        192,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "show",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_tour",
+      "docs": [
+        "Open a tour: a date window and region the band agent will fill with shows."
+      ],
+      "discriminator": [
+        66,
+        122,
+        110,
+        238,
+        201,
+        184,
+        48,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "band_authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "band_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "band_authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tour",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  117,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "band_profile"
+              },
+              {
+                "kind": "arg",
+                "path": "tour_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "tour_id",
+          "type": "u32"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "region",
+          "type": "string"
+        },
+        {
+          "name": "starts_at",
+          "type": "i64"
+        },
+        {
+          "name": "ends_at",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "propose_show",
+      "docs": [
+        "Band agent proposes a show at a venue with price, capacity, threshold and split."
+      ],
+      "discriminator": [
+        208,
+        27,
+        214,
+        233,
+        236,
+        141,
+        176,
+        201
+      ],
+      "accounts": [
+        {
+          "name": "band_authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "band_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "band_authority"
+              }
+            ]
+          },
+          "relations": [
+            "tour"
+          ]
+        },
+        {
+          "name": "tour",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  117,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "band_profile"
+              },
+              {
+                "kind": "account",
+                "path": "tour.tour_id",
+                "account": "Tour"
+              }
+            ]
+          }
+        },
+        {
+          "name": "venue_profile",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  101,
+                  110,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "venue_profile.authority",
+                "account": "VenueProfile"
+              }
+            ]
+          }
+        },
+        {
+          "name": "show",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "tour"
+              },
+              {
+                "kind": "account",
+                "path": "venue_profile"
+              },
+              {
+                "kind": "arg",
+                "path": "date"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "docs": [
+            "Escrow vault: a system-owned PDA that only this program can sign for."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "show"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "date",
+          "type": "i64"
+        },
+        {
+          "name": "ticket_price_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "capacity",
+          "type": "u32"
+        },
+        {
+          "name": "threshold_bps",
+          "type": "u16"
+        },
+        {
+          "name": "threshold_deadline",
+          "type": "i64"
+        },
+        {
+          "name": "band_bps",
+          "type": "u16"
+        },
+        {
+          "name": "venue_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "refund_ticket",
+      "docs": [
+        "Permissionless: refund one ticket of a cancelled show to its beneficiary."
+      ],
+      "discriminator": [
+        178,
+        97,
+        75,
+        218,
+        227,
+        28,
+        21,
+        73
+      ],
+      "accounts": [
+        {
+          "name": "show",
+          "writable": true,
+          "relations": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "show"
+              }
+            ]
+          }
+        },
+        {
+          "name": "ticket",
+          "writable": true
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "relations": [
+            "ticket"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_band",
+      "docs": [
+        "Create the band's profile (its on-chain track record starts at zero)."
+      ],
+      "discriminator": [
+        164,
+        67,
+        17,
+        143,
+        212,
+        142,
+        229,
+        105
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "band_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "genre",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "register_venue",
+      "docs": [
+        "Create a venue profile with location and standing capacity."
+      ],
+      "discriminator": [
+        116,
+        155,
+        199,
+        243,
+        228,
+        180,
+        176,
+        173
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "venue_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  101,
+                  110,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "city",
+          "type": "string"
+        },
+        {
+          "name": "lat_e6",
+          "type": "i32"
+        },
+        {
+          "name": "lng_e6",
+          "type": "i32"
+        },
+        {
+          "name": "capacity",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "reject_show",
+      "docs": [
+        "Venue agent rejects a proposed show; the account and vault float go back to the band."
+      ],
+      "discriminator": [
+        98,
+        211,
+        172,
+        21,
+        44,
+        179,
+        21,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "venue_authority",
+          "signer": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "band_authority",
+          "docs": [
+            "Receives the show account rent and the vault float back."
+          ],
+          "writable": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "show",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "show"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "settle_show",
+      "docs": [
+        "Permissionless: after the show date, split the escrow between band, venue and payees."
+      ],
+      "discriminator": [
+        73,
+        203,
+        237,
+        98,
+        152,
+        25,
+        219,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "show",
+          "writable": true
+        },
+        {
+          "name": "band_profile",
+          "writable": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "venue_profile",
+          "writable": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "band_authority",
+          "writable": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "venue_authority",
+          "writable": true,
+          "relations": [
+            "show"
+          ]
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "show"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BandProfile",
+      "discriminator": [
+        30,
+        82,
+        126,
+        201,
+        225,
+        188,
+        124,
+        31
+      ]
+    },
+    {
+      "name": "Show",
+      "discriminator": [
+        171,
+        128,
+        239,
+        156,
+        241,
+        58,
+        221,
+        199
+      ]
+    },
+    {
+      "name": "Ticket",
+      "discriminator": [
+        41,
+        228,
+        24,
+        165,
+        78,
+        90,
+        235,
+        200
+      ]
+    },
+    {
+      "name": "Tour",
+      "discriminator": [
+        32,
+        134,
+        56,
+        242,
+        226,
+        108,
+        129,
+        105
+      ]
+    },
+    {
+      "name": "VenueProfile",
+      "discriminator": [
+        82,
+        115,
+        200,
+        82,
+        205,
+        23,
+        64,
+        160
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "BandRegistered",
+      "discriminator": [
+        254,
+        150,
+        204,
+        144,
+        253,
+        151,
+        72,
+        207
+      ]
+    },
+    {
+      "name": "PayeeAdded",
+      "discriminator": [
+        3,
+        246,
+        5,
+        50,
+        2,
+        252,
+        12,
+        195
+      ]
+    },
+    {
+      "name": "ShowAccepted",
+      "discriminator": [
+        14,
+        174,
+        3,
+        29,
+        97,
+        26,
+        147,
+        211
+      ]
+    },
+    {
+      "name": "ShowCancelled",
+      "discriminator": [
+        68,
+        123,
+        38,
+        163,
+        199,
+        39,
+        17,
+        175
+      ]
+    },
+    {
+      "name": "ShowConfirmed",
+      "discriminator": [
+        88,
+        3,
+        91,
+        20,
+        189,
+        255,
+        211,
+        32
+      ]
+    },
+    {
+      "name": "ShowProposed",
+      "discriminator": [
+        188,
+        69,
+        37,
+        225,
+        92,
+        71,
+        139,
+        83
+      ]
+    },
+    {
+      "name": "ShowRejected",
+      "discriminator": [
+        212,
+        164,
+        36,
+        241,
+        97,
+        88,
+        170,
+        251
+      ]
+    },
+    {
+      "name": "ShowSettled",
+      "discriminator": [
+        151,
+        198,
+        71,
+        254,
+        151,
+        96,
+        136,
+        63
+      ]
+    },
+    {
+      "name": "TicketBought",
+      "discriminator": [
+        80,
+        244,
+        35,
+        181,
+        211,
+        143,
+        3,
+        166
+      ]
+    },
+    {
+      "name": "TicketRefunded",
+      "discriminator": [
+        46,
+        173,
+        213,
+        43,
+        145,
+        205,
+        132,
+        218
+      ]
+    },
+    {
+      "name": "TourCreated",
+      "discriminator": [
+        11,
+        30,
+        100,
+        141,
+        132,
+        151,
+        94,
+        31
+      ]
+    },
+    {
+      "name": "VenueRegistered",
+      "discriminator": [
+        86,
+        82,
+        191,
+        91,
+        171,
+        241,
+        178,
+        9
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "The signer is not the authority for this account"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidState",
+      "msg": "The show is not in a state that allows this action"
+    },
+    {
+      "code": 6002,
+      "name": "TooEarly",
+      "msg": "Too early: the threshold deadline or show date has not passed yet"
+    },
+    {
+      "code": 6003,
+      "name": "SalesClosed",
+      "msg": "Ticket sales are closed for this show"
+    },
+    {
+      "code": 6004,
+      "name": "SoldOut",
+      "msg": "Not enough capacity left for this purchase"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidQuantity",
+      "msg": "Quantity must be between 1 and MAX_TICKETS_PER_PURCHASE"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidSplit",
+      "msg": "Payout split must sum to 10000 bps and every part must be positive"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidThreshold",
+      "msg": "Threshold must be between 1 and 10000 bps"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidDates",
+      "msg": "Dates are inconsistent (show outside tour window or deadline after show)"
+    },
+    {
+      "code": 6009,
+      "name": "CapacityExceedsVenue",
+      "msg": "Requested capacity exceeds the venue capacity"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidPrice",
+      "msg": "Ticket price must be greater than zero"
+    },
+    {
+      "code": 6011,
+      "name": "AlreadyRefunded",
+      "msg": "This ticket was already refunded"
+    },
+    {
+      "code": 6012,
+      "name": "TooManyPayees",
+      "msg": "The show already has the maximum number of payees"
+    },
+    {
+      "code": 6013,
+      "name": "PayeeMismatch",
+      "msg": "Payee accounts passed for settlement do not match the stored payees"
+    },
+    {
+      "code": 6014,
+      "name": "DuplicatePayee",
+      "msg": "This address is already a payee on the show"
+    },
+    {
+      "code": 6015,
+      "name": "TextLength",
+      "msg": "A text field is empty or longer than allowed"
+    },
+    {
+      "code": 6016,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6017,
+      "name": "WrongTourId",
+      "msg": "Tour id must equal the band's next sequential tour number"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidCapacity",
+      "msg": "Capacity must be greater than zero"
+    }
+  ],
+  "types": [
+    {
+      "name": "BandProfile",
+      "docs": [
+        "A band (or artist). Its counters are the on-chain track record that venue",
+        "agents read as proof of past concerts; only `settle_show` can increase them."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "genre",
+            "type": "string"
+          },
+          {
+            "name": "tours_created",
+            "type": "u32"
+          },
+          {
+            "name": "shows_completed",
+            "type": "u32"
+          },
+          {
+            "name": "tickets_sold_total",
+            "type": "u64"
+          },
+          {
+            "name": "gross_settled_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BandRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "band_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Payee",
+      "docs": [
+        "An extra party that receives a slice of the settlement (sound, lights, driver...)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": "pubkey"
+          },
+          {
+            "name": "bps",
+            "type": "u16"
+          },
+          {
+            "name": "label",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PayeeAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "address",
+            "type": "pubkey"
+          },
+          {
+            "name": "bps",
+            "type": "u16"
+          },
+          {
+            "name": "label",
+            "type": "string"
+          },
+          {
+            "name": "band_bps_after",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Show",
+      "docs": [
+        "One concert at one venue on one date, with its own escrow vault."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tour",
+            "type": "pubkey"
+          },
+          {
+            "name": "band_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "venue_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "band_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "venue_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "date",
+            "docs": [
+              "Unix timestamp of the show."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "ticket_price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "capacity",
+            "docs": [
+              "Tickets offered for this show (at most the venue capacity)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "threshold_bps",
+            "docs": [
+              "Share of `capacity` that must be sold by `threshold_deadline`, in bps."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "threshold_deadline",
+            "docs": [
+              "Unix timestamp after which an unmet threshold cancels the show."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "band_bps",
+            "type": "u16"
+          },
+          {
+            "name": "venue_bps",
+            "type": "u16"
+          },
+          {
+            "name": "tickets_sold",
+            "type": "u32"
+          },
+          {
+            "name": "tickets_refunded",
+            "type": "u32"
+          },
+          {
+            "name": "escrow_lamports",
+            "docs": [
+              "Lamports held for ticket holders (excludes the vault's rent float)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "state",
+            "type": {
+              "defined": {
+                "name": "ShowState"
+              }
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          },
+          {
+            "name": "payees",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "Payee"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowAccepted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "venue_authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowCancelled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "tickets_sold",
+            "type": "u32"
+          },
+          {
+            "name": "tickets_required",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowConfirmed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "tickets_sold",
+            "type": "u32"
+          },
+          {
+            "name": "capacity",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowProposed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "tour",
+            "type": "pubkey"
+          },
+          {
+            "name": "venue_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "date",
+            "type": "i64"
+          },
+          {
+            "name": "ticket_price_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "capacity",
+            "type": "u32"
+          },
+          {
+            "name": "threshold_bps",
+            "type": "u16"
+          },
+          {
+            "name": "threshold_deadline",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowRejected",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "venue_authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "total_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "band_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "venue_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "payee_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "tickets_sold",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShowState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Proposed"
+          },
+          {
+            "name": "OnSale"
+          },
+          {
+            "name": "Confirmed"
+          },
+          {
+            "name": "Cancelled"
+          },
+          {
+            "name": "Settled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ticket",
+      "docs": [
+        "One purchase by one beneficiary for one show. Closed to the buyer on refund,",
+        "kept forever after settlement as proof of attendance."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "docs": [
+              "Beneficiary: receives the refund if the show is cancelled."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "docs": [
+              "Wallet that paid (may differ from `buyer`, e.g. a fan hub paying for fans)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u16"
+          },
+          {
+            "name": "amount_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "purchased_at",
+            "type": "i64"
+          },
+          {
+            "name": "refunded",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketBought",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticket",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "payer",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u16"
+          },
+          {
+            "name": "amount_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "tickets_sold",
+            "type": "u32"
+          },
+          {
+            "name": "threshold_met",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketRefunded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "show",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticket",
+            "type": "pubkey"
+          },
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_lamports",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tour",
+      "docs": [
+        "A tour groups the shows a band's agent books for one date window and region."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "band_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "tour_id",
+            "type": "u32"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "region",
+            "type": "string"
+          },
+          {
+            "name": "starts_at",
+            "type": "i64"
+          },
+          {
+            "name": "ends_at",
+            "type": "i64"
+          },
+          {
+            "name": "shows_count",
+            "type": "u16"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TourCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tour",
+            "type": "pubkey"
+          },
+          {
+            "name": "band_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "tour_id",
+            "type": "u32"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "starts_at",
+            "type": "i64"
+          },
+          {
+            "name": "ends_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VenueProfile",
+      "docs": [
+        "A venue (club or hall) with its location and standing capacity."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "city",
+            "type": "string"
+          },
+          {
+            "name": "lat_e6",
+            "docs": [
+              "Latitude * 1e6"
+            ],
+            "type": "i32"
+          },
+          {
+            "name": "lng_e6",
+            "docs": [
+              "Longitude * 1e6"
+            ],
+            "type": "i32"
+          },
+          {
+            "name": "capacity",
+            "type": "u32"
+          },
+          {
+            "name": "shows_hosted",
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "VenueRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "venue_profile",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "city",
+            "type": "string"
+          },
+          {
+            "name": "capacity",
+            "type": "u32"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "BAND_SEED",
+      "type": "bytes",
+      "value": "[98, 97, 110, 100]"
+    },
+    {
+      "name": "BPS_DENOMINATOR",
+      "docs": [
+        "Basis-point denominator used for thresholds and payout splits."
+      ],
+      "type": "u64",
+      "value": "10000"
+    },
+    {
+      "name": "MAX_PAYEES",
+      "docs": [
+        "Maximum extra payees (crew, services) a show can carry besides band and venue."
+      ],
+      "type": "u8",
+      "value": "4"
+    },
+    {
+      "name": "MAX_TICKETS_PER_PURCHASE",
+      "docs": [
+        "Maximum tickets one purchase (one `Ticket` account) can hold."
+      ],
+      "type": "u16",
+      "value": "10"
+    },
+    {
+      "name": "SHOW_SEED",
+      "type": "bytes",
+      "value": "[115, 104, 111, 119]"
+    },
+    {
+      "name": "TICKET_SEED",
+      "type": "bytes",
+      "value": "[116, 105, 99, 107, 101, 116]"
+    },
+    {
+      "name": "TOUR_SEED",
+      "type": "bytes",
+      "value": "[116, 111, 117, 114]"
+    },
+    {
+      "name": "VAULT_SEED",
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116]"
+    },
+    {
+      "name": "VENUE_SEED",
+      "type": "bytes",
+      "value": "[118, 101, 110, 117, 101]"
+    }
+  ]
+}

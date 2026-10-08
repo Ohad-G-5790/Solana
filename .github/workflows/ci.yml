@@ -1,0 +1,23 @@
+name: ci
+
+# Node-only checks that run anywhere. Program build/tests need the Solana
+# toolchain and a local validator; run those with `npm run test:program`.
+on:
+  push:
+  pull_request:
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck -w @greenroom/sdk -w @greenroom/world -w @greenroom/agents -w @greenroom/qa -w @greenroom/web
+      - run: npm test -w @greenroom/world
+      - run: npm test -w @greenroom/agents
+      - run: npm run lint -w @greenroom/web
+      - run: npm run build -w @greenroom/web

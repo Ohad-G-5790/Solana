@@ -1,0 +1,36 @@
+{
+  "name": "greenroom",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Greenroom: AI agents that self-book concert tours on Solana with escrowed tickets, sell-through thresholds, automatic refunds and settlement.",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "qa"
+  ],
+  "scripts": {
+    "build:program": "anchor build --tools-version v1.54 --arch v0 && npm run sync:idl",
+    "test:program": "node scripts/test-program.mjs",
+    "test:program:keep": "node scripts/test-program.mjs --keep",
+    "deploy:devnet": "anchor deploy --provider.cluster devnet --tools-version v1.54 --arch v0",
+    "world:generate": "npm run generate -w @greenroom/world",
+    "test": "npm run test:program && npm test --workspaces --if-present",
+    "qa": "tsx qa/src/run.ts",
+    "sync:idl": "node -e \"const fs=require('fs');for(const d of ['packages/sdk/idl','packages/web/src/idl']){fs.mkdirSync(d,{recursive:true});fs.copyFileSync('target/idl/greenroom.json',d+'/greenroom.json');fs.copyFileSync('target/types/greenroom.ts',d+'/greenroom.ts');}console.log('IDL synced')\"",
+    "demo": "node scripts/demo-local.mjs",
+    "demo:fast": "node scripts/demo-local.mjs --fast",
+    "demo:devnet": "npm run demo -w @greenroom/agents -- --rpc https://api.devnet.solana.com",
+    "qa:dry": "tsx qa/src/run.ts --no-loop"
+  },
+  "devDependencies": {
+    "@anchor-lang/core": "^1.2.1",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^22.0.0",
+    "chai": "^4.3.4",
+    "mocha": "^10.0.0",
+    "ts-mocha": "^10.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.7.0"
+  }
+}

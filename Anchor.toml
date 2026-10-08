@@ -1,0 +1,21 @@
+[toolchain]
+package_manager = "npm"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+greenroom = "4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8"
+
+[programs.devnet]
+greenroom = "4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8"
+
+[provider]
+cluster = "localnet"
+wallet = '~\.config/solana/id.json'
+
+[scripts]
+test = "node scripts/test-program.mjs"
+
+[hooks]

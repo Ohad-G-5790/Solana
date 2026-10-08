@@ -1,0 +1,436 @@
+/* Greenroom design tokens — see docs/DESIGN.md (Spotify-inspired, content-first darkness) */
+:root {
+  --bg: #121212;
+  --surface: #181818;
+  --surface-mid: #1f1f1f;
+  --card: #252525;
+  --card-alt: #272727;
+  --accent: #1ed760;
+  --accent-border: #1db954;
+  --text: #ffffff;
+  --text-muted: #b3b3b3;
+  --text-soft: #cbcbcb;
+  --border: #4d4d4d;
+  --border-light: #7c7c7c;
+  --negative: #f3727f;
+  --warning: #ffa42b;
+  --info: #539df5;
+  --shadow-heavy: rgba(0, 0, 0, 0.5) 0px 8px 24px;
+  --shadow-medium: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+  --inset: rgb(18, 18, 18) 0px 1px 0px, rgb(124, 124, 124) 0px 0px 0px 1px inset;
+  --font: "SpotifyMixUI", "CircularSp", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sidebar: 232px;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.3;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+h2 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+p {
+  margin: 0;
+}
+.muted {
+  color: var(--text-muted);
+}
+.small {
+  font-size: 12px;
+}
+.micro {
+  font-size: 10px;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+/* ---------- layout ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar) 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  background: var(--bg);
+  padding: 20px 12px;
+  border-right: 1px solid #000;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 20px;
+  font-weight: 700;
+  font-size: 16px;
+}
+.brand .dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+.nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.nav a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+.nav a.active {
+  color: var(--text);
+  font-weight: 700;
+  background: var(--surface);
+}
+.main {
+  padding: 20px 24px 80px;
+  max-width: 1280px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.topbar .status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  background: var(--surface-mid);
+  color: var(--text);
+  border: 0;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1;
+}
+.btn:hover {
+  background: #2a2a2a;
+}
+.btn.primary {
+  background: var(--accent);
+  color: #000;
+}
+.btn.primary:hover {
+  background: #1fdf64;
+}
+.btn.outline {
+  background: transparent;
+  border: 1px solid var(--border-light);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pill {
+  display: inline-block;
+  background: var(--surface-mid);
+  color: var(--text-muted);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------- cards ---------- */
+.card {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: none;
+  transition: background 0.15s;
+}
+.card:hover {
+  background: var(--surface-mid);
+  box-shadow: var(--shadow-medium);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.stat {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.stat .label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+}
+.stat .value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+/* ---------- progress ---------- */
+.progress {
+  position: relative;
+  height: 8px;
+  background: var(--surface-mid);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 10px 0 6px;
+}
+.progress .fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+  transition: width 0.4s;
+}
+.progress .fill.cancelled {
+  background: var(--negative);
+}
+.progress .threshold {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 12px;
+  background: var(--text);
+}
+
+/* ---------- badges ---------- */
+.badge {
+  display: inline-block;
+  border-radius: 2px;
+  padding: 2px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--surface-mid);
+  color: var(--text-soft);
+}
+.badge.onSale {
+  color: var(--info);
+}
+.badge.confirmed {
+  color: var(--accent);
+}
+.badge.cancelled {
+  color: var(--negative);
+}
+.badge.settled {
+  background: var(--accent);
+  color: #000;
+}
+.badge.proposed {
+  color: var(--warning);
+}
+
+/* ---------- feed ---------- */
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.feed .item {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-radius: 6px;
+}
+.feed .who {
+  font-weight: 700;
+}
+.feed .kind {
+  color: var(--text-muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+}
+.feed .item.tx {
+  border-left: 2px solid var(--accent);
+}
+
+/* ---------- inputs ---------- */
+.input {
+  background: var(--surface-mid);
+  color: var(--text);
+  border: 0;
+  border-radius: 500px;
+  padding: 10px 16px;
+  font-family: var(--font);
+  font-size: 14px;
+  box-shadow: var(--inset);
+  width: 90px;
+}
+.input:focus {
+  outline: 1px solid var(--text);
+}
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--surface-mid);
+}
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--surface-mid);
+}
+
+/* ---------- map ---------- */
+.map {
+  width: 100%;
+  background: var(--surface);
+  border-radius: 8px;
+  display: block;
+}
+.map .route {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+}
+.map .venue {
+  fill: var(--border);
+}
+.map .stop {
+  fill: var(--accent);
+}
+.map .stop.cancelled {
+  fill: var(--negative);
+}
+.map .label {
+  fill: var(--text-soft);
+  font-size: 11px;
+  font-family: var(--font);
+}
+
+/* ---------- wallet adapter overrides ---------- */
+.wallet-adapter-button {
+  background: var(--surface-mid) !important;
+  border-radius: 9999px !important;
+  font-family: var(--font) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.4px !important;
+  text-transform: uppercase !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  padding: 0 16px !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+}
+.wallet-adapter-button-trigger {
+  background: var(--accent) !important;
+  color: #000 !important;
+}
+.wallet-adapter-modal-wrapper {
+  background: var(--card) !important;
+  box-shadow: var(--shadow-heavy) !important;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 896px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #000;
+    padding: 12px 16px;
+  }
+  .nav {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+  }
+  .nav a {
+    padding: 8px 12px;
+    white-space: nowrap;
+  }
+  .brand {
+    padding-bottom: 8px;
+  }
+  .main {
+    padding: 16px 16px 60px;
+  }
+  .topbar .status .muted {
+    display: none;
+  }
+  .feed .item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

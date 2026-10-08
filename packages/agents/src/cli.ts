@@ -1,0 +1,51 @@
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Keypair } from "@solana/web3.js";
+import { runDemo } from "./orchestrator.ts";
+
+// Load <repo>/.env (KEY=value lines) without adding a dependency; the real environment wins.
+const envFile = resolve(dirname(fileURLToPath(import.meta.url)), "../../../.env");
+if (existsSync(envFile)) {
+  for (const line of readFileSync(envFile, "utf8").split(/\r?\n/)) {
+    const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
+    if (m && !line.trim().startsWith("#") && m[2] !== "" && process.env[m[1]] === undefined) {
+      process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+    }
+  }
+}
+
+/**
+ * npm run demo -w @greenroom/agents -- [--rpc http://127.0.0.1:8899] [--band <id>]
+ *   [--shows 8] [--countries DE,AT,FR,PL,CZ] [--deadline 60] [--show 120]
+ *   [--history] [--brain heuristic|claude] [--max-venues 40] [--fast]
+ */
+function arg(name: string, def?: string): string | undefined {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i === -1) return def;
+  const v = process.argv[i + 1];
+  return v && !v.startsWith("--") ? v : "true";
+}
+
+const rpcUrl = arg("rpc", process.env.GREENROOM_RPC_URL ?? "http://127.0.0.1:8899")!;
+const walletPath = arg("wallet", process.env.ANCHOR_WALLET ?? join(homedir(), ".config", "solana", "id.json"))!;
+const payer = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(walletPath, "utf8"))));
+const fast = arg("fast") === "true";
+if (arg("brain")) process.env.GREENROOM_BRAIN = arg("brain");
+
+const summary = await runDemo({
+  rpcUrl,
+  payer,
+  bandId: arg("band"),
+  wantedShows: Number(arg("shows", "8")),
+  countries: arg("countries")?.split(","),
+  deadlineAfterSec: Number(arg("deadline", fast ? "40" : "90")),
+  showAfterSec: Number(arg("show", fast ? "75" : "180")),
+  maxVenues: arg("max-venues") ? Number(arg("max-venues")) : undefined,
+  history: arg("history") === "true",
+  tickMs: fast ? 1000 : 2000,
+  maxBuysPerTick: Number(arg("buys-per-tick", "36")),
+  fansPerCity: Number(arg("fans", "60")),
+});
+console.log(JSON.stringify(summary.stats));

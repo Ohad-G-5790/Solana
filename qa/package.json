@@ -1,0 +1,17 @@
+{
+  "name": "@greenroom/qa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "QA bot: runs every automated check, merges rubric judge scores, computes the weighted overall score (pass >= 8.5) and enforces the five-loop limit.",
+  "type": "module",
+  "scripts": {
+    "qa": "tsx src/run.ts",
+    "qa:quick": "tsx src/run.ts --skip program-tests,agents-e2e",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.7.0"
+  }
+}
