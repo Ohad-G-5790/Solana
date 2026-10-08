@@ -84,13 +84,21 @@ export async function startValidator({ rpcPort = Number(process.env.GREENROOM_RP
   const mint = walletPubkey(wallet);
   if (mint) args.push("--mint", mint);
   log(`[validator] starting ${bin}`);
-  const child = spawn(bin, args, { stdio: ["ignore", "ignore", "pipe"] });
+  const child = spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
   let err = "";
-  child.stderr.on("data", (d) => (err += d.toString()));
+  const keep = (d) => {
+    err = (err + d.toString()).slice(-4000);
+  };
+  child.stdout.on("data", keep);
+  child.stderr.on("data", keep);
   let stopping = false;
-  child.on("exit", (code) => {
+  child.on("error", (e) => {
+    console.error(`[validator] could not start ${bin}: ${e.message}`);
+    process.exit(1);
+  });
+  child.on("exit", (code, signal) => {
     if (!stopping) {
-      console.error(`[validator] exited early (${code}):\n${err}`);
+      console.error(`[validator] exited early (code ${code}, signal ${signal}) with args: ${args.join(" ")}\n${err}`);
       process.exit(1);
     }
   });
