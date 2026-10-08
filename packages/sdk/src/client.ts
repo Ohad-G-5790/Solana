@@ -1,13 +1,13 @@
 import * as anchor from "@anchor-lang/core";
 import type { Idl, IdlAccounts, Wallet } from "@anchor-lang/core";
+import BN from "bn.js";
 
 // @anchor-lang/core is CommonJS; under Node 22's ESM loader its re-exported
-// names (BN in particular) are not detected as named exports, so take them
-// from the namespace object instead of `import { BN }`.
-const { AnchorProvider, Program, BN } = anchor;
+// `BN` is neither a named export nor on the namespace object, so BN comes
+// straight from bn.js (the same class Anchor re-exports).
+const { AnchorProvider, Program } = anchor;
 type AnchorProvider = anchor.AnchorProvider;
 type Program<T extends Idl> = anchor.Program<T>;
-type BN = anchor.BN;
 import {
   Connection,
   Keypair,
