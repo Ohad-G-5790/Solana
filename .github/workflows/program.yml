@@ -1,0 +1,45 @@
+name: program
+
+# Builds the Anchor program and runs the integration tests on a Linux
+# validator inside the official Anchor 1.2.1 image (Rust, Solana CLI, Node).
+# This is the Unix counterpart of the Windows flow documented in the README.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "programs/**"
+      - "tests/**"
+      - "scripts/**"
+      - "Anchor.toml"
+      - "Cargo.*"
+      - "package*.json"
+      - ".github/workflows/program.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    container:
+      image: quay.io/ottersec/anchor:v1.2.1
+      options: --user root
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain versions
+        run: |
+          node --version && npm --version
+          rustc --version && solana --version && anchor --version
+      - name: Dev wallet
+        run: |
+          mkdir -p ~/.config/solana
+          solana-keygen new --no-bip39-passphrase -s -o ~/.config/solana/id.json
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build program (SBPF v0, platform-tools v1.54)
+        run: npm run build:program
+      - name: Integration tests on a local validator
+        run: npm run test:program
+      - name: Agents end to end on a local validator
+        run: node scripts/demo-local.mjs --fast --shows 6 --max-venues 40

@@ -86,6 +86,8 @@ docs/                   kickoff, spec, plan, QA rubric, design system, demo scri
 
 The dashboard is published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`: https://ohad-g-5790.github.io/Solana/ . That build is a static export (`npm run build:static -w @greenroom/web`) that reads live account state from devnet and the recorded run bundled in `packages/web/public/demo`. To publish a new devnet run, copy its `summary.json` and `transcript.jsonl` over the bundled ones and push.
 
+Honest note on the bundled run: as of 2026-10-08 it is a three-show devnet tour in which every show was cancelled and refunded, because the demo's hub wallet ran out of devnet SOL mid-sale. The cancellations and refunds are real transactions; a funded eight-show run with confirmed and settled shows replaces it as soon as the faucet allows (the full local run is what the videos show).
+
 The same app also runs as a Node server (`npm run dev` / `next build`) with API routes that read `data/runs`; on Vercel set the root directory to `packages/web` and the `NEXT_PUBLIC_*` variables from `.env.example`.
 
 ## Windows note

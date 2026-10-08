@@ -1,4 +1,4 @@
-# QA report — loop 3 — overall **9.40 / 10** — PASS (pass ≥ 8.5)
+# QA report — loop 3 — overall **9.45 / 10** — PASS (pass ≥ 8.5)
 
 | Component | Weight | Automated | Judge | Score |
 |---|---|---|---|---|
@@ -6,8 +6,8 @@
 | Agents | 0.25 | 10 | 8.3 | **9.3** |
 | Dashboard | 0.2 | 10 | 8.6 | **9.4** |
 | Seed world | 0.1 | 10 | 8.5 | **9.4** |
-| Docs and submission | 0.1 | 10 | 8.6 | **9.4** |
-| Developer experience | 0.1 | 10 | 7.8 | **9.1** |
+| Docs and submission | 0.1 | 10 | 8.9 | **9.6** |
+| Developer experience | 0.1 | 10 | 8.8 | **9.5** |
 
 ## Checks
 
@@ -44,14 +44,14 @@ Judge: Honest, well-labelled seed data: a file-level disclaimer, a per-venue sou
 - ✅ world-no-real-bands: generated band names are invented (word-bank combinations only)
 
 ### Docs and submission
-Judge: A judge gets the product in one paragraph, the 'what is in the box' table, quick start, 'how a tour happens', repository layout, QA gate and Windows note are clear, and the honesty problems from the last review are fixed: the README no longer claims a live devnet deployment (status 'pending funding', explained in the Devnet section and tracked in docs/06-submission.md), the .env flow is real (cli.ts loads it) and the `--keep` + .env.local dashboard flow is documented and scripted, and docs/01-program-spec.md now matches the code field for field (Greenroom, buy_ticket(quantity, beneficiary), the SalesClosed rule, the full error list, a test-coverage section I checked against tests/greenroom.ts). Submission copy, presentation and demo scripts, architecture, plan, rubric and design system are all present, plus LICENSE and CLAUDE.md. Remaining honesty nits: README:14 still says the agents demo runs 'on localnet and devnet' although the program has never been deployed there, the '60 fans per city' phrasing, docs/02-plan.md and docs/00-kickoff.md still describe the LLM adapter as the Claude Code CLI with no API key, and the only QA report in the repo predates the fixes and shows a FAIL.
+Judge: Verified rather than trusted: the repository is public at the README's URL with main pushed and the tree clean, the dashboard answers at the GitHub Pages link with the Greenroom title, the program account on devnet is executable under the upgradeable loader and its oldest signature is exactly the slot and tx cited in README.md:47 and docs/06-submission.md:38, and the upgrade authority matches. The README gives a judge the product in one paragraph plus live links, every number in it checks out against the code (11 instructions, 13 tests, 136 venues in 35 cities across five countries), the setup, .env and --keep/.env.local flows are honest and scripted, the architecture, spec, plan, demo and presentation scripts are present, and the submission copy only lacks the videos. The remaining gaps are presentation honesty rather than invented features: the bundled devnet run behind the live dashboard is a 3-show tour in which every show was cancelled (0 confirmed, 0 settled, 0 crew hired) and nothing in the README says so, so 'end-to-end demo on devnet' is only half evidenced by what a judge sees first; docs/02-plan.md and docs/00-kickoff.md still describe the brain as the Claude Code CLI and the hosting as Vercel; and qa/reports/latest.md embeds the previous judge text ('zero commits', 'pending funding'), which contradicts the repo until the bot is re-run.
 
 - ✅ docs-readme: README has a one-paragraph pitch, quick start, architecture and demo sections (critical)
 - ✅ docs-set: spec, plan, rubric, design and demo script exist
 - ✅ docs-env-example: .env.example documents every variable used
 
 ### Developer experience
-Judge: Setup is one command on both OSes and the scripts now also create packages/web/.env.local; scripts/local-validator.mjs hides the Windows 1.18 / SBPF-v0 workaround cleanly, root `npm test` runs the program tests plus every workspace, demo-local.mjs supports --keep, the agents CLI loads <repo>/.env without a dependency, a GitHub Actions workflow runs the Node-side typecheck/tests/lint/build, LICENSE and CLAUDE.md exist, Cargo.lock and package-lock.json exist, .env/.env.local/data/runs are ignored, QA reports are tracked, and no secrets are present (packages/web/.env.local holds only public localnet values). The hard gap is unchanged and scored as such: the repository has zero commits, so 'lockfiles committed' and the README's git clone are not yet true, and deploy:devnet has never run (the wallet holds 0.025 SOL against ~2.5 needed). Smaller leftovers: the empty migrations/ scaffold, the inline `node -e` sync:idl, no root qa:quick alias, an unexplained .local/ folder, and a stale failing QA report.
+Judge: The two hard gaps from the last review are closed and verified: origin/main at https://github.com/Ohad-G-5790/Solana is public, holds five commits with Cargo.lock, package-lock.json, qa/reports/* and qa/state.json tracked and the working tree clean, every push ran the ci and pages workflows green (gh run list), and the program is live on devnet with .env.example, packages/agents/src/cli.ts and packages/web/src/lib/config.ts all defaulting to it so a fresh clone works without any local file. Setup is one script per OS that no longer writes .env.local (packages/web/.env.local.example is an explicit opt-in), test and demo are one command each with the Windows 1.18 validator shim hidden in scripts/local-validator.mjs, .gitattributes normalises line endings, qa:dry is the non-counting run, LICENSE and CLAUDE.md exist, and git grep finds no secrets, keypairs or machine paths in tracked files (the ignored .local/ and the empty migrations/ never reach the repository). What keeps it under 9: CI still proves only the Node side, so the program build/tests and the Unix path of setup.sh, test-program.mjs and demo-local.mjs have never run anywhere but the author's Windows machine; sync:idl is still an inline node -e; there is no root qa:quick or an engines field; and the committed demo bundle is a run that failed for lack of SOL, so the one-command static publish currently ships a tour that never reached settlement.
 
 - ✅ devex-scripts: root scripts: build:program, test:program, demo, deploy:devnet, qa
 - ✅ devex-lockfiles: Cargo.lock and package-lock.json are present and not ignored

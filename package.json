@@ -16,11 +16,12 @@
     "world:generate": "npm run generate -w @greenroom/world",
     "test": "npm run test:program && npm test --workspaces --if-present",
     "qa": "tsx qa/src/run.ts",
-    "sync:idl": "node -e \"const fs=require('fs');for(const d of ['packages/sdk/idl','packages/web/src/idl']){fs.mkdirSync(d,{recursive:true});fs.copyFileSync('target/idl/greenroom.json',d+'/greenroom.json');fs.copyFileSync('target/types/greenroom.ts',d+'/greenroom.ts');}console.log('IDL synced')\"",
+    "sync:idl": "node scripts/sync-idl.mjs",
     "demo": "node scripts/demo-local.mjs",
     "demo:fast": "node scripts/demo-local.mjs --fast",
     "demo:devnet": "npm run demo -w @greenroom/agents -- --rpc https://api.devnet.solana.com",
-    "qa:dry": "tsx qa/src/run.ts --no-loop"
+    "qa:dry": "tsx qa/src/run.ts --no-loop",
+    "qa:quick": "tsx qa/src/run.ts --no-loop --skip program-tests,agents-e2e"
   },
   "devDependencies": {
     "@anchor-lang/core": "^1.2.1",
@@ -32,5 +33,8 @@
     "ts-mocha": "^10.0.0",
     "tsx": "^4.23.0",
     "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.18"
   }
 }

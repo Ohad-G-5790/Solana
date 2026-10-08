@@ -14,7 +14,7 @@ Working name: **Greenroom** (the backstage room where band, venue and crew meet 
 
 | Topic | Decision |
 |---|---|
-| LLM access | No API key, Claude subscription only. Agents call Claude through the local Claude Code CLI / Agent SDK; a rule-based fallback keeps the system running without it. |
+| LLM access | No API key at kickoff, Claude subscription only. Anthropic's terms do not allow app agents on a subscription login, so the agents use a Claude Console API key when one is set and a deterministic heuristic brain otherwise (what tests, QA and the recorded runs use). |
 | Currency | SOL |
 | Deal terms | 50% threshold, deadline before the show, band 70 / venue 30, permissionless cranks |
 | Proof of past concerts | On-chain track record. Seed world: 100 bands, real venues in major cities of Germany, Austria, France, Poland and Czechia (`data/venues.json`, capacities approximate) |
@@ -97,7 +97,7 @@ Two Windows quirks to bake into the repo: list the program explicitly in the wor
 ## Open questions (answered defaults in bold)
 
 1. Which hackathon, exact deadline and timezone, and what must be submitted (repo, demo video, pitch deck, live link, track)?
-2. Do we have an Anthropic API key for the agents? **Needed for real LLM agents; otherwise agents fall back to rule-based logic.**
+2. Do we have an Anthropic API key for the agents? **Answered: no key yet; the agents run on the heuristic brain and switch to Claude when a Console key is set.**
 3. Ticket currency: **SOL for the MVP**, devnet USDC as a stretch.
 4. Default deal terms: **threshold 50%, deadline 30 days before the show (compressed in the demo), split band 70 / venue 30, anyone can crank refunds and settlement once time conditions are met.**
 5. Proof of past concerts: **on-chain track record from settled shows, seeded for the demo band.** Off-chain proof links as a stretch.
