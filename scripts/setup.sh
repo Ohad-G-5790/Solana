@@ -26,11 +26,8 @@ npm install --no-audit --no-fund
 echo "== program =="
 npm run build:program
 
-echo "== dashboard env =="
-if [ ! -f packages/web/.env.local ]; then
-  cp packages/web/.env.local.example packages/web/.env.local
-  echo "wrote packages/web/.env.local (dashboard -> local validator; delete it to use devnet)"
-fi
+echo "== dashboard =="
+echo "The dashboard reads devnet by default. To point it at a local validator: cp packages/web/.env.local.example packages/web/.env.local"
 
 echo
 echo "Ready. Next:"

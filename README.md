@@ -2,6 +2,8 @@
 
 **Tours that book themselves, with the deal on Solana.**
 
+Live: [dashboard](https://ohad-g-5790.github.io/Solana/) · [program on devnet](https://explorer.solana.com/address/4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8?cluster=devnet) · [source](https://github.com/Ohad-G-5790/Solana)
+
 Every band, venue, fan and crew member has an AI agent. A band's agent takes a brief ("November, Central Europe, eight shows, we draw 400"), negotiates with venue agents, plans a route that makes geographic sense, and opens ticket sales months early. Fans pay into an on-chain escrow per show. Each show carries a sell-through threshold and a deadline: hit it and the show is confirmed; miss it and every fan is refunded automatically. After the show date the escrow is split between the band, the venue and the crew the band hired. No booker, no promoter, no deposit risk, and the band's settled shows become a track record that venues can verify on-chain.
 
 Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 2026.
@@ -25,10 +27,10 @@ git clone https://github.com/Ohad-G-5790/Solana.git greenroom && cd greenroom
 bash scripts/setup.sh                 # Windows: powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 npm run test:program                  # program tests on a local validator (~2 min)
 npm run demo:fast -- --keep           # agents book a tour end to end on a local validator (~4 min), validator stays up
-npm run dev -w @greenroom/web         # dashboard at http://localhost:3000, pointed at that validator
+npm run dev -w @greenroom/web         # dashboard (reads devnet by default; see below for the local validator)
 ```
 
-`npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. The setup script writes `packages/web/.env.local` pointing the dashboard at the local validator; delete it to point at devnet. Without `--keep` the demo stops its validator when it finishes, and the dashboard then shows the recorded run from `packages/web/public/demo`.
+`npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. To watch a local run in the dashboard, copy `packages/web/.env.local.example` to `packages/web/.env.local` so it reads the local validator; without that file it reads devnet, where the program is deployed, and shows the recorded run from `packages/web/public/demo`.
 
 ### Devnet
 

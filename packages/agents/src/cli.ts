@@ -17,7 +17,7 @@ if (existsSync(envFile)) {
 }
 
 /**
- * npm run demo -w @greenroom/agents -- [--rpc http://127.0.0.1:8899] [--band <id>]
+ * npm run demo -w @greenroom/agents -- [--rpc https://api.devnet.solana.com] [--band <id>]
  *   [--shows 8] [--countries DE,AT,FR,PL,CZ] [--deadline 60] [--show 120]
  *   [--history] [--brain heuristic|claude] [--max-venues 40] [--fast]
  */
@@ -28,7 +28,7 @@ function arg(name: string, def?: string): string | undefined {
   return v && !v.startsWith("--") ? v : "true";
 }
 
-const rpcUrl = arg("rpc", process.env.GREENROOM_RPC_URL ?? "http://127.0.0.1:8899")!;
+const rpcUrl = arg("rpc", process.env.GREENROOM_RPC_URL ?? "https://api.devnet.solana.com")!;
 const walletPath = arg("wallet", process.env.ANCHOR_WALLET ?? join(homedir(), ".config", "solana", "id.json"))!;
 const payer = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(walletPath, "utf8"))));
 const fast = arg("fast") === "true";

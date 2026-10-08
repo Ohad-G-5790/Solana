@@ -3,7 +3,7 @@
 ## Repository layout (monorepo, npm workspaces)
 
 ```
-L:\Solana Project\
+greenroom/   (repository root)
   Anchor.toml  Cargo.toml  rust-toolchain.toml   # Anchor workspace root
   programs/greenroom/                           # on-chain program (Rust, Anchor 1.2.1)
   tests/                                        # program integration tests (mocha + solana-test-validator)

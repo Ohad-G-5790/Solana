@@ -103,4 +103,4 @@ Two Windows quirks to bake into the repo: list the program explicitly in the wor
 5. Proof of past concerts: **on-chain track record from settled shows, seeded for the demo band.** Off-chain proof links as a stretch.
 6. Frontend: **full dashboard with wallet buy button.**
 7. Crew/service-provider layer: **designed into the split list from day one, UI only if time allows.**
-8. Project name: **Roadie** unless you prefer another.
+8. Project name: decided later the same day: **Greenroom** ("Roadie" was rejected as too generic).
