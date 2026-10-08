@@ -76,6 +76,7 @@ qa/                     QA bot (checks, rubric, reports)
 scripts/                setup, local validator, test and demo runners
 data/                   venues.json, generated runs
 docs/                   kickoff, spec, plan, QA rubric, design system, demo script, architecture
+media/promo/            five 30-second promo videos (motion graphics) and their renderer
 ```
 
 ## QA gate

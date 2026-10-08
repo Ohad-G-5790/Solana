@@ -14,3 +14,4 @@ packages/web/.next
 packages/web/out
 *.log
 .local
+media/promo/out/stills
