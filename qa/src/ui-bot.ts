@@ -316,11 +316,27 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       const h1 = (await page.locator("h1").first().textContent()) ?? "";
       const connectBtn = await page.getByRole("button", { name: /connect wallet|select wallet/i }).filter({ visible: true }).count();
       const personal = await page.locator(".stats, .wallet-panel, .itinerary").count();
+      const notice = await page.locator(".demo-notice").count();
+      // the sign-up, when the build has an endpoint: the address goes out and the visitor is thanked
+      let signup = "no form in this build";
+      if (await page.locator(".demo-notice form").count()) {
+        let posted = "";
+        await page.route(/script\.google\.com|formspree|signup/, async (r) => {
+          posted = r.request().postData() ?? "";
+          await r.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' });
+        });
+        await page.getByLabel("Your email").fill("fan@example.com");
+        await page.getByRole("button", { name: /notify me/i }).click();
+        const thanked = await page.getByText(/thanks/i).waitFor({ timeout: 5000 }).then(() => true, () => false);
+        signup = thanked && posted.includes("fan%40example.com") ? "ok" : `sent "${posted}", thanked: ${thanked}`;
+      }
       await shot(page, "1-public");
       await page.close();
       if (!connectBtn) return `no "Connect wallet" button on the first screen (h1: ${h1})`;
       if (connectBtn > 1) return `${connectBtn} connect buttons compete on the first screen`;
       if (personal) return `${personal} band-data blocks are visible before any wallet is connected`;
+      if (!notice) return "no 'This is a demo version' notice";
+      if (signup !== "ok" && signup !== "no form in this build") return `the email sign-up does not work: ${signup}`;
       return null;
     });
 

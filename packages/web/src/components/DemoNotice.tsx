@@ -74,7 +74,7 @@ export function DemoNotice() {
               onChange={(e) => setEmail(e.target.value)}
               aria-label="Your email"
             />
-            <button className="btn primary small" disabled={state === "sending"}>
+            <button className="btn outline small" disabled={state === "sending"}>
               {state === "sending" ? "Sending…" : "Notify me"}
             </button>
             {state === "error" ? <span className="micro bad">That did not go through; try again.</span> : null}
