@@ -11,6 +11,7 @@ import { short } from "@/lib/format";
 import { getApprovals } from "@/lib/run";
 import { useBandSession } from "./BandSession";
 import { ConnectScreen } from "./Connect";
+import { Landing } from "./Landing";
 
 /** Pages that are about one band; they need a connected wallet (or demo mode). */
 const BAND_PAGES = ["/", "/approvals", "/band", "/feed"];
@@ -44,7 +45,22 @@ export function Shell({ children }: { children: ReactNode }) {
       clearInterval(t);
     };
   }, [ownRun]);
-  const gated = (BAND_PAGES.includes(path) || path.startsWith("/tour")) && !session.wallet && !(session.guest && !path.startsWith("/tour"));
+  const bandPage = BAND_PAGES.includes(path) || path.startsWith("/tour");
+  // Visitors see the pitch, not the app: the menu appears once a wallet connects or they explore the demo band.
+  if (!session.wallet && !session.guest)
+    return (
+      <div className="public">
+        <header className="public-top">
+          <Link href="/" className="brand">
+            <span className="dot" /> Greenroom
+          </Link>
+          {session.reconnecting ? null : <WalletButton>Connect wallet</WalletButton>}
+        </header>
+        <main className="public-main">{!bandPage ? children : session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <Landing />}</main>
+      </div>
+    );
+  // the demo band cannot create tours: that takes your own wallet
+  const gated = path.startsWith("/tour") && !session.wallet;
   const who = session.wallet ? (session.profile ? session.profile.name : short(session.wallet)) : session.guest ? "demo band" : null;
   return (
     <div className="shell">
@@ -80,9 +96,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   </button>
                 ) : null}
               </span>
-            ) : (
-              <span className="muted small">AI agents negotiate the tour; you approve; the deal lives on Solana.</span>
-            )}
+            ) : null}
           </div>
           {/* the connect screen has its own button; one call to action at a time */}
           {gated ? null : <WalletButton>{session.wallet ? undefined : "Connect wallet"}</WalletButton>}

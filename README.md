@@ -49,7 +49,7 @@ From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper
 
 The route preview asks whether the tour should finish near the first city (the default: the stop closest to home is played last) and lets you move stops earlier or later or drop them; days, drives and the drive home update as you go, compared with the agent's suggestion. The **Band record** shows a 0–10 reputation computed only from the on-chain record (fans per played show and shows played, both on a log scale: a stadium star with hundreds of shows is a 10). The `devnet-demo` workflow with `band = mine` and `history = only` plays a short past tour as your band to build that record.
 
-The site shows a "This is a demo version" notice with an email sign-up for the full release. Sign-ups land in a Google Sheet through a small Apps Script web app: paste `scripts/signup-sheet.gs` into the sheet (Extensions → Apps Script), deploy it as a web app that anyone can call, and put its URL in the repository variable `GREENROOM_SIGNUP_URL`. Each sign-up becomes a row (time, email, source), repeats are added once. Any other endpoint that takes a POSTed `email` field (Formspree and the like) works too; without one the notice shows without the form.
+Visitors land on a short pitch (today versus with Greenroom, how it works) with a large "This is a demo version" email sign-up for the full release; the app's menu appears once a wallet connects or they explore the demo band, and inside the app a slim notice keeps the sign-up at hand. Sign-ups land in a Google Sheet through a small Apps Script web app: paste `scripts/signup-sheet.gs` into the sheet (Extensions → Apps Script), deploy it as a web app that anyone can call, and put its URL in the repository variable `GREENROOM_SIGNUP_URL`. Each sign-up becomes a row (time, email, source), repeats are added once. Any other endpoint that takes a POSTed `email` field (Formspree and the like) works too; without one the notice shows without the form.
 
 Developers can still run the agents as their own band from a terminal (`npm run demo:devnet -- --band-keypair <file> --band-name ... --genre ... --draw ... --home-city ... --approve`); keep key files out of the repository.
 
@@ -126,7 +126,7 @@ docs/                   kickoff, spec, plan, QA rubric, design system, demo scri
 
 The **UI bot** (`qa/src/ui-bot.ts`, `npm run ui-bot`) checks that the dashboard is intuitive, not how it looks. It builds the static site and drives it in Chromium with a test wallet that cannot sign and a faked devnet. Its checks:
 
-- the first screen is public, with a single connect button
+- the first screen is a short pitch with the email sign-up and a single connect button; no app menu until a wallet connects or the demo is opened
 - connecting shows that wallet's band, with its address in the right case
 - a band without a tour sees one obvious next step
 - a tour takes four answers and shows the route, the drive home, money and risk before anything is booked, and the band can reorder it

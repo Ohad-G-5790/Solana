@@ -1046,13 +1046,13 @@ input[type="checkbox"] {
   width: 36px;
   height: 36px;
 }
-.welcome .steps {
+.steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 10px;
   margin-top: 32px;
 }
-.welcome .steps > div {
+.steps > div {
   background: var(--surface);
   border-radius: 8px;
   padding: 14px;
@@ -1221,6 +1221,239 @@ input[type="checkbox"] {
 .tile:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* ---------- landing (visitors without a wallet or the demo band) ---------- */
+.public {
+  min-height: 100vh;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+.public-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 0;
+}
+.public-top .brand {
+  padding: 0;
+}
+.public-top .brand:hover {
+  text-decoration: none;
+}
+.landing section {
+  margin: 0 auto;
+}
+.landing .hero {
+  max-width: 900px;
+  padding: 56px 0 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.landing .hero h1 {
+  margin-top: 18px;
+  font-size: clamp(32px, 5.6vw, 54px);
+  text-wrap: balance;
+  line-height: 1.08;
+  letter-spacing: -0.5px;
+}
+.landing .lead {
+  margin-top: 18px;
+  max-width: 600px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+.pill.accent {
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  background: transparent;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.signup-box {
+  margin-top: 32px;
+  width: 100%;
+  max-width: 620px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-heavy);
+  scroll-margin-top: 24px;
+}
+.signup-box > p {
+  font-size: 16px;
+  line-height: 1.45;
+}
+.signup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.signup.big {
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.signup.big .input {
+  flex: 1 1 260px;
+  max-width: 380px;
+  font-size: 16px;
+  padding: 15px 22px;
+}
+.signup-done {
+  margin-top: 14px;
+  color: var(--accent);
+}
+.hero-more {
+  margin-top: 20px;
+}
+.glimpse {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.glimpse-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface-mid);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.glimpse-msg.band {
+  border-bottom-left-radius: 4px;
+}
+.glimpse-msg.venue {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  background: var(--card);
+}
+.glimpse-msg.you {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+}
+.glimpse-msg.you .muted {
+  color: rgba(0, 0, 0, 0.6);
+}
+.landing .pitch {
+  max-width: 900px;
+  padding: 48px 0 8px;
+}
+.landing .pitch h2,
+.landing .closing h2 {
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-weight: 700;
+}
+.landing .pitch > p {
+  margin-top: 8px;
+  font-size: 15px;
+}
+.compare {
+  margin-top: 22px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 170px 1fr 1fr;
+  gap: 20px;
+  padding: 16px 20px;
+  border-top: 1px solid #000;
+  line-height: 1.45;
+}
+.compare-row.head {
+  border-top: 0;
+  padding-bottom: 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.compare-row.head > span:last-child {
+  color: var(--accent);
+}
+.compare .today {
+  color: var(--text-muted);
+}
+.compare .ours {
+  color: var(--text);
+}
+.landing .steps {
+  margin-top: 22px;
+  gap: 12px;
+}
+.landing .steps > div {
+  padding: 18px;
+  border-radius: 12px;
+  gap: 8px;
+}
+.step-no {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.landing .closing {
+  max-width: 640px;
+  padding: 64px 0 0;
+  text-align: center;
+}
+.landing .closing > p.muted {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+@media (max-width: 720px) {
+  .public {
+    padding: 0 16px 48px;
+  }
+  .landing .hero {
+    padding-top: 28px;
+  }
+  .signup-box {
+    padding: 18px 16px;
+  }
+  .compare-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .compare-row.head {
+    display: none;
+  }
+  .compare .today::before {
+    content: "Today: ";
+    font-weight: 700;
+  }
+  .compare .ours::before {
+    content: "With Greenroom: ";
+    font-weight: 700;
+    color: var(--accent);
+  }
 }
 
 /* ---------- demo notice ---------- */
