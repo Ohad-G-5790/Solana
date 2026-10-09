@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { SIGNUP_URL } from "@/lib/config";
+import { BASE_PATH, SIGNUP_URL } from "@/lib/config";
 import { useBandSession } from "./BandSession";
 import { RouteMap, type MapStop } from "./RouteMap";
 import { SignupForm } from "./Signup";
@@ -40,7 +40,19 @@ const STEPS: { title: string; text: string; icon: ReactNode }[] = [
 ];
 
 /** Names the full version may work with. Listed as potential partners: none of them is confirmed. */
-const PARTNERS = ["Solana", "Superteam Germany", "Fuse Wallet", "Squads", "Pigeoning Productions", "Nomads XYZ", "Jupiter", "Solflare", "Phantom", "Backpack", "Bonk"];
+const PARTNERS: { name: string; logo?: string }[] = [
+  { name: "Solana", logo: "solana" },
+  { name: "Superteam Germany" },
+  { name: "Fuse Wallet" },
+  { name: "Squads", logo: "squads" },
+  { name: "Pigeoning Productions" },
+  { name: "Nomads XYZ" },
+  { name: "Jupiter", logo: "jupiter" },
+  { name: "Solflare", logo: "solflare" },
+  { name: "Phantom", logo: "phantom" },
+  { name: "Backpack", logo: "backpack" },
+  { name: "Bonk" },
+];
 
 /** Facts about the product, not market statistics. */
 const FACTS = [
@@ -219,19 +231,25 @@ export function Landing() {
         <p className="muted">The teams and communities we would like to build the full version with.</p>
         <ul className="partners">
           {PARTNERS.map((p) => (
-            <li key={p}>
-              <span className="monogram" aria-hidden>
-                {p
-                  .split(" ")
-                  .slice(0, 2)
-                  .map((w) => w[0])
-                  .join("")}
-              </span>
-              {p}
+            <li key={p.name}>
+              {p.logo ? (
+                // logos live in public/partners/<logo>.svg
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="monogram" src={`${BASE_PATH}/partners/${p.logo}.svg`} alt="" width={34} height={34} />
+              ) : (
+                <span className="monogram" aria-hidden>
+                  {p.name
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((w) => w[0])
+                    .join("")}
+                </span>
+              )}
+              {p.name}
             </li>
           ))}
         </ul>
-        <p className="micro muted">Potential partners only: no partnership is confirmed, and names belong to their owners.</p>
+        <p className="micro muted">Potential partners only: no partnership is confirmed, and names and logos belong to their owners.</p>
       </section>
 
       <section className="closing">
