@@ -247,6 +247,8 @@ export async function newPage(browser: Browser, fake: Fake, width = 1280, root =
         }
         case "getSignaturesForAddress":
           return [];
+        case "getLatestBlockhash":
+          return { ...ctx, value: { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 100 } };
         case "getSlot":
           return 1;
         case "getBlockTime":
@@ -391,6 +393,13 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.getByRole("button", { name: /later$/ }).nth(1).click();
       const after = (await page.locator(".itinerary .stop .city").allTextContents()).join(" → ");
       const compared = (await page.locator("#your-route").textContent())?.includes("Your order") ?? false;
+      // Book: the tour is packed into transactions and handed to the wallet (the test wallet refuses to sign)
+      await page.getByRole("button", { name: /book this tour/i }).click();
+      const bookError = await page
+        .locator("p.bad")
+        .first()
+        .textContent({ timeout: 15_000 })
+        .catch(() => "no answer");
       await page.close();
       if (questions !== 4) return `${questions} questions instead of 4`;
       if (primaries !== 1) return `${primaries} primary buttons on the questions step (want exactly one: Plan my tour)`;
@@ -398,6 +407,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (!money) return "the route preview does not say what the tour earns or risks";
       if (!homeLine) return "the route preview does not say how far the last stop is from home";
       if (before === after || !compared) return `moving a stop does not change the route or compare it (${before} / ${after})`;
+      if (!/cannot sign|cancelled/i.test(bookError ?? "")) return `booking did not reach the wallet: ${bookError}`;
       return null;
     });
 
