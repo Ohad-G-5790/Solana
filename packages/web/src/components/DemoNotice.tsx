@@ -7,8 +7,9 @@ const KEY = "greenroom.demo-notice";
 
 /**
  * "This is a demo version" with an email sign-up for the full release. The
- * site is static, so the address goes to a form service (SIGNUP_URL, any
- * endpoint that takes a POSTed `email` field, e.g. Formspree). Without one the
+ * site is static, so the address goes to a form endpoint (SIGNUP_URL): the
+ * Google Sheet's Apps Script web app (scripts/signup-sheet.gs) or any service
+ * that takes a POSTed `email` field, e.g. Formspree. Without one the
  * notice still shows, without the form. Closing it hides it for this browser.
  */
 export function DemoNotice() {
@@ -38,8 +39,16 @@ export function DemoNotice() {
     if (!SIGNUP_URL || state === "sending") return;
     setState("sending");
     try {
-      const r = await fetch(SIGNUP_URL, { method: "POST", headers: { Accept: "application/json" }, body: new URLSearchParams({ email, source: "greenroom-demo" }) });
-      setState(r.ok ? "done" : "error");
+      const body = new URLSearchParams({ email, source: "greenroom-demo" });
+      if (/script\.google\.com/.test(SIGNUP_URL)) {
+        // a Google Apps Script web app (scripts/signup-sheet.gs) answers through a redirect the browser
+        // will not let a page read; the row is written all the same, so a sent request counts
+        await fetch(SIGNUP_URL, { method: "POST", mode: "no-cors", body });
+        setState("done");
+      } else {
+        const r = await fetch(SIGNUP_URL, { method: "POST", headers: { Accept: "application/json" }, body });
+        setState(r.ok ? "done" : "error");
+      }
     } catch {
       setState("error");
     }

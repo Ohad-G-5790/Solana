@@ -49,7 +49,7 @@ From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper
 
 The route preview asks whether the tour should finish near the first city (the default: the stop closest to home is played last) and lets you move stops earlier or later or drop them; days, drives and the drive home update as you go, compared with the agent's suggestion. The **Band record** shows a 0–10 reputation computed only from the on-chain record (fans per played show and shows played, both on a log scale: a stadium star with hundreds of shows is a 10). The `devnet-demo` workflow with `band = mine` and `history = only` plays a short past tour as your band to build that record.
 
-The site shows a "This is a demo version" notice. To collect emails for the full release, set the repository variable `GREENROOM_SIGNUP_URL` to a form endpoint that accepts a POSTed `email` field (Formspree, Getform, Basin, a Google Apps Script web app); without it the notice shows without the form.
+The site shows a "This is a demo version" notice with an email sign-up for the full release. Sign-ups land in a Google Sheet through a small Apps Script web app: paste `scripts/signup-sheet.gs` into the sheet (Extensions → Apps Script), deploy it as a web app that anyone can call, and put its URL in the repository variable `GREENROOM_SIGNUP_URL`. Each sign-up becomes a row (time, email, source), repeats are added once. Any other endpoint that takes a POSTed `email` field (Formspree and the like) works too; without one the notice shows without the form.
 
 Developers can still run the agents as their own band from a terminal (`npm run demo:devnet -- --band-keypair <file> --band-name ... --genre ... --draw ... --home-city ... --approve`); keep key files out of the repository.
 
