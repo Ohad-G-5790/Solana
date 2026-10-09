@@ -1,54 +1,82 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { SIGNUP_URL } from "@/lib/config";
 import { useBandSession } from "./BandSession";
+import { RouteMap, type MapStop } from "./RouteMap";
 import { SignupForm } from "./Signup";
 
-/** Today versus with Greenroom: the pains a touring band knows, one row each. */
+/** Today versus with Greenroom: the pains a touring band knows, one line each side. */
 const PAINS = [
+  { what: "Finding venues", today: "Dozens of emails, one venue at a time, then weeks of waiting.", ours: "Your agent asks every venue along the way at once and compares the offers." },
+  { what: "Planning the route", today: "Maps, spreadsheets, and an 800 km drive home after the last show.", ours: "Short drives, a day off after three shows, a last stop near home." },
+  { what: "A half-empty room", today: "You find out on the night, after paying for the van and the hotel.", ours: "A show that misses its ticket target is called off early. Every fan is refunded." },
+  { what: "Getting paid", today: "Chasing the door split for weeks after the show.", ours: "Band, venue and crew are paid automatically when the show settles." },
+  { what: "The deal", today: "A handshake and a long email thread.", ours: "Terms both sides sign. Nothing is booked before you say yes." },
+];
+
+const STEPS: { title: string; text: string; icon: ReactNode }[] = [
   {
-    what: "Finding venues",
-    today: "Dozens of emails, one venue at a time, then weeks of waiting for answers.",
-    greenroom: "Your agent asks every venue along the way at once and compares the offers for you.",
+    title: "Answer four questions",
+    text: "How many people you bring, the ticket price, where to start, how long to go.",
+    icon: <path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" />,
   },
   {
-    what: "Planning the route",
-    today: "Maps, spreadsheets, and an 800 km drive home after the last show.",
-    greenroom: "Short drives, a day off after three shows, and a last stop near home. Move stops around and see the difference.",
+    title: "Approve the route",
+    text: "Venue agents make offers. You see the map, the dates and the drives, and move stops around.",
+    icon: <path d="M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h5a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h5" />,
   },
   {
-    what: "A half-empty room",
-    today: "You find out on the night, after paying for the van, the fuel and the hotel.",
-    greenroom: "Every show has a ticket target. Miss it and the show is called off early, and every fan is refunded automatically.",
+    title: "Sell or save the date",
+    text: "Fans pay into a safe. If a show misses its target, every fan gets their money back.",
+    icon: <path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6zM8.5 12l2.5 2.5 4.5-5" />,
   },
   {
-    what: "Getting paid",
-    today: "Chasing the door split for weeks after the show.",
-    greenroom: "Band, venue and crew are paid automatically the moment the show settles.",
-  },
-  {
-    what: "The deal",
-    today: "A handshake and a long email thread.",
-    greenroom: "Terms both sides sign, kept on Solana. Nothing is booked before you say yes.",
+    title: "Get paid",
+    text: "After the show the ticket money is split between band, venue and crew, automatically.",
+    icon: <path d="M3 7h18v10H3zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 10v4M18 10v4" />,
   },
 ];
 
-const STEPS = [
-  { title: "Answer four questions", text: "How many people you bring, the ticket price, where to start, how long to go." },
-  { title: "Approve the route", text: "Venue agents make offers; you see the map, the dates and the drives, and change the order if you like." },
-  { title: "Sell or save the date", text: "Fans pay into a safe. A show that misses its target is cancelled and every fan gets their money back." },
-  { title: "Get paid", text: "After the show the ticket money is split between band, venue and crew, automatically." },
+/** Names the full version may work with. Listed as potential partners: none of them is confirmed. */
+const PARTNERS = ["Solana", "Superteam Germany", "Fuse Wallet", "Squads", "Pigeoning Productions", "Nomads XYZ", "Jupiter", "Solflare", "Phantom", "Backpack", "Bonk"];
+
+/** Facts about the product, not market statistics. */
+const FACTS = [
+  { big: "4", text: "questions to plan a whole tour" },
+  { big: "1", text: "tap to approve the route" },
+  { big: "100%", text: "of the ticket money back to fans if a show misses its target" },
+  { big: "0", text: "emails to venues" },
+];
+
+/** A sample tour for the picture: Berlin round trip, finishing in Leipzig. */
+const SAMPLE: MapStop[] = [
+  { key: "ber", label: "Berlin", lat: 52.52, lng: 13.405 },
+  { key: "ham", label: "Hamburg", lat: 53.551, lng: 9.994 },
+  { key: "cgn", label: "Cologne", lat: 50.938, lng: 6.96 },
+  { key: "fra", label: "Frankfurt", lat: 50.11, lng: 8.682 },
+  { key: "stu", label: "Stuttgart", lat: 48.776, lng: 9.183 },
+  { key: "muc", label: "Munich", lat: 48.137, lng: 11.575 },
+  { key: "prg", label: "Prague", lat: 50.075, lng: 14.437 },
+  { key: "lej", label: "Leipzig", lat: 51.34, lng: 12.375 },
 ];
 
 /** What it sounds like when the agents work: an illustration, not a recording. */
-const GLIMPSE = [
+const CHAT = [
   { who: "Your agent", tone: "band", text: "8 shows in 14 days from Berlin, €30 tickets. Who has a free night?" },
   { who: "Venue · Hamburg", tone: "venue", text: "Friday works. 400 capacity, 70% of the door to the band." },
-  { who: "Venue · Prague", tone: "venue", text: "We pass: our room is too big for this draw." },
-  { who: "Your agent", tone: "band", text: "Route ready: 8 venues, finishing in Leipzig, 190 km from home. Book it?" },
-  { who: "You", tone: "you", text: "Approved." },
+  { who: "Venue · Vienna", tone: "venue", text: "We pass: too far off this route." },
+  { who: "Venue · Leipzig", tone: "venue", text: "Saturday is yours. 350 capacity." },
 ];
+
+function Icon({ children }: { children: ReactNode }) {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {children}
+    </svg>
+  );
+}
 
 /**
  * The first page for visitors: the pitch and the sign-up for the full version.
@@ -63,94 +91,166 @@ export function Landing() {
     // creating a tour needs your own wallet; the demo band lives on the dashboard
     if (path.replace(/\/$/, "") !== "") router.push("/");
   };
-  const demoButton = (label: string) =>
-    runAuthority ? (
-      <button className="btn outline big" onClick={explore}>
-        {label}
-      </button>
-    ) : null;
 
   return (
     <div className="landing">
       <section className="hero">
-        <span className="pill accent">Demo version</span>
-        <h1>
+        <div className="glow" aria-hidden />
+        <span className="pill accent rise">Demo version · live on Solana devnet</span>
+        <h1 className="rise d1">
           Your tour, booked by agents.
           <br />
-          Approved by you.
+          <span className="green">Approved by you.</span>
         </h1>
-        <p className="lead">
-          Greenroom&apos;s AI agents find the venues, plan the route and negotiate the deals. You approve with one tap. Tickets, refunds and payouts run by
-          themselves.
-        </p>
-        <div className="signup-box" id="signup">
+        <p className="lead rise d2">AI agents find the venues, plan the route and negotiate the deals. You approve with one tap. Tickets, refunds and payouts run by themselves.</p>
+        <div className="signup-box rise d3" id="signup">
           <p>
             <b>This is a demo version.</b> {SIGNUP_URL ? "Want the full version once it is out? Leave your email and you will get an update." : "The full version is on its way."}
           </p>
           <SignupForm big />
+          {SIGNUP_URL ? <p className="micro muted">One email when the full version opens. Nothing else.</p> : null}
         </div>
-        <div className="hero-more">{demoButton("Explore the demo band")}</div>
-        <div className="glimpse" aria-label="An example of the agents at work">
-          {GLIMPSE.map((m, i) => (
-            <div key={i} className={`glimpse-msg ${m.tone}`}>
-              <span className="small muted">{m.who}</span>
-              <span>{m.text}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+        {runAuthority ? (
+          <button className="btn outline big rise d3" onClick={explore}>
+            Explore the demo band →
+          </button>
+        ) : null}
 
-      <section className="pitch">
-        <h2>Booking a tour is a second job. It should not be.</h2>
-        <p className="muted">Most bands spend months on the phone and in their inbox before a single ticket is sold. Here is what changes.</p>
-        <div className="compare" role="table" aria-label="Booking a tour today and with Greenroom">
-          <div className="compare-row head" role="row">
-            <span role="columnheader" />
-            <span role="columnheader">Today</span>
-            <span role="columnheader">With Greenroom</span>
+        <div className="window rise d4" aria-label="A sample tour, planned by the agents">
+          <div className="window-bar" aria-hidden>
+            <i />
+            <i />
+            <i />
+            <span>Your route · 8 shows · 14 days</span>
           </div>
-          {PAINS.map((p) => (
-            <div key={p.what} className="compare-row" role="row">
-              <b role="rowheader">{p.what}</b>
-              <span role="cell" className="today">
-                {p.today}
-              </span>
-              <span role="cell" className="ours">
-                {p.greenroom}
-              </span>
+          <div className="window-body">
+            <div className="window-map">
+              <RouteMap stops={SAMPLE} height={560} />
+            </div>
+            <div className="window-chat">
+              {CHAT.map((m, i) => (
+                <div key={i} className={`bubble ${m.tone}`} style={{ animationDelay: `${0.9 + i * 0.55}s` }}>
+                  <span className="who">{m.who}</span>
+                  {m.text}
+                </div>
+              ))}
+              <div className="approve-card" style={{ animationDelay: `${0.9 + CHAT.length * 0.55}s` }}>
+                <span className="who">Your agent</span>
+                <b>Route ready</b>
+                <span className="small muted">8 shows · 1,930 km · ends in Leipzig, 180 km from home</span>
+                <span className="approve" aria-hidden>
+                  Approve
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="facts">
+          {FACTS.map((f) => (
+            <div key={f.big}>
+              <b>{f.big}</b>
+              <span>{f.text}</span>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="pitch">
-        <h2>How it works</h2>
-        <div className="steps">
+      <section className="pitch" id="why">
+        <span className="eyebrow">Why Greenroom</span>
+        <h2>Booking a tour is a second job. It should not be.</h2>
+        <p className="muted">Most bands spend months in their inbox before a single ticket is sold.</p>
+        <div className="versus">
+          <div className="side before">
+            <h3>Without Greenroom</h3>
+            <ul>
+              {PAINS.map((p) => (
+                <li key={p.what}>
+                  <span className="mark no" aria-hidden>
+                    ✕
+                  </span>
+                  <div>
+                    <b>{p.what}</b>
+                    <span>{p.today}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="side after">
+            <h3>With Greenroom</h3>
+            <ul>
+              {PAINS.map((p) => (
+                <li key={p.what}>
+                  <span className="mark yes" aria-hidden>
+                    ✓
+                  </span>
+                  <div>
+                    <b>{p.what}</b>
+                    <span>{p.ours}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="pitch" id="how">
+        <span className="eyebrow">How it works</span>
+        <h2>From four answers to a booked tour.</h2>
+        <ol className="timeline">
           {STEPS.map((s, i) => (
-            <div key={s.title}>
-              <span className="step-no">{i + 1}</span>
+            <li key={s.title}>
+              <span className="step-icon">
+                <Icon>{s.icon}</Icon>
+              </span>
+              <span className="step-no">Step {i + 1}</span>
               <b>{s.title}</b>
               <span className="small muted">{s.text}</span>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
+      </section>
+
+      <section className="pitch" id="partners">
+        <span className="eyebrow">Potential partners</span>
+        <h2>Built in the Solana ecosystem.</h2>
+        <p className="muted">The teams and communities we would like to build the full version with.</p>
+        <ul className="partners">
+          {PARTNERS.map((p) => (
+            <li key={p}>
+              <span className="monogram" aria-hidden>
+                {p
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")}
+              </span>
+              {p}
+            </li>
+          ))}
+        </ul>
+        <p className="micro muted">Potential partners only: no partnership is confirmed, and names belong to their owners.</p>
       </section>
 
       <section className="closing">
-        <h2>Be first on the road</h2>
-        <p className="muted">The full version books real venues with real money. Get a note when it opens, or look around the demo band&apos;s tour now.</p>
-        <div className="row" style={{ justifyContent: "center", marginTop: 18 }}>
-          {SIGNUP_URL ? (
-            <a href="#signup" className="btn primary big">
-              Leave your email
-            </a>
-          ) : null}
-          {demoButton("Try the demo")}
-        </div>
-        <p className="micro muted" style={{ marginTop: 28 }}>
-          The demo runs on Solana devnet with play money: nothing you do here costs real money.
-        </p>
+        <h2>Be first on the road.</h2>
+        <p>The full version books real venues with real money. Get one email when it opens.</p>
+        <SignupForm big source="greenroom-demo-bottom" />
+        {runAuthority ? (
+          <button className="btn outline big" onClick={explore}>
+            Try the demo
+          </button>
+        ) : null}
       </section>
+
+      <footer className="landing-foot">
+        <span className="brand">
+          <span className="dot" /> Greenroom
+        </span>
+        <span className="micro muted">The demo runs on Solana devnet with play money: nothing you do here costs real money.</span>
+      </footer>
     </div>
   );
 }
