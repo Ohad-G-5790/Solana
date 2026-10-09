@@ -33,6 +33,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: devnet-demo
@@ -85,6 +86,11 @@ jobs:
             git pull --rebase origin main && git push && break
             sleep 10
           done
+          # Pushes made with the workflow token do not trigger other workflows,
+          # so rebuild the Pages site explicitly.
+          gh workflow run pages.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Remove the wallet file
         if: always()
         run: rm -f ~/.config/solana/demo.json
