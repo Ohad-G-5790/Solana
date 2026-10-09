@@ -1,13 +1,14 @@
 "use client";
 
 import { toVenueOffer, venueOfferHeuristic } from "@greenroom/agents/offers";
-import { planTour, type PlannedShow, type VenueOffer } from "@greenroom/agents/planner";
+import { planTour, scheduleRoute, type PlannedShow, type VenueOffer } from "@greenroom/agents/planner";
 import type { City } from "@greenroom/world";
 import { BN } from "@anchor-lang/core";
 import { PublicKey, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { bandPda, connection, vaultPda, walletProgram, type BandAccount, type WalletLike } from "./greenroom";
-import type { WorldCity, WorldVenue } from "./run";
+import type { FeedMessage, WorldCity, WorldVenue } from "./run";
 import { APP_REGION, DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO, SALES_SEC } from "./config";
+import { saveStory } from "./story";
 import { venueKeys } from "./venue-keys";
 
 /** How many people the band can bring: the one number the venues care about most. */
@@ -29,6 +30,8 @@ export interface TourAnswers {
   priceEuro: number;
   startCity: string;
   days: number;
+  /** Finish near the first city (a round trip home), not wherever the shortest path ends. */
+  roundTrip?: boolean;
 }
 
 export interface TourPlan {
@@ -38,6 +41,12 @@ export interface TourPlan {
   /** Seed venues on-chain right now (0: the keeper has not registered them yet). */
   registered: number;
   plan: PlannedShow[];
+  /** The agent's suggested order (venue ids), to compare a rearranged route with. */
+  suggested: string[];
+  /** The band's genre, for scoring the offers again when the route changes. */
+  genre: string;
+  /** The negotiation in the agents' words (offers, declines, the plan), for the agent feed. */
+  story: FeedMessage[];
 }
 
 /** Why a plan came back empty, in the band's words. */
@@ -87,10 +96,22 @@ export async function planFromAnswers(a: TourAnswers, band: Pick<BandAccount, "g
   };
   const offers: VenueOffer[] = [];
   let declined = 0;
+  // the negotiation, as the agents would say it: kept with the tour for the agent feed
+  const t0 = Date.now();
+  const story: FeedMessage[] = [];
+  const say = (kind: string, from: string, text: string) => story.push({ id: -1000 - story.length, at: t0 + story.length, kind, from, text });
+  const names: Record<string, string> = { DE: "Germany", AT: "Austria", FR: "France", PL: "Poland", CZ: "Czechia" };
+  say(
+    "tour.request",
+    "band:you",
+    `Asked the venues in ${COUNTRIES.map((c) => names[c] ?? c).join(", ")} for up to ${showsFor(a.days)} shows in ${a.days} days: ${a.draw.toLocaleString()} people a night, €${a.priceEuro} a ticket, starting in ${a.startCity}${a.roundTrip === false ? "" : " and finishing near it"}.`
+  );
   for (const v of candidates) {
     const profile = byId.get(v.id)!.profile;
     if (!registered.has(profile)) continue;
     const d = venueOfferHeuristic(v as never, req);
+    if (d.offer) say("venue.offer", `venue:${v.id}`, `${d.reasoning} Offer: up to ${d.offeredCapacity.toLocaleString()} people, ${d.askBps / 100}% to the venue.`);
+    else say("venue.decline", `venue:${v.id}`, d.reasoning);
     if (d.offer) offers.push(toVenueOffer(v as never, profile, d, a.days));
     else declined++;
   }
@@ -101,11 +122,30 @@ export async function planFromAnswers(a: TourAnswers, band: Pick<BandAccount, "g
     wantedShows: showsFor(a.days),
     windowDays: a.days,
     startCity: a.startCity,
-    thresholdBps: 5000,
-    capacityScale: SAMPLE,
-    minCapacity: MIN_TICKETS,
+    roundTrip: a.roundTrip ?? true,
+    ...SCHEDULE,
   }).map((p) => ({ ...p, capacity: Math.min(MAX_TICKETS, p.capacity) }));
-  return { answers: a, offers, declined, registered: registered.size, plan };
+  if (plan.length)
+    say(
+      "band.plan",
+      "band:you",
+      `${offers.length} venues said yes, ${declined} said no. I picked the best room per city and ordered them by road: ${plan.map((s) => s.city).join(" → ")}.`
+    );
+  return { answers: a, offers, declined, registered: registered.size, plan, suggested: plan.map((s) => s.venueId), genre: band.genre, story };
+}
+
+const SCHEDULE = { thresholdBps: 5000, capacityScale: SAMPLE, minCapacity: MIN_TICKETS };
+
+/**
+ * The band rearranged the route (moved or dropped stops): the same venues'
+ * offers in the band's order, with days, rest days and drives worked out again.
+ */
+export function replan(p: TourPlan, venueIds: string[]): TourPlan {
+  const byId = new Map(p.offers.map((o) => [o.venueId, o]));
+  const route = venueIds.map((id) => byId.get(id)).filter((o): o is VenueOffer => !!o);
+  const band = { genre: p.genre as never, draw: p.answers.draw, targetPriceLamports: p.answers.priceEuro * LAMPORTS_PER_EURO, homeCity: p.answers.startCity };
+  const plan = scheduleRoute({ band, windowDays: p.answers.days, ...SCHEDULE }, route).map((s) => ({ ...s, capacity: Math.min(MAX_TICKETS, s.capacity) }));
+  return { ...p, plan };
 }
 
 const enc = (s: string) => Buffer.from(s);
@@ -249,5 +289,10 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
       throw e;
     }
   }
+  saveStory(tour.toBase58(), [
+    ...p.story,
+    { id: -1, at: Date.now(), kind: "approval.decision", from: "you", text: `You approved the route and booked ${p.plan.length} shows: ${p.plan.map((s) => s.city).join(" → ")}.` },
+  ]);
   return { tour: tour.toBase58(), tourId, shows, signatures };
 }
+

@@ -40,6 +40,10 @@ export interface RunOptions {
   crewPerCity?: number;
   /** Run a short "last year" tour first so the track record is real. */
   history?: boolean;
+  /** Shows in that past tour (default 3). */
+  historyShows?: number;
+  /** Only the past tour: build the band's on-chain record and stop (no current tour). */
+  historyOnly?: boolean;
   brain?: Brain;
   runDir?: string;
   seed?: string;
@@ -219,10 +223,10 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
   // ---------- optional history tour ----------
   if (opts.history) {
     const rec = await client.fetchBand(bandProfile);
-    if (rec.showsCompleted === 0) {
+    if (rec.showsCompleted === 0 || opts.historyOnly) {
       bus.publish({ kind: "note", from: "orchestrator", text: `Replaying last year's tour so ${band.name} has a real on-chain track record.` });
       await runTour(
-        { ...brief, wantedShows: 3, deadlineAfterSec: 25, showAfterSec: 45, tourName: `${band.name} 2025`.slice(0, 32) },
+        { ...brief, wantedShows: opts.historyShows ?? 3, deadlineAfterSec: 25, showAfterSec: 45, tourName: `${band.name} 2025`.slice(0, 32) },
         { hub: opts.payer.publicKey, connection, bandAgent, crank, fans, bus, client, world, crewAddress, log, tickMs: 1000, collectMs: 800, hireCrew: false }
       );
     }
@@ -235,7 +239,9 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
     bus.publish({ kind: "note", from: "orchestrator", text: "Approvals are on: the band agent waits for the band to approve venues, the route and any replacement show in the dashboard." });
     log(`[approvals] waiting for decisions in the dashboard (Approvals page); they are written to ${join(runDir, "decisions.jsonl")}`);
   }
-  const outcome = await runTour(brief, {
+  const outcome: TourOutcome = opts.historyOnly
+    ? { tour: null, shows: [], stats: { proposed: 0, accepted: 0, rejected: 0, confirmed: 0, cancelled: 0, refunded: 0, settled: 0, ticketsSold: 0, crewHired: 0, replacements: 0 } }
+    : await runTour(brief, {
     hub: opts.payer.publicKey,
     connection,
     bandAgent,

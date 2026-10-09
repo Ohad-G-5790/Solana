@@ -18,6 +18,8 @@ export const FANS_PER_TICKET = 20;
 export const APP_REGION = "Greenroom app";
 /** Ticket sales of a dashboard booking run this long before each show's deadline. */
 export const SALES_SEC = 40 * 60;
+/** Where the demo notice sends sign-up emails (a form service endpoint); empty hides the form. */
+export const SIGNUP_URL = process.env.NEXT_PUBLIC_SIGNUP_URL ?? "";
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export function explorerUrl(kind: "address" | "tx", value: string): string {

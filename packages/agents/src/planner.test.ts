@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { generateWorld } from "@greenroom/world";
-import { planTour, scoreOffer, venueAvailability, type VenueOffer } from "./planner.ts";
+import { planTour, scheduleRoute, scoreOffer, venueAvailability, type VenueOffer } from "./planner.ts";
 import { HeuristicBrain } from "./brain.ts";
 import { MessageBus } from "./bus.ts";
 
@@ -110,4 +110,32 @@ test("planTour adds a travel day before a leg too long to drive on a show day", 
   const plan = planTour({ band, offers, cities: world.cities, wantedShows: 2, windowDays: 21, capacityScale: 1 });
   assert.equal(plan.length, 2);
   assert.ok(plan[1].day - plan[0].day >= 2, `Berlin to Paris gets a day in between: days ${plan.map((p) => p.day)}`);
+});
+
+test("planTour with roundTrip finishes near home instead of far away", () => {
+  const offers = [
+    offerFor("berlin", "Berlin", "DE", 400, 52.52, 13.4),
+    offerFor("leipzig", "Leipzig", "DE", 400, 51.34, 12.37),
+    offerFor("dresden", "Dresden", "DE", 400, 51.05, 13.74),
+    offerFor("prague", "Prague", "CZ", 500, 50.08, 14.43),
+    offerFor("vienna", "Vienna", "AT", 450, 48.21, 16.37),
+    offerFor("munich", "Munich", "DE", 400, 48.14, 11.58),
+  ];
+  const home = world.cities.find((c) => c.name === "Berlin")!;
+  const km = (p: { lat: number; lng: number }) => Math.hypot(p.lat - home.lat, (p.lng - home.lng) * 0.62) * 111;
+  const at = (city: string) => offers.find((o) => o.city === city)!;
+  const open = planTour({ band, offers, cities: world.cities, wantedShows: 6, windowDays: 21, capacityScale: 1 });
+  const loop = planTour({ band, offers, cities: world.cities, wantedShows: 6, windowDays: 21, capacityScale: 1, roundTrip: true });
+  assert.equal(loop[0].city, "Berlin");
+  const endOpen = km(at(open[open.length - 1].city));
+  const endLoop = km(at(loop[loop.length - 1].city));
+  assert.ok(endLoop < endOpen, `round trip ends nearer home: ${loop.map((p) => p.city).join(" → ")} vs ${open.map((p) => p.city).join(" → ")}`);
+  assert.ok(endLoop < 250, `last stop within a short drive of home (${Math.round(endLoop)} km)`);
+});
+
+test("scheduleRoute keeps the band's own order and re-plans the days", () => {
+  const route = [offerFor("berlin", "Berlin", "DE", 400, 52.52, 13.4), offerFor("vienna", "Vienna", "AT", 450, 48.21, 16.37), offerFor("leipzig", "Leipzig", "DE", 400, 51.34, 12.37)];
+  const plan = scheduleRoute({ band, windowDays: 21, capacityScale: 1 }, route);
+  assert.deepEqual(plan.map((p) => p.city), ["Berlin", "Vienna", "Leipzig"]);
+  assert.ok(plan[1].distanceFromPrevKm > 400, "the long leg is kept as asked");
 });

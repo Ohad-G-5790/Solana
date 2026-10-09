@@ -17,6 +17,7 @@ const SIZES = [
   { id: "l", label: "800–2,000", min: 801, max: 2000 },
   { id: "xl", label: "2,000+", min: 2001, max: Infinity },
 ];
+const COUNTRY_NAMES: Record<string, string> = { DE: "Germany", AT: "Austria", FR: "France", PL: "Poland", CZ: "Czechia" };
 const MAX_DRIVE = [
   { id: "any", label: "Any distance", minutes: Infinity },
   { id: "3", label: "Within 3 h", minutes: 180 },
@@ -33,22 +34,19 @@ export default function VenuesPage() {
   const [offers, setOffers] = useState<Map<string, VenueChoice>>(new Map());
   const [plan, setPlan] = useState<string[]>([]);
   const [q, setQ] = useState("");
-  const [country, setCountry] = useState("all");
+  const [country, setCountry] = useState<string | null>(null);
+  const [city, setCity] = useState<string | null>(null);
   const [size, setSize] = useState("any");
   const [genre, setGenre] = useState("any");
   const [from, setFrom] = useState("");
   const [maxDrive, setMaxDrive] = useState("any");
   const [sort, setSort] = useState<Sort>("distance");
-  // on a phone each city starts with its two biggest rooms; the rest open on demand
-  const [narrow, setNarrow] = useState(false);
-  const [openCities, setOpenCities] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 640px)");
-    const on = () => setNarrow(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
+  const go = (c: string | null, ci: string | null) => {
+    setCountry(c);
+    setCity(ci);
+    setQ("");
+    window.scrollTo({ top: 0 });
+  };
 
   useEffect(() => {
     void getWorld().then(setWorld);
@@ -76,7 +74,7 @@ export default function VenuesPage() {
 
   const shown = world.venues.filter(
     (v) =>
-      (country === "all" || v.country === country) &&
+
       v.capacity >= sz.min &&
       v.capacity <= sz.max &&
       (genre === "any" || v.genres.includes(genre)) &&
@@ -91,6 +89,12 @@ export default function VenuesPage() {
     return a[0].localeCompare(b[0]);
   });
 
+  const active = [size !== "any" ? SIZES.find((x) => x.id === size)!.label : "", genre !== "any" ? genre : "", maxDrive !== "any" ? MAX_DRIVE.find((m) => m.id === maxDrive)!.label.toLowerCase() : ""].filter(Boolean).join(" · ");
+  const clearFilters = () => {
+    setSize("any");
+    setGenre("any");
+    setMaxDrive("any");
+  };
   const togglePlan = (id: string) => setPlan(plan.includes(id) ? removeFromPlan(id) : addToPlan(id));
 
   return (
@@ -99,8 +103,8 @@ export default function VenuesPage() {
         <div>
           <h1>Venues</h1>
           <p className="muted" style={{ marginTop: 6, maxWidth: 760 }}>
-            {world.venues.length} real venues in {world.cities.length} cities. Filter by size, programme and how far you are willing to drive, then add venues to the
-            route planner. Capacities are approximate seed data; check with the venue.
+            {world.venues.length} real venues in {world.cities.length} cities. Pick a country, then a city, then a room, or search for one by name. Add what you like
+            to the route planner. Capacities are approximate seed data; check with the venue.
           </p>
         </div>
         <Link href="/planner" className="btn outline">
@@ -108,126 +112,194 @@ export default function VenuesPage() {
         </Link>
       </div>
 
-      <div className="toolbar">
-        <input className="input wide" placeholder="Search venue or city" value={q} onChange={(e) => setQ(e.target.value)} />
-        <button className={`chip ${country === "all" ? "on" : ""}`} onClick={() => setCountry("all")}>
-          All
+      {/* country, then city, then the rooms: one decision at a time */}
+      <nav className="crumbs small" aria-label="Where you are">
+        <button className="link-btn small" onClick={() => go(null, null)} aria-current={!country && !city ? "page" : undefined}>
+          All countries
         </button>
-        {countries.map((c) => (
-          <button key={c} className={`chip ${country === c ? "on" : ""}`} onClick={() => setCountry(c)}>
-            {c}
-          </button>
-        ))}
-      </div>
+        {country ? (
+          <>
+            <span className="muted">›</span>
+            <button className="link-btn small" onClick={() => go(country, null)} aria-current={!city ? "page" : undefined}>
+              {COUNTRY_NAMES[country] ?? country}
+            </button>
+          </>
+        ) : null}
+        {city ? (
+          <>
+            <span className="muted">›</span>
+            <b>{city}</b>
+          </>
+        ) : null}
+      </nav>
+
       <div className="toolbar">
-        <select className="select" value={size} onChange={(e) => setSize(e.target.value)} aria-label="Capacity">
-          {SIZES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-        <select className="select" value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Programme">
-          <option value="any">Any programme</option>
-          {genres.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
-        <span className="small muted">Drive from</span>
-        <select className="select" value={from || defaultFrom} onChange={(e) => setFrom(e.target.value)} aria-label="Distance from">
-          {world.cities
-            .map((c) => c.name)
-            .sort()
-            .map((c) => (
-              <option key={c} value={c}>
-                {c}
-                {c === run?.band.homeCity ? " (home)" : ""}
+        <input className="input wide" placeholder="Search any venue or city" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      <details className="filters">
+        <summary className="small">
+          Filters{active ? ` · ${active}` : ""}
+        </summary>
+        <div className="toolbar">
+          <select className="select" value={size} onChange={(e) => setSize(e.target.value)} aria-label="Capacity">
+            {SIZES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
               </option>
             ))}
-        </select>
-        <select className="select" value={maxDrive} onChange={(e) => setMaxDrive(e.target.value)} aria-label="Maximum drive">
-          {MAX_DRIVE.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-        <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort">
-          <option value="distance">Closest first</option>
-          <option value="capacity">Biggest room first</option>
-          <option value="name">A–Z</option>
-        </select>
-      </div>
-      <p className="small muted" style={{ marginBottom: 10 }}>
-        {shown.length} venue{shown.length === 1 ? "" : "s"} in {cities.length} cit{cities.length === 1 ? "y" : "ies"}
-        {origin ? ` · drive times from ${origin.name}` : ""}
-      </p>
+          </select>
+          <select className="select" value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Programme">
+            <option value="any">Any programme</option>
+            {genres.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+          <span className="small muted">Drive from</span>
+          <select className="select" value={from || defaultFrom} onChange={(e) => setFrom(e.target.value)} aria-label="Distance from">
+            {world.cities
+              .map((c) => c.name)
+              .sort()
+              .map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                  {c === run?.band.homeCity ? " (home)" : ""}
+                </option>
+              ))}
+          </select>
+          <select className="select" value={maxDrive} onChange={(e) => setMaxDrive(e.target.value)} aria-label="Maximum drive">
+            {MAX_DRIVE.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+          <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort">
+            <option value="distance">Closest first</option>
+            <option value="capacity">Biggest room first</option>
+            <option value="name">A–Z</option>
+          </select>
+          {active ? (
+            <button className="link-btn small" onClick={clearFilters}>
+              Clear filters
+            </button>
+          ) : null}
+        </div>
+      </details>
 
-      {cities.map(([city, list]) => {
-        const d = driveTo.get(city);
-        const c = world.cities.find((x) => x.name === city);
-        return (
-          <div key={city} className="city-card">
-            <div className="city-head">
-              <div>
-                <h3 style={{ display: "inline" }}>{city}</h3> <span className="muted small">{c?.country}</span>
-                {c?.population ? <span className="muted micro"> · {(c.population / 1e6).toFixed(c.population >= 1e6 ? 1 : 2)}M people</span> : null}
-              </div>
-              <div className="row">
-                {d ? (
-                  <span className={`small ${d.level === "travel-day" ? "bad" : d.level === "long" ? "warn" : "muted"}`}>
-                    {d.km === 0 ? "home city" : `${d.km.toLocaleString()} km · ${formatMinutes(d.minutes)} drive`}
-                  </span>
-                ) : null}
-                <button
-                  className={`btn small ${plan.includes(`city:${city}`) ? "" : "outline"}`}
-                  onClick={() => togglePlan(`city:${city}`)}
-                  aria-pressed={plan.includes(`city:${city}`)}
-                  title="Add the city as a stop and decide the venue later"
-                >
-                  {plan.includes(`city:${city}`) ? "City in plan ✓" : "+ Plan city"}
-                </button>
-              </div>
-            </div>
-            {[...list]
-              .sort((a, b) => b.capacity - a.capacity)
-              .slice(0, narrow && !openCities.has(city) ? 2 : undefined)
-              .map((v) => {
-                const o = offers.get(v.id);
-                const added = plan.includes(v.id);
-                return (
-                  <div key={v.id} className="vrow">
-                    <div style={{ minWidth: 0 }}>
-                      <b>{v.name}</b>{" "}
-                      {v.website ? (
-                        <a className="micro muted" href={v.website} target="_blank" rel="noreferrer">
-                          website ↗
-                        </a>
-                      ) : null}{" "}
-                      {onTour.has(v.id) ? <span className="badge confirmed">{mine ? "on your tour" : "on the demo tour"}</span> : null}{" "}
-                      {o ? <span className="badge rec">offered {o.offeredCapacity} tickets · {o.askBps / 100}%</span> : null}
-                      {v.notes ? <div className="micro muted" style={{ marginTop: 2 }}>{v.notes}</div> : null}
-                    </div>
-                    <span className="small">{v.capacity.toLocaleString()} cap</span>
-                    <span className="small muted hide-sm">{v.genres.join(", ")}</span>
-                    <button className={`btn small ${added ? "" : "outline"}`} onClick={() => togglePlan(v.id)} aria-pressed={added}>
-                      {added ? "In plan ✓" : "+ Plan"}
-                    </button>
-                  </div>
-                );
-              })}
-            {narrow && !openCities.has(city) && list.length > 2 ? (
-              <button className="link-btn small" style={{ marginTop: 6 }} onClick={() => setOpenCities((s) => new Set(s).add(city))}>
-                Show {list.length - 2} more in {city}
+      {q ? (
+        <>
+          <p className="small muted" style={{ marginBottom: 10 }}>
+            {shown.length} venue{shown.length === 1 ? "" : "s"} match “{q}”
+          </p>
+          {cities.map(([c, list]) => cityCard(c, list))}
+        </>
+      ) : !country ? (
+        <div className="tiles">
+          {countries.map((c) => {
+            const vs = shown.filter((v) => v.country === c);
+            const cs = new Set(vs.map((v) => v.city));
+            return (
+              <button key={c} className="tile" onClick={() => go(c, null)} disabled={vs.length === 0}>
+                <b>{COUNTRY_NAMES[c] ?? c}</b>
+                <span className="small muted">
+                  {cs.size} cities · {vs.length} venues
+                </span>
               </button>
-            ) : null}
-          </div>
-        );
-      })}
-      {cities.length === 0 && world.venues.length > 0 ? <p className="muted">No venues match these filters.</p> : null}
+            );
+          })}
+        </div>
+      ) : !city ? (
+        <div className="tiles">
+          {cities
+            .filter(([, list]) => list[0]?.country === country)
+            .map(([c, list]) => {
+              const d = driveTo.get(c);
+              const caps = list.map((v) => v.capacity);
+              return (
+                <button key={c} className="tile" onClick={() => go(country, c)}>
+                  <b>{c}</b>
+                  <span className="small muted">
+                    {list.length} venue{list.length === 1 ? "" : "s"} · {Math.min(...caps).toLocaleString()}–{Math.max(...caps).toLocaleString()} people
+                  </span>
+                  {d ? (
+                    <span className={`micro ${d.level === "travel-day" ? "bad" : d.level === "long" ? "warn" : "muted"}`}>
+                      {d.km === 0 ? "home city" : `${d.km.toLocaleString()} km · ${formatMinutes(d.minutes)} from ${origin?.name}`}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+        </div>
+      ) : (
+        cities.filter(([c]) => c === city).map(([c, list]) => cityCard(c, list))
+      )}
+      {shown.length === 0 && world.venues.length > 0 ? (
+        <p className="muted">
+          No venues match these filters.{" "}
+          <button className="link-btn" onClick={clearFilters}>
+            Clear filters
+          </button>
+        </p>
+      ) : null}
       <DriveNote />
     </div>
   );
+
+  function cityCard(city: string, list: WorldVenue[]) {
+    const d = driveTo.get(city);
+    const c = world.cities.find((x) => x.name === city);
+    return (
+      <div key={city} className="city-card">
+        <div className="city-head">
+          <div>
+            <h3 style={{ display: "inline" }}>{city}</h3> <span className="muted small">{c?.country}</span>
+            {c?.population ? <span className="muted micro"> · {(c.population / 1e6).toFixed(c.population >= 1e6 ? 1 : 2)}M people</span> : null}
+          </div>
+          <div className="row">
+            {d ? (
+              <span className={`small ${d.level === "travel-day" ? "bad" : d.level === "long" ? "warn" : "muted"}`}>
+                {d.km === 0 ? "home city" : `${d.km.toLocaleString()} km · ${formatMinutes(d.minutes)} drive`}
+              </span>
+            ) : null}
+            <button
+              className={`btn small ${plan.includes(`city:${city}`) ? "" : "outline"}`}
+              onClick={() => togglePlan(`city:${city}`)}
+              aria-pressed={plan.includes(`city:${city}`)}
+              title="Add the city as a stop and decide the venue later"
+            >
+              {plan.includes(`city:${city}`) ? "City in plan ✓" : "+ Plan city"}
+            </button>
+          </div>
+        </div>
+        {[...list]
+          .sort((a, b) => b.capacity - a.capacity)
+          .map((v) => {
+            const o = offers.get(v.id);
+            const added = plan.includes(v.id);
+            return (
+              <div key={v.id} className="vrow">
+                <div style={{ minWidth: 0 }}>
+                  <b>{v.name}</b>{" "}
+                  {v.website ? (
+                    <a className="micro muted" href={v.website} target="_blank" rel="noreferrer">
+                      website ↗
+                    </a>
+                  ) : null}{" "}
+                  {onTour.has(v.id) ? <span className="badge confirmed">{mine ? "on your tour" : "on the demo tour"}</span> : null}{" "}
+                  {o ? <span className="badge rec">offered {o.offeredCapacity} tickets · {o.askBps / 100}%</span> : null}
+                  {v.notes ? <div className="micro muted" style={{ marginTop: 2 }}>{v.notes}</div> : null}
+                </div>
+                <span className="small">{v.capacity.toLocaleString()} people</span>
+                <span className="small muted hide-sm">{v.genres.join(", ")}</span>
+                <button className={`btn small ${added ? "" : "outline"}`} onClick={() => togglePlan(v.id)} aria-pressed={added}>
+                  {added ? "In plan ✓" : "+ Plan"}
+                </button>
+              </div>
+            );
+          })}
+      </div>
+    );
+  }
 }

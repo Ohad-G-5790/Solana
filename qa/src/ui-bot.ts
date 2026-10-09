@@ -33,7 +33,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-public-first", title: "the first screen is public: nothing personal until a wallet connects" },
   { id: "ux-connect-shows-mine", title: "connecting a wallet shows that wallet's own data right away" },
   { id: "ux-next-step", title: "a band without a tour sees one obvious next step" },
-  { id: "ux-create-tour", title: "creating a tour takes four answers and shows the route before anything is booked" },
+  { id: "ux-create-tour", title: "creating a tour takes four answers, shows the route and the drive home before anything is booked, and lets the band reorder it" },
   { id: "ux-booked-tour", title: "after booking, the dashboard shows your own tour in fans and euros: planned days, booked by you, what waits on whom, your show pages, your activity only, also on a phone" },
   { id: "ux-fast-paint", title: "every page shows its heading within 1.5 s even when the chain answers slowly" },
   { id: "ux-phone-width", title: "no sideways scrolling at phone width (390 px)" },
@@ -41,7 +41,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-headings-nav", title: "one main heading per page and the current page is marked in the navigation" },
   { id: "ux-plain-language", title: "band-facing pages speak plainly (no lamports, bps, PDAs or shell commands)" },
   { id: "ux-shared-controls", title: "buttons come from the shared set (btn, chip, choice, icon) so they look and behave alike" },
-  { id: "ux-activity-grouped", title: "activity is grouped by kind and starts compact" },
+  { id: "ux-activity-grouped", title: "the agent feed tells the tour in phases, says who speaks, and starts compact" },
   { id: "ux-guest-path", title: "visitors without a wallet can still explore (demo band, venues, route planner)" },
 ];
 
@@ -368,12 +368,20 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.getByRole("button", { name: /book this tour/i }).waitFor({ timeout: 20_000 });
       const stops = await page.locator(".itinerary .stop").count();
       const money = await page.locator(".money").count();
+      const homeLine = (await page.locator("#your-route").textContent())?.includes("Home from") ?? false;
       await shot(page, "4-route-preview");
+      // the band can rearrange the route: move the second stop later and see the comparison
+      const before = (await page.locator(".itinerary .stop .city").allTextContents()).join(" → ");
+      await page.getByRole("button", { name: /later$/ }).nth(1).click();
+      const after = (await page.locator(".itinerary .stop .city").allTextContents()).join(" → ");
+      const compared = (await page.locator("#your-route").textContent())?.includes("Your order") ?? false;
       await page.close();
       if (questions !== 4) return `${questions} questions instead of 4`;
       if (primaries !== 1) return `${primaries} primary buttons on the questions step (want exactly one: Plan my tour)`;
       if (stops < 2) return `the route preview shows ${stops} stops`;
       if (!money) return "the route preview does not say what the tour earns or risks";
+      if (!homeLine) return "the route preview does not say how far the last stop is from home";
+      if (before === after || !compared) return `moving a stop does not change the route or compare it (${before} / ${after})`;
       return null;
     });
 
@@ -512,7 +520,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
         await page.waitForTimeout(1200);
         const bad = await page.evaluate(() =>
           Array.from(document.querySelectorAll("button"))
-            .filter((b) => !/(^|\s)(btn|chip|choice|icon-btn|link-btn|wallet-adapter)/.test(b.className) && !b.closest(".wallet-adapter-modal, nextjs-portal"))
+            .filter((b) => !/(^|\s)(btn|chip|choice|icon-btn|link-btn|tile|wallet-adapter)/.test(b.className) && !b.closest(".wallet-adapter-modal, nextjs-portal"))
             .map((b) => `"${(b.textContent ?? "").trim().slice(0, 20)}" .${b.className || "(no class)"}`)
         );
         if (bad.length) odd.push(`${p}: ${bad.slice(0, 3).join(", ")}`);
@@ -527,15 +535,17 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.goto(url("/"), { waitUntil: "domcontentloaded" });
       await page.getByRole("button", { name: /explore the demo band/i }).click();
       await page.goto(url("/feed/"), { waitUntil: "domcontentloaded" });
-      await page.locator(".activity .group").first().waitFor({ timeout: 8000 });
-      const groups = await page.locator(".activity .group").count();
-      const visibleEntries = await page.locator(".activity .entry:visible").count();
-      const chips = await page.locator(".activity [role=tab]").count();
-      await shot(page, "5-activity");
+      await page.locator(".agent-feed .phase").first().waitFor({ timeout: 8000 });
+      const phases = await page.locator(".agent-feed .phase").count();
+      const visible = await page.locator(".agent-feed .msg:visible").count();
+      const chips = await page.locator(".agent-feed [role=tab]").count();
+      const named = await page.locator(".agent-feed .msg-head b").count();
+      await shot(page, "5-agent-feed");
       await page.close();
-      if (groups < 3) return `only ${groups} groups`;
-      if (visibleEntries > 15) return `${visibleEntries} messages are open at first; groups should start closed`;
-      if (chips < 3) return `no category filters`;
+      if (phases < 3) return `only ${phases} phases in the agent feed`;
+      if (visible > 4 * phases + 2) return `${visible} messages show at first; each phase should start with its latest few`;
+      if (named < visible) return "some messages do not say who is speaking";
+      if (chips < 3) return "no way to filter by who is speaking";
       return null;
     });
 
@@ -546,13 +556,21 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.locator(".stats, .card").first().waitFor({ timeout: 8000 });
       const h1 = (await page.locator("h1").first().textContent()) ?? "";
       await page.goto(url("/venues/"), { waitUntil: "domcontentloaded" });
-      const venues = await page.locator(".city-card").first().waitFor({ timeout: 8000 }).then(() => true, () => false);
+      // country → city → rooms, one tap each
+      const venues = await (async () => {
+        await page.locator(".tile").first().waitFor({ timeout: 8000 });
+        await page.locator(".tile", { hasText: "Germany" }).click();
+        await page.locator(".tile", { hasText: "Berlin" }).click();
+        await page.locator(".city-card").first().waitFor({ timeout: 8000 });
+        await shot(page, "9-venues-city");
+        return true;
+      })().catch(() => false);
       await page.goto(url("/planner/"), { waitUntil: "domcontentloaded" });
       const planner = (await page.locator("h1").first().textContent()) ?? "";
       await shot(page, "6-planner");
       await page.close();
       if (/booked by agents/i.test(h1)) return "Explore the demo band did not open the demo";
-      if (!venues) return "the Venues page shows no venues without a wallet";
+      if (!venues) return "Venues does not lead from a country to a city to its rooms";
       if (!/route planner/i.test(planner)) return "the Route planner is not reachable without a wallet";
       return null;
     });

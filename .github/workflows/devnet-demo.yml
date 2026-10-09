@@ -29,7 +29,7 @@ on:
         description: "Seconds from sales opening to the show date (settlement)"
         default: "360"
       history:
-        description: "Replay a short previous tour first (true/false)"
+        description: "Replay a short previous tour first: false, true, or only (just the past tour of 'shows' shows: builds the band's on-chain record and reputation)"
         default: "false"
       publish:
         description: "Commit the run to the dashboard bundle (true/false)"
@@ -85,6 +85,7 @@ jobs:
         run: |
           ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline ${{ inputs.deadline }} --show ${{ inputs.show_after }}"
           if [ "${{ inputs.history }}" = "true" ]; then ARGS="$ARGS --history"; fi
+          if [ "${{ inputs.history }}" = "only" ]; then ARGS="$ARGS --history-only --history-shows ${{ inputs.shows }}"; fi
           BAND_ARGS=()
           if [ "$BAND" = "mine" ]; then
             IFS='|' read -r B_NAME B_GENRE B_DRAW B_HOME <<< "$BAND_PROFILE"

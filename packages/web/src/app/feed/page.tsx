@@ -6,6 +6,7 @@ import { useBandSession } from "@/components/BandSession";
 import { Feed, showsFeed } from "@/components/Feed";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { getRun } from "@/lib/run";
+import { loadStory } from "@/lib/story";
 
 /**
  * Activity for the band on screen: a connected band sees what happened to its
@@ -17,6 +18,7 @@ export default function FeedPage() {
   const own = !!session.wallet && session.authority === session.wallet;
   const [shows, setShows] = useState<{ show: string; city: string; state: string; ticketsSold: number }[] | null | undefined>(undefined);
   const [inFans, setInFans] = useState(true);
+  const [tour, setTour] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [demoName, setDemoName] = useState<string | null>(null);
 
@@ -29,6 +31,7 @@ export default function FeedPage() {
             if (!alive) return;
             setShows(t?.shows.map((s) => ({ show: s.show, city: s.city, state: s.state, ticketsSold: s.ticketsSold })) ?? null);
             setInFans(!!t?.inApp);
+            setTour(t?.tour ?? null);
             setFailed(false);
           })
           .catch(() => alive && setFailed(true));
@@ -48,9 +51,9 @@ export default function FeedPage() {
   if (!own)
     return (
       <div>
-        <h1>Activity</h1>
+        <h1>Agent feed</h1>
         <p className="muted" style={{ margin: "6px 0 12px", maxWidth: 760 }}>
-          The demo band{demoName ? `, ${demoName},` : ""} on its recorded tour: every offer, decline, sale, refund and payout, grouped by what it is about. Open a group to read it.
+          The demo band{demoName ? `, ${demoName},` : ""} on its recorded tour: what its agent, the venues, the fans and the money said, phase by phase.
         </p>
         <Feed source="transcript" />
       </div>
@@ -58,9 +61,9 @@ export default function FeedPage() {
 
   return (
     <div>
-      <h1>Activity</h1>
+      <h1>Agent feed</h1>
       <p className="muted" style={{ margin: "6px 0 12px", maxWidth: 760 }}>
-        Everything that happened to your shows, grouped by what it is about. Open a group to read it; pick a chip to see one kind only.
+        What your agent, the venues, the fans and the money did on your tour, phase by phase. Each phase shows its latest messages; open it for the rest.
       </p>
       {shows === undefined ? (
         <p className="muted small">{failed ? "Devnet is busy; trying again in a moment…" : "Reading your tour…"}</p>
@@ -77,6 +80,7 @@ export default function FeedPage() {
       ) : (
         <Feed source="chain" shows={shows.map((s) => s.show)} cityOf={Object.fromEntries(shows.map((s) => [s.show, s.city]))}
           inFans={inFans}
+          story={tour ? loadStory(tour) : undefined}
           fallback={showsFeed(shows, inFans)}
           empty="Your shows are booked; nothing else has happened yet. Venues sign within about 10 minutes." />
       )}

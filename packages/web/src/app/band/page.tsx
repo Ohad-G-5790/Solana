@@ -5,7 +5,8 @@ import { PublicKey } from "@solana/web3.js";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { explorerUrl, POLL_MS } from "@/lib/config";
-import { sol } from "@/lib/format";
+import { fans, sol } from "@/lib/format";
+import { reputation, reputationLabel, REPUTATION_SCALE } from "@/lib/reputation";
 import { bandPda, fetchBand, type BandAccount } from "@/lib/greenroom";
 import { useBandSession } from "@/components/BandSession";
 import { RegisterBand } from "@/components/Connect";
@@ -62,6 +63,7 @@ function BandView() {
     );
 
   const avg = band.showsCompleted > 0 ? Math.round(Number(band.ticketsSoldTotal) / band.showsCompleted) : 0;
+  const rep = reputation(band);
   return (
     <div>
       <h1>{band.name}</h1>
@@ -71,18 +73,43 @@ function BandView() {
           profile ↗
         </a>
       </p>
+      <div className="card reputation" aria-label="Reputation">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+          <div>
+            <div className="label">Reputation</div>
+            <div className="rep-score">
+              {rep.toFixed(1)}
+              <span className="muted"> / 10</span>
+            </div>
+            <div className="small muted">{reputationLabel(rep)}</div>
+          </div>
+          <p className="micro muted" style={{ maxWidth: 360 }}>
+            From the record below only: fans per played show and the number of shows played. A stadium star with hundreds of shows is a 10.
+          </p>
+        </div>
+        <div className="rep-bar" role="img" aria-label={`Reputation ${rep.toFixed(1)} out of 10`}>
+          <div className="rep-fill" style={{ width: `${rep * 10}%` }} />
+        </div>
+        <div className="rep-scale micro muted">
+          {REPUTATION_SCALE.map((s) => (
+            <span key={s.at} style={{ left: `${s.at * 10}%` }}>
+              {s.label}
+            </span>
+          ))}
+        </div>
+      </div>
       <div className="stats">
         <div className="stat">
           <div className="label">Shows played</div>
           <div className="value">{band.showsCompleted}</div>
         </div>
         <div className="stat">
-          <div className="label">Tickets sold</div>
-          <div className="value">{Number(band.ticketsSoldTotal)}</div>
+          <div className="label">Fans in all</div>
+          <div className="value">{fans(Number(band.ticketsSoldTotal))}</div>
         </div>
         <div className="stat">
-          <div className="label">Avg per show</div>
-          <div className="value">{avg}</div>
+          <div className="label">Fans per show</div>
+          <div className="value">{fans(avg)}</div>
         </div>
         <div className="stat">
           <div className="label">Paid out in all</div>

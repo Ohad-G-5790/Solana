@@ -6,6 +6,7 @@ import { useBandSession } from "@/components/BandSession";
 import { RegisterBand } from "@/components/Connect";
 import { WalletPanel } from "@/components/WalletPanel";
 import { Feed } from "@/components/Feed";
+import { loadStory } from "@/lib/story";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary";
 import { RouteMap, type MapStop } from "@/components/RouteMap";
@@ -405,10 +406,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {live ? null : <h2 style={{ margin: "24px 0 10px" }}>What happened on this recorded tour</h2>}
+      {live ? null : <h2 style={{ margin: "24px 0 10px" }}>Agent feed of this recorded tour</h2>}
       {live ? (
         <Feed
-          title={<h2 style={{ margin: "24px 0 10px" }}>What happened</h2>}
+          title={<h2 style={{ margin: "24px 0 10px" }}>Agent feed</h2>}
+          story={run.tour ? loadStory(run.tour) : undefined}
           hideWhenEmpty
           limit={500}
           compact
@@ -422,7 +424,7 @@ export default function DashboardPage() {
         <Feed limit={2000} compact source="transcript" />
       )}
       <p className="small" style={{ marginTop: 8 }}>
-        <Link href="/feed">All activity →</Link>
+        <Link href="/feed">Open the agent feed →</Link>
       </p>
       {/* wallet details matter less than the tour: they sit below it */}
       {panel ? (
