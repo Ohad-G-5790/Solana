@@ -1,7 +1,7 @@
 // b2 — Five musicians. Crimson Gardens, punk trio, 250 a night: the van -> the shortest loop -> local crew -> paid.
 (() => {
   const { vis, prog, ease, clamp, lerp, h, fmt, makeMap, route, city, km } = GR;
-  const { S, makePhone, pane, paneVis, add, title, splitBar, sceneText, tag, eur } = PK;
+  const { S, makePhone, pane, paneVis, add, title, splitBar, sceneText, eur } = PK;
 
   const LOOP = ["Hamburg", "Berlin", "Leipzig", "Dresden", "Prague", "Nuremberg", "Frankfurt", "Cologne"];
   const ZIGZAG = ["Hamburg", "Prague", "Cologne", "Dresden", "Frankfurt", "Berlin", "Nuremberg", "Leipzig"];
@@ -10,7 +10,6 @@
   const GOOD = Math.round(dist(LOOP) / 10) * 10;
 
   window.VIDEO = {
-    tag: tag("Musicians ", 2, "DIY trio"),
     kicker: "Crimson Gardens · punk trio",
     punch: "Less driving.\n{g:More left over.}",
     build(stage) {

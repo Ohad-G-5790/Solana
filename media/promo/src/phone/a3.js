@@ -1,10 +1,9 @@
 // a3 — One band, one tour. Chapter 3: Sell. Live sales -> every city -> confirmations -> Vienna refunded.
 (() => {
   const { vis, prog, ease, clamp, lerp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, progRow, notifStack, sceneText, tag, eur, TOUR } = PK;
+  const { S, makePhone, pane, paneVis, add, title, progRow, notifStack, sceneText, eur, TOUR } = PK;
 
   window.VIDEO = {
-    tag: tag("On tour ", 3, "Sell"),
     kicker: "Chapter 3 · Sell",
     punch: "No guessing.\n{g:I see every ticket.}",
     build(stage) {

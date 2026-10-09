@@ -1,13 +1,12 @@
 // a4 — One band, one tour. Chapter 4: Show night. Hire local crew -> crew in the split -> the room -> settlement.
 (() => {
   const { vis, prog, ease, clamp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, splitBar, notifStack, sceneText, tag } = PK;
+  const { S, makePhone, pane, paneVis, add, title, splitBar, notifStack, sceneText } = PK;
 
   const crewRow = (p, ini, name, role, meta, ask) =>
     add(p, "prow row", `<div style="flex:none;width:72px;height:72px;border-radius:50%;background:#2e2e2e;color:#e6e6e6;font-weight:700;font-size:24px;display:flex;align-items:center;justify-content:center">${ini}</div><div style="flex:1"><b style="font-size:30px">${name}</b><div style="font-size:24px;color:#b3b3b3;margin-top:2px">${role}</div><div style="font-size:22px;color:#8a8a8a;margin-top:2px">${meta}</div></div><div style="text-align:right"><div style="font-size:30px;font-weight:800;color:#fff">${ask}</div><span class="hire pill outline-g" style="font-size:20px;padding:6px 18px;margin-top:8px">Hire</span></div>`, { gap: "22px" });
 
   window.VIDEO = {
-    tag: tag("On tour ", 4, "Show night"),
     kicker: "Chapter 4 · Show night",
     punch: "I play the show.\n{g:The deal does the rest.}",
     build(stage) {

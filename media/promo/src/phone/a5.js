@@ -1,7 +1,7 @@
 // a5 — One band, one tour. Chapter 5: Payday. Paid -> where every euro went -> the tour -> a better record.
 (() => {
   const { vis, prog, ease, clamp, lerp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, splitBar, barList, notifStack, sceneText, tag, eur, TOUR } = PK;
+  const { S, makePhone, pane, paneVis, add, title, splitBar, barList, notifStack, sceneText, eur, TOUR } = PK;
 
   // Band take per city: 70% of sales, Leipzig 66% (4% to the sound engineer), Vienna refunded.
   const TAKE = TOUR.stops.map((s) => ({ ...s, take: s.cancelled ? 0 : s.sold * TOUR.price * (s.city === "Leipzig" ? 0.66 : 0.7) }));
@@ -9,7 +9,6 @@
   const SOLD = TOUR.stops.filter((s) => !s.cancelled).reduce((n, s) => n + s.sold, 0);
 
   window.VIDEO = {
-    tag: tag("On tour ", 5, "Payday"),
     kicker: "Chapter 5 · Payday",
     punch: "Payday is\n{g:the morning after.}",
     build(stage) {

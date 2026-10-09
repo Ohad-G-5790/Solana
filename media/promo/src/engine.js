@@ -223,16 +223,14 @@
   const city = (name) => window.GEO.cities.find((c) => c.name === name);
 
   // ---------------- shared chrome + end card ----------------
-  function chrome(stage, num, title) {
+  function chrome(stage) {
     const logo = abs(stage, "brand", `<span class="dot"></span>Greenroom`, 120, 66);
-    const chap = abs(stage, "chapter", `<b>${num}</b><span>/ 05</span><span style="width:2px;height:20px;background:#4d4d4d;display:inline-block"></span><span style="color:#fff">${title}</span>`, 0, 60, { right: 120, left: "auto" });
     const player = abs(stage, "player", `<span class="num t0">0:00</span><div class="track"><div class="fill"></div><div class="knob"></div></div><span class="num">0:30</span>`, 120, 1004, { width: W - 240 });
     const t0 = player.querySelector(".t0");
     const fill = player.querySelector(".fill");
     const knob = player.querySelector(".knob");
     return (t) => {
       vis(logo, t, 0.1, END_AT - 0.2, { y: -20, d: 0.8 });
-      vis(chap, t, 0.25, END_AT - 0.2, { y: -20, d: 0.8 });
       vis(player, t, 0.3, null, { y: 20, d: 0.8, max: 0.9 });
       const p = clamp(t / DUR);
       fill.style.width = `${p * 100}%`;

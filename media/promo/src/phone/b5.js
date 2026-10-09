@@ -1,11 +1,10 @@
 // b5 — Five musicians. Jonas, session drummer: chasing invoices -> pitches only for sold shows -> on the deal -> paid with the band.
 (() => {
   const { vis, prog, ease, clamp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, splitBar, notifStack, sceneText, tag, eur } = PK;
+  const { S, makePhone, pane, paneVis, add, title, splitBar, notifStack, sceneText, eur } = PK;
 
   // Dresden, Nov 5 (Cinema of Royal Street at Beatpol): 264 tickets x EUR 25 = EUR 6,600; a 6% payee gets EUR 396.
   window.VIDEO = {
-    tag: tag("Musicians ", 5, "Session player"),
     kicker: "Jonas · session drummer",
     punch: "No invoices.\n{g:No chasing.}",
     build(stage) {

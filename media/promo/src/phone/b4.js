@@ -1,7 +1,7 @@
 // b4 — Five musicians. Rusty Pilots, hip-hop, 3,500 a night: big rooms -> no fee stack -> 15,500 tickets in escrow -> one-transaction settlement.
 (() => {
   const { vis, prog, ease, clamp, lerp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, progRow, splitBar, sceneText, tag, eur } = PK;
+  const { S, makePhone, pane, paneVis, add, title, progRow, splitBar, sceneText, eur } = PK;
 
   const SHOWS = [
     { city: "Berlin", venue: "Columbiahalle", cap: 3500 },
@@ -15,7 +15,6 @@
   const PRICE = 45;
 
   window.VIDEO = {
-    tag: tag("Musicians ", 4, "Big act"),
     kicker: "Rusty Pilots · hip-hop",
     punch: "Big rooms.\n{g:Simple math.}",
     build(stage) {

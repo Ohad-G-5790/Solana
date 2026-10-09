@@ -12,8 +12,6 @@
   const icon = (k) => `<div style="width:84px;height:84px;border-radius:50%;box-shadow:inset 0 0 0 3px var(--accent);display:flex;align-items:center;justify-content:center"><svg width="56" height="56" viewBox="0 0 60 60" fill="none" stroke="#1ed760" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg></div>`;
 
   window.VIDEO = {
-    num: "03",
-    title: "Cheaper concerts",
     punch: "Pay for the show.\n{g:Not the middlemen.}",
     build(stage) {
       const L = abs(stage, "layer", "", 0, 0);

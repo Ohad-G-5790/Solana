@@ -1,11 +1,10 @@
 // c5 — Small vs big. Record: everyone starts somewhere -> the record sets the terms -> every show counts -> small acts catch up.
 (() => {
   const { vis, prog, ease, clamp, lerp, h, fmt } = GR;
-  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, splitBar, tag, LENA, RUSTY } = PK;
+  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, splitBar, LENA, RUSTY } = PK;
 
   // Venue-agent pricing in the app: 35% with no record, 27% with a strong one (3+ settled shows averaging half the draw).
   window.VIDEO = {
-    tag: tag("Small or big ", 5, "Track record"),
     kicker: "Small or big · Track record",
     punch: "Every show\n{g:builds my leverage.}",
     build(stage) {

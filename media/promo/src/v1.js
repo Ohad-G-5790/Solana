@@ -3,8 +3,6 @@
   const { abs, vis, prog, ease, clamp, lerp, headline, showCard, makeMap, route, city, km, typed, fmt, h } = GR;
 
   window.VIDEO = {
-    num: "01",
-    title: "For musicians",
     punch: "Book the tour.\n{g:Skip the risk.}",
     build(stage) {
       const L = abs(stage, "layer", "", 0, 0);

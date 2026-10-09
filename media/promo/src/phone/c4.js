@@ -1,14 +1,13 @@
 // c4 — Small vs big. Payday: different rooms -> paid in one transaction -> the split follows the record -> nobody skims.
 (() => {
   const { vis, prog, ease, clamp, h, fmt } = GR;
-  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, splitBar, tag, eur, LENA, RUSTY } = PK;
+  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, splitBar, eur, LENA, RUSTY } = PK;
 
   // Lena: first tour, venue asks 35% -> 65% of 146 x EUR 18. Rusty Pilots: strong record, venue asks 27% -> 73% of 3,500 x EUR 45.
   const LG = 146 * 18;
   const RG = 3500 * 45;
 
   window.VIDEO = {
-    tag: tag("Small or big ", 4, "Payday"),
     kicker: "Small or big · Payday",
     punch: "Small or big,\n{g:same rules.}",
     build(stage) {

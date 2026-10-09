@@ -22,7 +22,7 @@
         const stage = document.getElementById("stage");
         const V = window.VIDEO;
         const body = V.build(stage);
-        const bar = PK.chromeV(stage, V.tag);
+        const bar = PK.chromeV(stage);
         const end = PK.endCardV(stage, V);
         window.render = (t) => {
           body(t);

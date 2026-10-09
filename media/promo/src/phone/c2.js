@@ -1,10 +1,9 @@
 // c2 — Small vs big. Threshold: same 50% rule -> both confirmed -> both refund a miss -> nobody loses a deposit.
 (() => {
   const { vis, prog, ease, clamp } = GR;
-  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, bigProg, tag, LENA, RUSTY } = PK;
+  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, bigProg, LENA, RUSTY } = PK;
 
   window.VIDEO = {
-    tag: tag("Small or big ", 2, "Threshold"),
     kicker: "Small or big · Threshold",
     punch: "One rule\n{g:for every stage.}",
     build(stage) {

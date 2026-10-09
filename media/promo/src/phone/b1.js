@@ -1,7 +1,7 @@
 // b1 — Five musicians. Lena, solo, 150 a night: no booker -> books six small rooms -> 75 tickets confirms -> paid.
 (() => {
   const { vis, prog, ease, clamp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, progRow, splitBar, notifStack, sceneText, tag, eur } = PK;
+  const { S, makePhone, pane, paneVis, add, title, progRow, splitBar, notifStack, sceneText, eur } = PK;
 
   const SHOWS = [
     { city: "Brno", venue: "Kabinet múz", sold: 146 },
@@ -16,7 +16,6 @@
   const TOUR_TAKE = SHOWS.filter((s) => s.sold >= 75).reduce((n, s) => n + s.sold * PRICE * 0.65, 0);
 
   window.VIDEO = {
-    tag: tag("Musicians ", 1, "Solo"),
     kicker: "Lena · solo artist",
     punch: "No booker needed.\n{g:I have an agent.}",
     build(stage) {

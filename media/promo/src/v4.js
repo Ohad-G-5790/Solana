@@ -4,8 +4,6 @@
   const { abs, vis, prog, ease, clamp, lerp, headline, feedItem, makeMap, route, city, fmt, h } = GR;
 
   window.VIDEO = {
-    num: "04",
-    title: "Musicians earn more",
     punch: "More of every ticket goes\nto {g:the people on stage.}",
     build(stage) {
       const L = abs(stage, "layer", "", 0, 0);

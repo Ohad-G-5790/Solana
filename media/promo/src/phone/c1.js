@@ -1,13 +1,12 @@
 // c1 — Small vs big. Booking: same brief, offers from rooms their size, a route each, on sale the same day.
 (() => {
   const { vis, prog, ease, clamp, h, makeMap, route, city } = GR;
-  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, tag, LENA, RUSTY } = PK;
+  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, LENA, RUSTY } = PK;
 
   const LROUTE = ["Frankfurt", "Nuremberg", "Plzeň", "Brno", "Linz", "Innsbruck"];
   const RROUTE = ["Cologne", "Berlin", "Leipzig", "Dresden", "Prague", "Munich"];
 
   window.VIDEO = {
-    tag: tag("Small or big ", 1, "Booking"),
     kicker: "Small or big · Booking",
     punch: "Small or big,\n{g:book it yourself.}",
     build(stage) {

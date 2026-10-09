@@ -20,7 +20,7 @@
         const stage = document.getElementById("stage");
         const V = window.VIDEO;
         const body = V.build(stage);
-        const bar = GR.chrome(stage, V.num, V.title);
+        const bar = GR.chrome(stage);
         const end = GR.endCard(stage, V.punch);
         window.render = (t) => {
           body(t);

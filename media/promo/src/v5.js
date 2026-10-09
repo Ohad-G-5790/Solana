@@ -18,8 +18,6 @@
   };
 
   window.VIDEO = {
-    num: "05",
-    title: "End the monopoly",
     punch: "You can't buy out\n{g:an open protocol.}",
     build(stage) {
       const L = abs(stage, "layer", "", 0, 0);

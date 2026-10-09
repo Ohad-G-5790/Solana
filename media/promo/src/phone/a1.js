@@ -1,10 +1,9 @@
 // a1 — One band, one tour. Chapter 1: Plan. Four months of email -> one brief -> offers -> a route.
 (() => {
   const { abs, vis, prog, ease, clamp, lerp, h, fmt, typed, makeMap, route, city } = GR;
-  const { S, makePhone, pane, paneVis, add, title, notifStack, sceneText, tag, TOUR } = PK;
+  const { S, makePhone, pane, paneVis, add, title, notifStack, sceneText, TOUR } = PK;
 
   window.VIDEO = {
-    tag: tag("On tour ", 1, "Plan"),
     kicker: "Chapter 1 · Plan",
     punch: "I planned a tour\n{g:before lunch.}",
     build(stage) {

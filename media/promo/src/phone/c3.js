@@ -1,13 +1,12 @@
 // c3 — Small vs big. Every ticket: live sales -> money waits in escrow -> which city buys -> anyone can read it.
 (() => {
   const { vis, prog, ease, clamp, h, fmt } = GR;
-  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, tag, eur, LENA, RUSTY } = PK;
+  const { S, pane, paneVis, add, bigTitle: title, duo, duoText, bigCard, bigRow, eur, LENA, RUSTY } = PK;
 
   const LC = [["Frankfurt", 150], ["Brno", 146], ["Plzeň", 139], ["Nuremberg", 131], ["Innsbruck", 118]];
   const RC = [["Berlin", 3500], ["Prague", 3000], ["Leipzig", 2500], ["Dresden", 2500], ["Cologne", 2000]];
 
   window.VIDEO = {
-    tag: tag("Small or big ", 3, "Every ticket"),
     kicker: "Small or big · Every ticket",
     punch: "Small or big,\n{g:nothing is hidden.}",
     build(stage) {

@@ -4,8 +4,6 @@
   const { abs, vis, prog, ease, clamp, lerp, headline, showCard, feedItem, fmt, h } = GR;
 
   window.VIDEO = {
-    num: "02",
-    title: "For venues",
     punch: "Fill the calendar.\n{g:Skip the gamble.}",
     build(stage) {
       const L = abs(stage, "layer", "", 0, 0);

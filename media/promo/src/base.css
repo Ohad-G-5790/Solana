@@ -127,22 +127,6 @@ body {
   background: var(--accent);
   display: inline-block;
 }
-.chapter {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: var(--surface-mid);
-  border-radius: 9999px;
-  padding: 12px 24px;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.chapter b {
-  color: var(--text);
-}
 .player {
   display: flex;
   align-items: center;

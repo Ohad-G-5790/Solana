@@ -1,14 +1,13 @@
 // b3 — Five musicians. The Broken Tides, indie, 600 a night: a record on-chain -> venues ask less -> +€1,344 a night.
 (() => {
   const { vis, prog, ease, clamp, lerp, h, fmt } = GR;
-  const { S, makePhone, pane, paneVis, add, title, splitBar, sceneText, tag, eur } = PK;
+  const { S, makePhone, pane, paneVis, add, title, splitBar, sceneText, eur } = PK;
 
   // 600 tickets x EUR 28 = EUR 16,800. Venue-agent pricing in the app: 35% for a band with
   // no history, 27% for a strong record (3+ settled shows averaging at least half the draw).
   const GROSS = 600 * 28;
 
   window.VIDEO = {
-    tag: tag("Musicians ", 3, "Mid-size"),
     kicker: "The Broken Tides · indie",
     punch: "Our record\n{g:pays us back.}",
     build(stage) {

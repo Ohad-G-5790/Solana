@@ -1,10 +1,9 @@
 // a2 — One band, one tour. Chapter 2: Book. My terms -> best offer per city -> venue signs -> terms locked.
 (() => {
   const { vis, prog, ease, clamp, h } = GR;
-  const { S, makePhone, pane, paneVis, add, title, badge, splitBar, notifStack, sceneText, tag } = PK;
+  const { S, makePhone, pane, paneVis, add, title, badge, splitBar, notifStack, sceneText } = PK;
 
   window.VIDEO = {
-    tag: tag("On tour ", 2, "Book"),
     kicker: "Chapter 2 · Book",
     punch: "My tour.\n{g:My terms.}",
     build(stage) {

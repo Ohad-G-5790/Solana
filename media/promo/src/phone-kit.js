@@ -158,12 +158,10 @@
     };
   }
 
-  function chromeV(stage, tag) {
+  function chromeV(stage) {
     const logo = abs(stage, "brand", `<span class="dot"></span>Greenroom`, 64, 66, { fontSize: 28 });
-    const pill = abs(stage, "chapter", tag, 0, 58, { right: 64, left: "auto", fontSize: 18, padding: "12px 22px", letterSpacing: "1.6px" });
     return (t) => {
       vis(logo, t, 0.1, END - 0.2, { y: -20, d: 0.8 });
-      vis(pill, t, 0.25, END - 0.2, { y: -20, d: 0.8 });
     };
   }
 
@@ -191,9 +189,6 @@
       vis(foot, t, END + 2.0, null, { y: 0, d: 0.8, max: 0.9 });
     };
   }
-
-  /** Chapter pill markup: "<series> 1 / 5 · Title". */
-  const tag = (series, n, name) => `<span>${series}</span><b>${n}</b><span>/ 5</span><span style="width:2px;height:18px;background:#4d4d4d;display:inline-block"></span><span style="color:#fff">${name}</span>`;
 
   // Scene windows shared by every vertical video.
   const S = [
@@ -288,5 +283,5 @@
     ],
   };
 
-  window.PK = { TOUR, DUO, duo, duoText, bigCard, bigRow, bigTitle, bigProg, LENA, RUSTY, VW, VH, END, S, eur, makePhone, pane, paneVis, add, title, badge, progRow, splitBar, barList, notif, notifStack, sceneText, chromeV, endCardV, tag };
+  window.PK = { TOUR, DUO, duo, duoText, bigCard, bigRow, bigTitle, bigProg, LENA, RUSTY, VW, VH, END, S, eur, makePhone, pane, paneVis, add, title, badge, progRow, splitBar, barList, notif, notifStack, sceneText, chromeV, endCardV };
 })();
