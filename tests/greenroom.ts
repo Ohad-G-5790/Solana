@@ -375,6 +375,46 @@ describe("greenroom", () => {
     await expectAnchorError(settle([crew.publicKey]), "InvalidState");
   });
 
+  // ---------- settlement dust rule ----------
+
+  it("pays shares too small to fund an empty wallet to the band instead of failing", async () => {
+    // 10 tickets at 1000 lamports: venue 30% = 3000 lamports, far below the
+    // rent-exempt floor of an empty wallet; a fresh venue wallet must not block settlement.
+    const venueAuth = Keypair.generate();
+    await fund(venueAuth.publicKey, 0.01); // enough to register, drained to zero below
+    const [venue] = PublicKey.findProgramAddressSync([Buffer.from("venue"), venueAuth.publicKey.toBuffer()], pid);
+    await program.methods
+      .registerVenue("Tiny Room", "Ostrava", 49800000, 18200000, 10)
+      .accounts({ authority: venueAuth.publicKey, venueProfile: venue, systemProgram: SystemProgram.programId })
+      .signers([venueAuth])
+      .rpc();
+    // drain the venue wallet to zero so any payout below the floor would be refused
+    const bal = await conn.getBalance(venueAuth.publicKey);
+    const drain = new anchor.web3.Transaction().add(SystemProgram.transfer({ fromPubkey: venueAuth.publicKey, toPubkey: provider.wallet.publicKey, lamports: bal })); // fee is paid by the provider wallet, so the venue ends at exactly 0
+    await provider.sendAndConfirm(drain, [venueAuth]);
+    const now0 = await chainNow(conn);
+    const dateT = now0 + 12;
+    const showT = showPda(venue, dateT);
+    await program.methods
+      .proposeShow(new BN(dateT), new BN(1000), 10, 5000, new BN(now0 + 6), 7000, 3000)
+      .accounts({ bandAuthority: bandAuth.publicKey, bandProfile: bandPda, tour: tourPda, venueProfile: venue, show: showT, vault: vaultPda(showT), systemProgram: SystemProgram.programId })
+      .signers([bandAuth])
+      .rpc();
+    await program.methods.acceptShow().accounts({ venueAuthority: venueAuth.publicKey, show: showT }).signers([venueAuth]).rpc();
+    await buy(showT, fan2, fan2.publicKey, 5);
+    await program.methods.checkThreshold().accounts({ show: showT }).rpc();
+    await waitChain(conn, dateT + 1);
+    const bandBefore = await conn.getBalance(bandAuth.publicKey);
+    const venueBefore = await conn.getBalance(venueAuth.publicKey);
+    await program.methods
+      .settleShow()
+      .accounts({ show: showT, bandProfile: bandPda, venueProfile: venue, bandAuthority: bandAuth.publicKey, venueAuthority: venueAuth.publicKey, vault: vaultPda(showT), systemProgram: SystemProgram.programId })
+      .rpc();
+    expect(await conn.getBalance(venueAuth.publicKey)).to.equal(venueBefore);
+    expect((await conn.getBalance(bandAuth.publicKey)) - bandBefore).to.equal(5000);
+    expect((await program.account.show.fetch(showT)).state).to.deep.equal({ settled: {} });
+  });
+
   // ---------- cancellation and refunds ----------
 
   it("cancels an under-sold show after the deadline and refunds every ticket", async () => {

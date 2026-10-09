@@ -53,11 +53,26 @@ pub fn handle_settle_show<'info>(ctx: Context<'info, SettleShow<'info>>) -> Resu
     }
 
     let total = show.escrow_lamports;
-    let venue_amount = share(total, show.venue_bps as u64)?;
+    // A system transfer may not leave a recipient below the rent-exempt
+    // minimum, so a share too small to fund an empty wallet would block the
+    // whole settlement. Such shares go to the band instead (the band's wallet
+    // is funded: it paid the show's rent); nobody can hold a settlement hostage.
+    let rent_floor = Rent::get()?.minimum_balance(0);
+    let payable = |recipient_lamports: u64, amt: u64| -> u64 {
+        if amt == 0 || recipient_lamports.saturating_add(amt) >= rent_floor {
+            amt
+        } else {
+            0
+        }
+    };
+    let venue_amount = payable(
+        ctx.accounts.venue_authority.lamports(),
+        share(total, show.venue_bps as u64)?,
+    );
     let mut payee_total: u64 = 0;
     let mut payee_amounts = Vec::with_capacity(payees.len());
-    for payee in payees.iter() {
-        let amt = share(total, payee.bps as u64)?;
+    for (acc, payee) in ctx.remaining_accounts.iter().zip(payees.iter()) {
+        let amt = payable(acc.lamports(), share(total, payee.bps as u64)?);
         payee_total = payee_total.checked_add(amt).ok_or(ErrorCode::MathOverflow)?;
         payee_amounts.push(amt);
     }
