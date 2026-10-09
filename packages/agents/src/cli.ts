@@ -20,6 +20,10 @@ if (existsSync(envFile)) {
  * npm run demo -w @greenroom/agents -- [--rpc https://api.devnet.solana.com] [--band <id>]
  *   [--shows 8] [--countries DE,AT,FR,PL,CZ] [--deadline 60] [--show 120]
  *   [--history] [--brain heuristic|claude] [--max-venues 40] [--fast]
+ *   [--approve] [--replacement-timeout 300]
+ *
+ * --approve: the band decides in the dashboard (venues, route, replacement
+ * shows) instead of auto-pilot; the run waits on the Approvals page.
  */
 function arg(name: string, def?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -47,5 +51,7 @@ const summary = await runDemo({
   tickMs: fast ? 1000 : 2000,
   maxBuysPerTick: Number(arg("buys-per-tick", "36")),
   fansPerCity: Number(arg("fans", "60")),
+  approvals: arg("approve") === "true" ? "dashboard" : "auto",
+  replacementTimeoutSec: Number(arg("replacement-timeout", "300")),
 });
 console.log(JSON.stringify(summary.stats));

@@ -1,48 +1,70 @@
 "use client";
 
-import type { RunShow, WorldCity, WorldVenue } from "@/lib/run";
+import type { WorldVenue } from "@/lib/run";
 
-/**
- * Minimal equirectangular map of Central Europe drawn as SVG: every venue in
- * the world as a grey dot, the tour's stops in green (red if cancelled),
- * joined in order with a dashed route.
- */
-const BOUNDS = { minLng: -5, maxLng: 24, minLat: 42, maxLat: 55.5 };
-const W = 900;
-const H = 440;
+export type StopTone = "ok" | "cancelled" | "muted" | "warn";
 
-function project(lat: number, lng: number): [number, number] {
-  const x = ((lng - BOUNDS.minLng) / (BOUNDS.maxLng - BOUNDS.minLng)) * W;
-  const y = ((BOUNDS.maxLat - lat) / (BOUNDS.maxLat - BOUNDS.minLat)) * H;
-  return [x, y];
+export interface MapStop {
+  key: string;
+  label: string;
+  lat: number;
+  lng: number;
+  tone?: StopTone;
+  /** Left off the route line (cancelled without replacement, dropped). */
+  offRoute?: boolean;
 }
 
-export function RouteMap({ shows, venues, cities, states }: { shows: RunShow[]; venues: WorldVenue[]; cities: WorldCity[]; states: Map<string, string> }) {
-  const stops = [...shows]
-    .sort((a, b) => a.day - b.day)
-    .map((s) => {
-      const v = venues.find((x) => x.id === s.venue);
-      const c = cities.find((x) => x.name === s.city);
-      const lat = v?.lat ?? c?.lat;
-      const lng = v?.lng ?? c?.lng;
-      return lat !== undefined && lng !== undefined ? { ...s, xy: project(lat, lng) } : null;
-    })
-    .filter((s): s is RunShow & { xy: [number, number] } => s !== null);
-  const path = stops.map((s, i) => `${i === 0 ? "M" : "L"}${s.xy[0].toFixed(1)},${s.xy[1].toFixed(1)}`).join(" ");
+const W = 900;
+const H = 440;
+const REGION = { minLat: 42, maxLat: 55.5, minLng: -5, maxLng: 24 };
+
+/**
+ * Equirectangular map drawn as SVG, longitude scaled by cos(latitude) so
+ * distances look right. It fits the stops (or the whole region when there are
+ * fewer than two), shows every known venue as a grey dot, and joins the stops
+ * in order with a dashed route.
+ */
+export function RouteMap({ stops, venues = [], height = H }: { stops: MapStop[]; venues?: WorldVenue[]; height?: number }) {
+  const h = height;
+  let { minLat, maxLat, minLng, maxLng } = REGION;
+  if (stops.length >= 2) {
+    minLat = Math.min(...stops.map((s) => s.lat));
+    maxLat = Math.max(...stops.map((s) => s.lat));
+    minLng = Math.min(...stops.map((s) => s.lng));
+    maxLng = Math.max(...stops.map((s) => s.lng));
+  }
+  const midLat = (minLat + maxLat) / 2;
+  const k = Math.cos((midLat * Math.PI) / 180);
+  // pad, then widen the narrow side so the aspect ratio matches the viewBox
+  let spanX = Math.max(0.6, (maxLng - minLng) * k);
+  let spanY = Math.max(0.6, maxLat - minLat);
+  spanX *= 1.25;
+  spanY *= 1.3;
+  if (spanX / spanY > W / h) spanY = (spanX * h) / W;
+  else spanX = (spanY * W) / h;
+  const cx = ((minLng + maxLng) / 2) * k;
+  const cy = (minLat + maxLat) / 2;
+  const project = (lat: number, lng: number): [number, number] => [((lng * k - cx) / spanX + 0.5) * W, (0.5 - (lat - cy) / spanY) * h];
+  const inView = ([x, y]: [number, number]) => x >= -10 && x <= W + 10 && y >= -10 && y <= h + 10;
+
+  const placed = stops.map((s) => ({ ...s, xy: project(s.lat, s.lng) }));
+  const onRoute = placed.filter((s) => !s.offRoute);
+  const path = onRoute.map((s, i) => `${i === 0 ? "M" : "L"}${s.xy[0].toFixed(1)},${s.xy[1].toFixed(1)}`).join(" ");
+  let n = 0;
   return (
-    <svg className="map" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Tour route map">
+    <svg className="map" viewBox={`0 0 ${W} ${h}`} role="img" aria-label={`Route map: ${onRoute.map((s) => s.label).join(", ")}`}>
       {venues.map((v) => {
-        const [x, y] = project(v.lat, v.lng);
-        return <circle key={v.id} className="venue" cx={x} cy={y} r={2} />;
+        const xy = project(v.lat, v.lng);
+        return inView(xy) ? <circle key={v.id} className="venue" cx={xy[0]} cy={xy[1]} r={2} /> : null;
       })}
       {path && <path className="route" d={path} />}
-      {stops.map((s, i) => {
-        const st = states.get(s.show) ?? s.state;
+      {placed.map((s) => {
+        const label = s.offRoute ? s.label : `${++n}. ${s.label}`;
         return (
-          <g key={s.show}>
-            <circle className={`stop ${st === "cancelled" ? "cancelled" : ""}`} cx={s.xy[0]} cy={s.xy[1]} r={6} />
-            <text className="label" x={s.xy[0] + 9} y={s.xy[1] + 4}>
-              {i + 1}. {s.city}
+          <g key={s.key}>
+            <circle className={`stop ${s.tone ?? "ok"}`} cx={s.xy[0]} cy={s.xy[1]} r={s.offRoute ? 5 : 6} />
+            <text className={`label ${s.offRoute ? "off" : ""}`} x={s.xy[0] + 9} y={s.xy[1] + 4}>
+              {label}
             </text>
           </g>
         );

@@ -1,8 +1,11 @@
-import { distanceKm, type Band, type City, type Venue } from "@greenroom/world";
+import type { Band, City, Venue } from "@greenroom/world";
+import { distanceKm, drive, optimizeOrder } from "@greenroom/world/geo";
 
 /** One venue's answer to a tour request. */
 export interface VenueOffer {
   venueId: string;
+  /** Display name (older transcripts lack it). */
+  venueName?: string;
   venuePubkey: string;
   city: string;
   country: string;
@@ -24,6 +27,7 @@ export interface PlannedShow {
   city: string;
   country: string;
   venueId: string;
+  venueName?: string;
   venuePubkey: string;
   /** Day index inside the tour window. */
   day: number;
@@ -36,8 +40,11 @@ export interface PlannedShow {
   distanceFromPrevKm: number;
 }
 
+/** The parts of a band the planner looks at (a full Band works too). */
+export type PlanBand = Pick<Band, "genre" | "draw" | "targetPriceLamports" | "homeCity">;
+
 export interface PlanInput {
-  band: Band;
+  band: PlanBand;
   offers: VenueOffer[];
   cities: City[];
   /** How many shows the band wants. */
@@ -54,64 +61,13 @@ export interface PlanInput {
 }
 
 /** 0..1 score of one offer for this band. Higher is better. */
-export function scoreOffer(band: Band, o: VenueOffer): number {
+export function scoreOffer(band: Pick<Band, "genre" | "draw" | "targetPriceLamports">, o: VenueOffer): number {
   const genreFit = o.genres.includes(band.genre) ? 1 : 0.55;
   const ratio = o.offeredCapacity / Math.max(1, band.draw);
   const capFit = Math.max(0, 1 - Math.abs(Math.log(ratio)) / 1.2); // 1.0 at ratio 1, 0 at ~3.3x or 0.3x
   const shareFit = Math.max(0, 1 - (o.askBps - 2500) / 2500); // 1.0 at 25%, 0 at 50%
   const priceFit = o.minPriceLamports <= band.targetPriceLamports ? 1 : band.targetPriceLamports / o.minPriceLamports;
   return 0.35 * genreFit + 0.3 * capFit + 0.2 * shareFit + 0.15 * priceFit;
-}
-
-function nearestNeighbourOrder(points: { lat: number; lng: number }[], startIndex: number): number[] {
-  const n = points.length;
-  const visited = new Array(n).fill(false);
-  const order = [startIndex];
-  visited[startIndex] = true;
-  while (order.length < n) {
-    const last = points[order[order.length - 1]];
-    let best = -1;
-    let bestD = Infinity;
-    for (let i = 0; i < n; i++) {
-      if (visited[i]) continue;
-      const d = distanceKm(last, points[i]);
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    order.push(best);
-    visited[best] = true;
-  }
-  return order;
-}
-
-function routeLength(points: { lat: number; lng: number }[], order: number[]): number {
-  let total = 0;
-  for (let i = 1; i < order.length; i++) total += distanceKm(points[order[i - 1]], points[order[i]]);
-  return total;
-}
-
-/** Classic 2-opt improvement on an open path. */
-function twoOpt(points: { lat: number; lng: number }[], order: number[]): number[] {
-  let best = order.slice();
-  let improved = true;
-  let bestLen = routeLength(points, best);
-  while (improved) {
-    improved = false;
-    for (let i = 1; i < best.length - 1; i++) {
-      for (let k = i + 1; k < best.length; k++) {
-        const candidate = best.slice(0, i).concat(best.slice(i, k + 1).reverse(), best.slice(k + 1));
-        const len = routeLength(points, candidate);
-        if (len < bestLen - 1e-9) {
-          best = candidate;
-          bestLen = len;
-          improved = true;
-        }
-      }
-    }
-  }
-  return best;
 }
 
 /**
@@ -121,7 +77,8 @@ function twoOpt(points: { lat: number; lng: number }[], order: number[]): number
  * 3. order them geographically (nearest neighbour + 2-opt) starting near the
  *    band's home or the requested start city,
  * 4. assign days left to right, one show per day, a rest day after every third
- *    show, respecting each venue's availability (shifting forward when needed).
+ *    show or before a leg too long to drive on a show day, respecting each
+ *    venue's availability (shifting forward when needed).
  */
 export function planTour(input: PlanInput): PlannedShow[] {
   const { band, offers } = input;
@@ -151,7 +108,7 @@ export function planTour(input: PlanInput): PlannedShow[] {
       }
     });
   }
-  const order = twoOpt(points, nearestNeighbourOrder(points, startIndex));
+  const order = optimizeOrder(points, startIndex);
 
   const plan: PlannedShow[] = [];
   let day = 0;
@@ -161,6 +118,9 @@ export function planTour(input: PlanInput): PlannedShow[] {
     const { offer, score } = ranked[idx];
     if (showsSinceRest === 3) {
       day += 1; // rest day
+      showsSinceRest = 0;
+    } else if (prev && drive(prev, offer).level === "travel-day") {
+      day += 1; // too far to drive and play the same day
       showsSinceRest = 0;
     }
     // first available day at or after `day`
@@ -173,6 +133,7 @@ export function planTour(input: PlanInput): PlannedShow[] {
       city: offer.city,
       country: offer.country,
       venueId: offer.venueId,
+      venueName: offer.venueName,
       venuePubkey: offer.venuePubkey,
       day,
       capacity,

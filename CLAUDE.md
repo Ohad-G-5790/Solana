@@ -6,7 +6,9 @@ Monorepo: Anchor program (`programs/greenroom`), TypeScript workspaces (`package
 
 - `npm run build:program` — `anchor build --tools-version v1.54 --arch v0` + IDL sync into `packages/sdk/idl` and `packages/web/src/idl`. Always rebuild and sync after changing Rust.
 - `npm run test:program` — starts a local validator with the program preloaded and runs `tests/greenroom.ts` (~90 s).
-- `npm run demo:fast` — full agent run on a local validator (~4 min). `--keep` leaves the validator up for the dashboard.
+- `npm run demo:fast` — full agent run on a local validator (~4 min), auto-pilot approvals. `--keep` leaves the validator up for the dashboard.
+- `npm run demo:approve` — same, but the run waits for the band's decisions on the dashboard's Approvals page.
+- `npx tsx src/testing/simulate.ts [--approve] [--empty-first]` (in `packages/agents`) — dev aid: one tour on an in-memory fake chain written to `data/runs/`, for working on the dashboard without a validator. Its addresses and signatures exist on no cluster.
 - `npm run dev -w @greenroom/web` — dashboard; `packages/web/.env.local` points it at localnet.
 - `npm run typecheck -w <pkg>`, `npm test -w @greenroom/world`, `npm test -w @greenroom/agents`.
 - `npm run qa` — the QA bot. Every run counts as a loop; `npm run qa:dry` for a dry run that does not count.
@@ -24,6 +26,8 @@ Monorepo: Anchor program (`programs/greenroom`), TypeScript workspaces (`package
 
 - Instruction names are `subject_verb_object`-ish and documented in the spec; keep the state machine in `state.rs` explicit.
 - Agents never let the model sign: every decision has a heuristic baseline and a `validate` step (`packages/agents/src/brain.ts`).
+- Nothing goes on-chain before the band approves the route (`approvals.ts`, `approver.ts`). Modules the dashboard imports (`approvals.ts`, `alternatives.ts`, `planner.ts`, `world/src/geo.ts`) stay pure: no Node APIs.
+- `npm test -w @greenroom/agents` includes `orchestrator.test.ts`, which runs whole tours on `src/testing/fake-chain.ts` (~20 s). It mirrors the spec's preconditions but is not the program; `npm run test:program` is.
 - Demo clocks are compressed; on-chain timestamps are plain unix seconds.
 - The dashboard follows `docs/DESIGN.md`; keep tokens in `globals.css`.
 - QA gate: score each part 1–10, overall ≥ 8.5 passes, stop after the fifth failed loop (see `docs/03-qa-rubric.md`).

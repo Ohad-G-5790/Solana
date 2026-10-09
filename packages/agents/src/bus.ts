@@ -12,6 +12,8 @@ export type MessageKind =
   | "venue.offer"
   | "venue.decline"
   | "band.plan"
+  | "approval.request"
+  | "approval.decision"
   | "show.proposed"
   | "show.accepted"
   | "show.rejected"

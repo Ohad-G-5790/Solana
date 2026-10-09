@@ -25,6 +25,8 @@ export class FanSim {
   private rng: Rng;
   private bought = new Set<string>(); // `${show}:${fanId}`
   private declined = new Set<string>();
+  /** Fans who held a ticket per show: when a cancelled show is replaced they come back first. */
+  private holders = new Map<string, Set<string>>();
 
   constructor(
     private readonly band: Band,
@@ -58,7 +60,8 @@ export class FanSim {
     for (const s of shows) {
       if (s.state !== "onSale" && s.state !== "confirmed") continue;
       let planned = s.ticketsSold;
-      const candidates = this.fansNear(s.booked.city);
+      const loyal = s.booked.replaces ? (this.holders.get(s.booked.replaces) ?? new Set<string>()) : new Set<string>();
+      const candidates = this.fansNear(s.booked.city).sort((a, b) => Number(loyal.has(b.id)) - Number(loyal.has(a.id)));
       for (const fan of candidates) {
         if (intents.length >= this.opts.maxBuysPerTick) break;
         if (planned >= s.capacity) break;
@@ -70,7 +73,8 @@ export class FanSim {
           continue;
         }
         const urgency = 0.4 + 0.6 * s.progress; // fans hurry as the deadline nears
-        const p = taste * fan.eagerness * urgency * 0.9;
+        // a fan refunded from the cancelled date mostly rebuys for its replacement
+        const p = loyal.has(fan.id) ? 0.8 : taste * fan.eagerness * urgency * 0.9;
         if (this.rng.next() > p) continue;
         const qty = Math.min(this.rng.int(1, 2), s.capacity - planned);
         planned += qty;
@@ -96,6 +100,9 @@ export class FanSim {
               ({ sig } = await this.client.buyTicket(null, s.booked.show, qty, fanKey));
             }
             this.bought.add(key);
+            const showKey = s.booked.show.toBase58();
+            if (!this.holders.has(showKey)) this.holders.set(showKey, new Set());
+            this.holders.get(showKey)!.add(fan.id);
             s.ticketsSold += qty;
             buys++;
             this.bus.publish({

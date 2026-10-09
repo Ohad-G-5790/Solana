@@ -6,7 +6,10 @@
   "type": "module",
   "main": "src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./planner": "./src/planner.ts",
+    "./approvals": "./src/approvals.ts",
+    "./alternatives": "./src/alternatives.ts"
   },
   "scripts": {
     "demo": "tsx src/cli.ts",

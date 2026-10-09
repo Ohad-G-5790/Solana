@@ -4,8 +4,12 @@ import { fileURLToPath } from "node:url";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { generateWorld, type CrewProfile, type Venue, type World } from "@greenroom/world";
 import { bandPda, GreenroomClient, keypairFromSeedHex, showStateName, venuePda } from "@greenroom/sdk";
+import { findAlternatives } from "./alternatives.ts";
+import type { AlternativeOption, ApprovalMode } from "./approvals.ts";
+import { askBand, AutoApprover, FileApprover, type Approver } from "./approver.ts";
 import { BandAgent, crewOffersFor, type BookedShow, type CrewOffer, type TourBrief } from "./band-agent.ts";
 import { makeBrain, type Brain } from "./brain.ts";
+import type { VenueOffer } from "./planner.ts";
 import { MessageBus } from "./bus.ts";
 import { Crank } from "./crank.ts";
 import { FanSim } from "./fan-sim.ts";
@@ -37,27 +41,62 @@ export interface RunOptions {
   /** Fan purchases per tick (devnet: keep small). */
   maxBuysPerTick?: number;
   tickMs?: number;
+  /**
+   * Who approves venues, the route and replacement shows. "auto" (default):
+   * auto-pilot takes the agent's recommendation. "dashboard": the run waits
+   * for the band to decide in the dashboard (decisions.jsonl in the run folder).
+   */
+  approvals?: ApprovalMode;
+  /** Seconds the band has to pick a replacement before the offer lapses (dashboard mode). */
+  replacementTimeoutSec?: number;
   log?: (line: string) => void;
+}
+
+export interface RunShowSummary {
+  show: string;
+  city: string;
+  venue: string;
+  venueName?: string;
+  day: number;
+  capacity: number;
+  ticketsSold: number;
+  state: string;
+  date: number;
+  thresholdDeadline: number;
+  salesOpenAt: number;
+  ticketPriceLamports: number;
+  venueBps: number;
+  thresholdBps: number;
+  payees: { label: string; bps: number }[];
+  /** This show replaces a cancelled one. */
+  replaces?: string;
+  /** This cancelled show was replaced by another. */
+  replacedBy?: string;
+}
+
+export interface TourStats {
+  proposed: number;
+  accepted: number;
+  rejected: number;
+  confirmed: number;
+  cancelled: number;
+  refunded: number;
+  settled: number;
+  ticketsSold: number;
+  crewHired: number;
+  replacements: number;
 }
 
 export interface RunSummary {
   runId: string;
   cluster: string;
-  band: { id: string; name: string; authority: string; profile: string };
+  band: { id: string; name: string; authority: string; profile: string; homeCity: string; genre: string; draw: number };
+  brief: { countries: string[]; wantedShows: number; windowDays: number };
+  approvals: ApprovalMode;
+  /** Empty when the band declined before anything was booked. */
   tour: string;
-  shows: {
-    show: string;
-    city: string;
-    venue: string;
-    day: number;
-    capacity: number;
-    ticketsSold: number;
-    state: string;
-    date: number;
-    thresholdDeadline: number;
-    payees: { label: string; bps: number }[];
-  }[];
-  stats: { proposed: number; accepted: number; rejected: number; confirmed: number; cancelled: number; refunded: number; settled: number; ticketsSold: number; crewHired: number; messages: number; brain: string };
+  shows: RunShowSummary[];
+  stats: TourStats & { messages: number; brain: string };
 }
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -184,14 +223,38 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
   }
 
   // ---------- the tour ----------
-  const outcome = await runTour(brief, { hub: opts.payer.publicKey, connection, bandAgent, crank, fans, bus, client, world, crewAddress, log, tickMs: opts.tickMs ?? 2500, collectMs: 1500, hireCrew: true });
+  const mode: ApprovalMode = opts.approvals ?? "auto";
+  const approver: Approver = mode === "dashboard" ? new FileApprover(join(runDir, "decisions.jsonl")) : new AutoApprover();
+  if (mode === "dashboard") {
+    bus.publish({ kind: "note", from: "orchestrator", text: "Approvals are on: the band agent waits for the band to approve venues, the route and any replacement show in the dashboard." });
+    log(`[approvals] waiting for decisions in the dashboard (Approvals page); they are written to ${join(runDir, "decisions.jsonl")}`);
+  }
+  const outcome = await runTour(brief, {
+    hub: opts.payer.publicKey,
+    connection,
+    bandAgent,
+    crank,
+    fans,
+    bus,
+    client,
+    world,
+    crewAddress,
+    log,
+    tickMs: opts.tickMs ?? 2500,
+    collectMs: 1500,
+    hireCrew: true,
+    approver,
+    replacementTimeoutSec: opts.replacementTimeoutSec ?? 300,
+  });
   for (const a of venueAgents) a.stop();
 
   const summary: RunSummary = {
     runId,
     cluster: opts.rpcUrl,
-    band: { id: band.id, name: band.name, authority: bandKp.publicKey.toBase58(), profile: bandProfile.toBase58() },
-    tour: outcome.tour.toBase58(),
+    band: { id: band.id, name: band.name, authority: bandKp.publicKey.toBase58(), profile: bandProfile.toBase58(), homeCity: band.homeCity, genre: band.genre, draw: band.draw },
+    brief: { countries: brief.countries, wantedShows: brief.wantedShows, windowDays: brief.windowDays },
+    approvals: mode,
+    tour: outcome.tour?.toBase58() ?? "",
     shows: outcome.shows,
     stats: { ...outcome.stats, messages: bus.log.length, brain: brain.name },
   };
@@ -212,10 +275,10 @@ async function fund(client: GreenroomClient, payer: Keypair, to: PublicKey, sol:
   await client.transferSol(payer, to, sol);
 }
 
-interface TourDeps {
+export interface TourDeps {
   /** Fee payer / hub wallet that pays for simulated fans. */
   hub: PublicKey;
-  connection: Connection;
+  connection: Pick<Connection, "getBalance">;
   bandAgent: BandAgent;
   crank: Crank;
   fans: FanSim;
@@ -227,19 +290,69 @@ interface TourDeps {
   tickMs: number;
   collectMs: number;
   hireCrew: boolean;
+  /** Without an approver nothing is asked (the history replay). */
+  approver?: Approver;
+  replacementTimeoutSec?: number;
 }
 
-async function runTour(brief: TourBrief, d: TourDeps) {
-  const { bandAgent, crank, fans, bus, client, world } = d;
-  const stats = { proposed: 0, accepted: 0, rejected: 0, confirmed: 0, cancelled: 0, refunded: 0, settled: 0, ticketsSold: 0, crewHired: 0 };
+export interface TourOutcome {
+  tour: PublicKey | null;
+  shows: RunShowSummary[];
+  stats: TourStats;
+}
+
+/**
+ * One tour, start to finish: offers -> (band approves venues) -> plan ->
+ * (band approves the route) -> propose/accept -> fans buy -> crank confirms or
+ * cancels -> (band picks a replacement for a cancelled show) -> refunds, crew,
+ * settlement.
+ */
+export async function runTour(brief: TourBrief, d: TourDeps): Promise<TourOutcome> {
+  const { bandAgent, crank, fans, bus, client, world, approver } = d;
+  const stats: TourStats = { proposed: 0, accepted: 0, rejected: 0, confirmed: 0, cancelled: 0, refunded: 0, settled: 0, ticketsSold: 0, crewHired: 0, replacements: 0 };
+  const nothingBooked = (why: string): TourOutcome => {
+    bus.publish({ kind: "note", from: bandAgent.id, text: why });
+    return { tour: null, shows: [], stats };
+  };
 
   const offers = await bandAgent.requestOffers(brief, d.collectMs);
   bus.publish({ kind: "note", from: bandAgent.id, text: `${offers.length} venues made offers.` });
-  const plan = await bandAgent.plan(brief, offers);
-  if (plan.length === 0) throw new Error("no viable plan (no offers?)");
+  if (offers.length === 0) throw new Error("no viable plan (no offers?)");
+
+  // ---------- 1. the band approves venues ----------
+  let approved: VenueOffer[] = offers;
+  if (approver) {
+    const req = bandAgent.venuesRequest(brief, offers);
+    const p = req.payload.step === "venues" ? req.payload : null;
+    const recommendedCount = req.recommended.step === "venues" ? req.recommended.venueIds.length : 0;
+    const text = `${offers.length} venues in ${new Set(offers.map((o) => o.city)).size} cities made offers. I recommend ${recommendedCount}: the best ${brief.wantedShows} for the route plus backups for replacements. Approve the venues you want to play; nothing is booked yet.`;
+    const decision = await askBand(bus, approver, bandAgent.id, req, text);
+    const a = decision.answer;
+    if (a.step !== "venues" || !a.approve || a.venueIds.length === 0) return nothingBooked(`No venues approved${p ? ` out of ${p.offers.length}` : ""}; the tour is not booked.`);
+    approved = offers.filter((o) => a.venueIds.includes(o.venueId));
+  }
+
+  // ---------- 2. the band approves the route ----------
+  let plan = await bandAgent.plan(brief, approved);
+  if (plan.length === 0) {
+    if (approver) return nothingBooked("The approved venues have no free days that fit the window; nothing booked.");
+    throw new Error("no viable plan (no offers?)");
+  }
+  if (approver) {
+    for (let round = 1; ; round++) {
+      const { request, text } = bandAgent.routeRequest(plan, approved, round);
+      const a = (await askBand(bus, approver, bandAgent.id, request, text)).answer;
+      if (a.step === "route" && a.approve) break;
+      if (a.step !== "route" || a.dropVenueIds.length === 0) return nothingBooked("Route declined; nothing booked.");
+      if (round >= 5) return nothingBooked("Five routes declined; stopping here, nothing booked.");
+      approved = approved.filter((o) => !a.dropVenueIds.includes(o.venueId));
+      plan = await bandAgent.plan(brief, approved);
+      if (plan.length === 0) return nothingBooked("No route is left after those changes; nothing booked.");
+    }
+  }
 
   // Venue agents answer proposals on the bus as soon as they see them, so
-  // listen before proposing anything.
+  // listen before proposing anything (replacements included).
   const decided = new Set<string>();
   const unsubscribeA = bus.on("show.accepted", (m) => {
     stats.accepted++;
@@ -250,14 +363,13 @@ async function runTour(brief: TourBrief, d: TourDeps) {
     decided.add((m.data as { show: string }).show);
   });
 
+  // ---------- 3. book ----------
   const salesOpenAt = (await client.chainTime()) + 2;
   bandAgent.booked.length = 0;
   const { tour } = await bandAgent.book(brief, plan, salesOpenAt);
   stats.proposed = bandAgent.booked.length;
 
   for (let i = 0; i < 40 && decided.size < bandAgent.booked.length; i++) await sleep(500);
-  unsubscribeA();
-  unsubscribeR();
 
   // The chain is the source of truth: a show is live when its account exists
   // and is on sale (rejected shows are closed).
@@ -273,19 +385,43 @@ async function runTour(brief: TourBrief, d: TourDeps) {
   bus.publish({ kind: "note", from: "orchestrator", text: `${live.length} of ${bandAgent.booked.length} proposed shows are on sale; fans are buying.` });
   const hiredFor = new Set<string>();
   const done = new Set<string>();
+  const cancelledShows = new Set<string>();
+  const replacedBy = new Map<string, string>();
+
+  // Replacement offers are asked without blocking the loop: other shows keep
+  // selling while the band decides. Picks are booked at the top of a tick.
+  const stopAsking = new AbortController();
+  let asking = 0;
+  const picked: { cancelled: BookedShow; optionId: string; options: AlternativeOption[] }[] = [];
 
   // main loop: fans buy, crank advances state, crew gets hired, until every show is terminal.
   // Every RPC error inside a tick is transient by assumption (public endpoints
   // rate-limit bursts): log, back off, and try again next tick.
   const start = Date.now();
+  let limitMs = (brief.showAfterSec + 180) * 1000;
   let failures = 0;
   let hubEmptyNoted = false;
-  while (done.size < live.length && Date.now() - start < (brief.showAfterSec + 180) * 1000) {
+  while ((done.size < live.length || asking > 0 || picked.length > 0) && Date.now() - start < limitMs) {
     let r: Awaited<ReturnType<Crank["run"]>>;
+    let chainNow: number;
+    const accounts = new Map<string, Awaited<ReturnType<GreenroomClient["fetchShow"]>>>();
     try {
-      const chainNow = await client.chainTime();
+      chainNow = await client.chainTime();
+
+      while (picked.length) {
+        const { cancelled, optionId, options } = picked.shift()!;
+        const option = options.find((o) => o.id === optionId);
+        if (!option) continue;
+        const booked = await bandAgent.bookReplacement(brief, tour, cancelled, option, chainNow + 2);
+        if (!booked) continue;
+        stats.proposed++;
+        stats.replacements++;
+        live.push(booked);
+        replacedBy.set(cancelled.show.toBase58(), booked.show.toBase58());
+        limitMs = Math.max(limitMs, Date.now() - start + (booked.date - chainNow + 180) * 1000);
+      }
+
       const views: { booked: BookedShow; state: string; ticketsSold: number; capacity: number; progress: number }[] = [];
-      const accounts = new Map<string, Awaited<ReturnType<GreenroomClient["fetchShow"]>>>();
       for (const b of live) {
         if (done.has(b.show.toBase58())) continue;
         let acct;
@@ -298,7 +434,7 @@ async function runTour(brief: TourBrief, d: TourDeps) {
         accounts.set(b.show.toBase58(), acct);
         const state = showStateName(acct.state);
         if (state === "settled" || (state === "cancelled" && acct.ticketsRefunded === acct.ticketsSold)) done.add(b.show.toBase58());
-        const openAt = Number(acct.thresholdDeadline) - brief.deadlineAfterSec;
+        const openAt = b.salesOpenAt;
         const progress = Math.min(1, Math.max(0, (chainNow - openAt) / Math.max(1, Number(acct.thresholdDeadline) - openAt)));
         views.push({ booked: b, state, ticketsSold: acct.ticketsSold, capacity: acct.capacity, progress });
       }
@@ -324,6 +460,48 @@ async function runTour(brief: TourBrief, d: TourDeps) {
     stats.refunded += r.refunded;
     stats.settled += r.settled.length;
 
+    // ---------- 4. a show missed its threshold: offer the band a replacement ----------
+    for (const show of r.cancelled) {
+      const b = live.find((x) => x.show.equals(show));
+      if (!b) continue;
+      cancelledShows.add(b.show.toBase58());
+      if (!approver) continue;
+      if (b.replaces) {
+        // One replacement per date: chasing a second one turns the tour into a ping-pong.
+        bus.publish({ kind: "note", from: bandAgent.id, text: `The replacement in ${b.city} missed its threshold too; fans are refunded and the tour goes on without that date.` });
+        continue;
+      }
+      const acct = accounts.get(b.show.toBase58());
+      const sold = acct?.ticketsSold ?? 0;
+      const required = Math.ceil((b.capacity * b.thresholdBps) / 10_000);
+      const stillOn = live.filter((x) => !cancelledShows.has(x.show.toBase58()));
+      const options = findAlternatives({
+        band: bandAgent.band,
+        cancelled: { venueId: b.venueId, city: b.city, day: b.day, capacity: b.capacity, ticketsSold: sold, thresholdBps: b.thresholdBps },
+        offers: approved,
+        route: stillOn.map((x) => {
+          const o = approved.find((y) => y.venueId === x.venueId);
+          return { venueId: x.venueId, city: x.city, day: x.day, lat: o?.lat ?? 0, lng: o?.lng ?? 0 };
+        }),
+        windowDays: brief.windowDays,
+        capacityScale: brief.capacityScale,
+        minCapacity: brief.minCapacity,
+      });
+      if (options.length === 0) {
+        bus.publish({ kind: "note", from: bandAgent.id, text: `${b.city} was cancelled and none of the approved venues can take the date; fans are refunded and the tour goes on without it.` });
+        continue;
+      }
+      const { request, text } = bandAgent.alternativeRequest(b, sold, required, options);
+      const expiresAt = approver.mode === "dashboard" ? Date.now() + (d.replacementTimeoutSec ?? 300) * 1000 : undefined;
+      asking++;
+      void askBand(bus, approver, bandAgent.id, { ...request, expiresAt }, text, stopAsking.signal)
+        .then((dec) => {
+          const a = dec.answer;
+          if (a.step === "alternative" && a.approve && a.optionId) picked.push({ cancelled: b, optionId: a.optionId, options });
+        })
+        .finally(() => asking--);
+    }
+
     if (d.hireCrew) {
       for (const show of r.confirmed) {
         const b = live.find((x) => x.show.equals(show));
@@ -339,8 +517,11 @@ async function runTour(brief: TourBrief, d: TourDeps) {
     }
     await sleep(d.tickMs);
   }
+  stopAsking.abort();
+  unsubscribeA();
+  unsubscribeR();
 
-  const shows = [];
+  const shows: RunShowSummary[] = [];
   for (const b of bandAgent.booked) {
     let state = "rejected";
     let ticketsSold = 0;
@@ -354,7 +535,25 @@ async function runTour(brief: TourBrief, d: TourDeps) {
       /* closed */
     }
     stats.ticketsSold += ticketsSold;
-    shows.push({ show: b.show.toBase58(), city: b.city, venue: b.venueId, day: b.day, capacity: b.capacity, ticketsSold, state, date: b.date, thresholdDeadline: b.thresholdDeadline, payees });
+    shows.push({
+      show: b.show.toBase58(),
+      city: b.city,
+      venue: b.venueId,
+      venueName: b.venueName,
+      day: b.day,
+      capacity: b.capacity,
+      ticketsSold,
+      state,
+      date: b.date,
+      thresholdDeadline: b.thresholdDeadline,
+      salesOpenAt: b.salesOpenAt,
+      ticketPriceLamports: b.ticketPriceLamports,
+      venueBps: b.venueBps,
+      thresholdBps: b.thresholdBps,
+      payees,
+      replaces: b.replaces,
+      replacedBy: replacedBy.get(b.show.toBase58()),
+    });
   }
   return { tour, shows, stats };
 }

@@ -14,9 +14,12 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
+  Transaction,
+  VersionedTransaction,
   type Commitment,
   type ConfirmOptions,
 } from "@solana/web3.js";
+
 import type { Greenroom } from "../idl/greenroom.ts";
 import idlJson from "../idl/greenroom.json" with { type: "json" };
 import { bandPda, showPda, ticketPda, tourPda, vaultPda, venuePda } from "./pdas.ts";
@@ -49,12 +52,12 @@ export class KeypairWallet implements Wallet {
   get publicKey(): PublicKey {
     return this.payer.publicKey;
   }
-  async signTransaction<T extends anchor.web3.Transaction | anchor.web3.VersionedTransaction>(tx: T): Promise<T> {
-    if (tx instanceof anchor.web3.VersionedTransaction) tx.sign([this.payer]);
+  async signTransaction<T extends Transaction | VersionedTransaction>(tx: T): Promise<T> {
+    if (tx instanceof VersionedTransaction) tx.sign([this.payer]);
     else tx.partialSign(this.payer);
     return tx;
   }
-  async signAllTransactions<T extends anchor.web3.Transaction | anchor.web3.VersionedTransaction>(txs: T[]): Promise<T[]> {
+  async signAllTransactions<T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> {
     for (const tx of txs) await this.signTransaction(tx);
     return txs;
   }
@@ -106,7 +109,7 @@ export class GreenroomClient {
   async transferSolMany(from: Keypair, targets: { to: PublicKey; sol: number }[]): Promise<string[]> {
     const sigs: string[] = [];
     for (let i = 0; i < targets.length; i += 16) {
-      const tx = new anchor.web3.Transaction();
+      const tx = new Transaction();
       for (const t of targets.slice(i, i + 16)) {
         tx.add(SystemProgram.transfer({ fromPubkey: from.publicKey, toPubkey: t.to, lamports: Math.round(t.sol * LAMPORTS_PER_SOL) }));
       }
@@ -116,7 +119,7 @@ export class GreenroomClient {
   }
 
   async transferSol(from: Keypair, to: PublicKey, sol: number): Promise<string> {
-    const tx = new anchor.web3.Transaction().add(
+    const tx = new Transaction().add(
       SystemProgram.transfer({ fromPubkey: from.publicKey, toPubkey: to, lamports: Math.round(sol * LAMPORTS_PER_SOL) })
     );
     return this.provider.sendAndConfirm(tx, [from]);

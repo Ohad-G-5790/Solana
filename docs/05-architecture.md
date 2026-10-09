@@ -33,8 +33,8 @@
 | Program | `programs/greenroom` (Rust, Anchor 1.2.1) | deal terms, escrow, state machine, payouts. Spec: [01-program-spec.md](01-program-spec.md) |
 | SDK | `packages/sdk` | PDAs, instruction wrappers, account fetchers, deterministic wallets, vendored IDL |
 | World | `packages/world` | `data/venues.json` loader (136 real venues in 35 cities), generators for 100 bands, 100 crew per city, fans per city |
-| Agents | `packages/agents` | message bus, brain, planner, band/venue agents, fan sim, crew offers, crank, orchestrator, CLI |
-| Dashboard | `packages/web` | tour route, show cards, live feed, band track record, wallet buy/refund |
+| Agents | `packages/agents` | message bus, brain, planner, band approvals and replacement options, band/venue agents, fan sim, crew offers, crank, orchestrator, CLI |
+| Dashboard | `packages/web` | the band's view: approvals, attention list, route with drive times, show health, venue finder, route planner, live feed, track record, wallet buy/refund |
 | QA | `qa/` | automated checks + rubric judge → weighted score, five-loop limit |
 
 ## How a tour happens
@@ -42,13 +42,27 @@
 1. **Brief.** The band agent is told countries, number of shows, window, draw, target price.
 2. **Request.** It broadcasts a `tour.request` with its on-chain track record (settled shows, tickets sold).
 3. **Offers.** Every venue agent in those countries evaluates fit (genre, draw vs capacity, history) and answers with an offer (capacity, share in bps, minimum price, free days) or declines.
-4. **Plan.** The band agent keeps the best offer per city, ranks cities, orders them geographically (nearest neighbour + 2-opt), assigns days with a rest day after every third show, and respects availability. Claude, when enabled, may reorder or drop cities; the deterministic planner re-validates everything.
-5. **Book.** `create_tour`, then `propose_show` per city with price, capacity, 50% threshold, deadline and split. Venue agents compare the proposal with their offer and sign `accept_show` or `reject_show`.
-6. **Sell.** Fan agents near each city buy tickets into the show's vault; a hub wallet pays, the fan is the beneficiary.
-7. **Decide.** The crank calls `check_threshold`: confirmed as soon as the threshold is met, cancelled once the deadline passes without it.
-8. **Refund.** For cancelled shows the crank refunds every ticket to its beneficiary and closes the ticket account.
-9. **Crew.** For confirmed shows, local crew agents pitch; the band hires up to two different roles within 15% of revenue (`add_payee`).
-10. **Settle.** After the show date the crank calls `settle_show`; the vault is split by bps, dust goes to the band, and the band's track record grows.
+4. **Band approves venues.** The band agent publishes an `approval.request` with every offer scored for fit and the drive from home; the planner's picks plus a few backups are recommended. The band answers in the dashboard (or auto-pilot takes the recommendation).
+5. **Plan.** From the approved venues only, the band agent keeps the best offer per city, ranks cities, orders them geographically (nearest neighbour + 2-opt), assigns days with a rest day after every third show and a travel day before any leg over 9 hours of driving, and respects availability. Claude, when enabled, may reorder or drop cities; the deterministic planner re-validates everything.
+6. **Band approves the route.** A second `approval.request` carries the itinerary, drive per leg, days off and money at threshold and sellout. Dropping stops triggers a re-plan; declining books nothing.
+7. **Book.** `create_tour`, then `propose_show` per city with price, capacity, 50% threshold, deadline and split. Venue agents compare the proposal with their offer and sign `accept_show` or `reject_show`.
+8. **Sell.** Fan agents near each city buy tickets into the show's vault; a hub wallet pays, the fan is the beneficiary.
+9. **Decide.** The crank calls `check_threshold`: confirmed as soon as the threshold is met, cancelled once the deadline passes without it.
+10. **Refund and replace.** For cancelled shows the crank refunds every ticket to its beneficiary and closes the ticket account. The band agent offers up to three replacements from approved venues (same venue at half the capacity, a smaller room in the same city, a nearby city within 250 km of extra driving) without pausing the other shows; the band's pick is proposed as a new show with its own deadline and linked to the cancelled one. One replacement per date.
+11. **Crew.** For confirmed shows, local crew agents pitch; the band hires up to two different roles within 15% of revenue (`add_payee`).
+12. **Settle.** After the show date the crank calls `settle_show`; the vault is split by bps, dust goes to the band, and the band's track record grows.
+
+## Band approvals
+
+| Piece | Where | Role |
+|---|---|---|
+| Request and answer types, builders, validation, transcript reader | `packages/agents/src/approvals.ts` | pure, also imported by the dashboard |
+| Replacement options | `packages/agents/src/alternatives.ts` | pure |
+| Auto-pilot and dashboard approvers | `packages/agents/src/approver.ts` | `AutoApprover` answers with the recommendation; `FileApprover` polls `decisions.jsonl` in the run folder |
+| Decision endpoint | `packages/web/src/app/api/approvals/route.ts` | validates the answer against the pending request and appends it to `decisions.jsonl` |
+| Drive estimates and stop ordering | `packages/world/src/geo.ts` | pure, shared by planner and dashboard |
+
+Requests and decisions are ordinary bus messages (`approval.request`, `approval.decision`), so they appear in the transcript and the feed. The band never signs through the dashboard: the agent holds the band's key, and an answer only selects among options the agent computed.
 
 ## Trust model
 

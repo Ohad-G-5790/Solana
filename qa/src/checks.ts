@@ -236,7 +236,8 @@ export const CHECKS: CheckDef[] = [
     command: "npm test -w @greenroom/world",
     run: (root) => {
       const r = sh("npm", ["test", "-w", "@greenroom/world"], root);
-      return { ok: r.ok && /pass 3/.test(r.out) && !/fail [1-9]/.test(r.out), detail: tail(r.out, 500) };
+      const passed = Number(/# pass (\d+)/.exec(r.out)?.[1] ?? 0);
+      return { ok: r.ok && passed >= 3 && !/fail [1-9]/.test(r.out), detail: tail(r.out, 500) };
     },
   },
   {

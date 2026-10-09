@@ -12,6 +12,7 @@ export interface TourRequest {
   genre: string;
   draw: number;
   countries: string[];
+  wantedShows?: number;
   windowDays: number;
   targetPriceLamports: number;
   trackRecord: { showsCompleted: number; ticketsSoldTotal: number; grossSettledLamports: number };
@@ -21,6 +22,7 @@ export interface ShowProposedData {
   show: string;
   venuePubkey: string;
   venueId: string;
+  venueName?: string;
   city: string;
   day: number;
   capacity: number;
@@ -30,6 +32,10 @@ export interface ShowProposedData {
   thresholdBps: number;
   bandAuthority: string;
   bandName: string;
+  /** Demo-clock unix seconds when sales opened (deadline and date follow from it). */
+  salesOpenAt?: number;
+  /** The cancelled show this one replaces. */
+  replaces?: string;
 }
 
 /**
@@ -114,6 +120,7 @@ export class VenueAgent {
     }
     const offer: VenueOffer = {
       venueId: v.id,
+      venueName: v.name,
       venuePubkey: this.venueProfile.toBase58(),
       city: v.city,
       country: v.country,

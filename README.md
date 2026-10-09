@@ -6,7 +6,7 @@ Live: [dashboard](https://ohad-g-5790.github.io/Solana/) · [program on devnet](
 
 [![ci](https://github.com/Ohad-G-5790/Solana/actions/workflows/ci.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/ci.yml) [![program](https://github.com/Ohad-G-5790/Solana/actions/workflows/program.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/program.yml) [![pages](https://github.com/Ohad-G-5790/Solana/actions/workflows/pages.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/pages.yml)
 
-Every band, venue, fan and crew member has an AI agent. A band's agent takes a brief ("November, Central Europe, eight shows, we draw 400"), negotiates with venue agents, plans a route that makes geographic sense, and opens ticket sales months early. Fans pay into an on-chain escrow per show. Each show carries a sell-through threshold and a deadline: hit it and the show is confirmed; miss it and every fan is refunded automatically. After the show date the escrow is split between the band, the venue and the crew the band hired. No booker, no promoter, no deposit risk, and the band's settled shows become a track record that venues can verify on-chain.
+Every band, venue, fan and crew member has an AI agent. A band's agent takes a brief ("November, Central Europe, eight shows, we draw 400"), negotiates with venue agents, plans a route that makes geographic sense, asks the band to approve the venues and the route, and only then opens ticket sales months early. Fans pay into an on-chain escrow per show. Each show carries a sell-through threshold and a deadline: hit it and the show is confirmed; miss it and every fan is refunded automatically. After the show date the escrow is split between the band, the venue and the crew the band hired. No booker, no promoter, no deposit risk, and the band's settled shows become a track record that venues can verify on-chain.
 
 Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 2026.
 
@@ -17,7 +17,7 @@ Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 20
 | Anchor program: profiles, tours, shows with escrow vaults, tickets, threshold/refund/settlement cranks, crew payees | `programs/greenroom` | 11 instructions, 13 integration tests on a local validator; deployed on devnet |
 | Agents: band, venues, fans, crew, crank, message bus, pluggable brain (heuristic or Claude) | `packages/agents` | end-to-end demo on localnet and devnet |
 | Seed world: 136 real venues in 35 cities across DE/AT/FR/PL/CZ, 100 generated bands, 100 crew and 60 fans per city | `packages/world`, `data/venues.json` | deterministic |
-| Dashboard: route, show cards with threshold progress, live agent feed, wallet buy/refund, band track record | `packages/web` | Next.js, design per `docs/DESIGN.md` |
+| Dashboard for the band: approvals (venues, route, replacement shows), what needs attention, route with drive times, show health, venue finder, route planner, live agent feed, wallet buy/refund, track record | `packages/web` | Next.js, design per `docs/DESIGN.md` |
 | QA bot: automated checks + rubric judge, weighted score, pass at 8.5, five-loop limit | `qa/` | `npm run qa` |
 
 ## Quick start
@@ -33,6 +33,26 @@ npm run dev -w @greenroom/web         # dashboard (reads devnet by default; see 
 ```
 
 `npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. To watch a local run in the dashboard, copy `packages/web/.env.local.example` to `packages/web/.env.local` so it reads the local validator; without that file it reads devnet, where the program is deployed, and shows the recorded run from `packages/web/public/demo`.
+
+### Approving the tour yourself
+
+`npm run demo:fast` runs on auto-pilot: the band agent approves its own recommendations. To make the band's decisions yourself, start the agents in approval mode and keep the dashboard open on **Approvals**:
+
+```bash
+npm run demo:approve                  # local validator + agents; the run waits for you (validator stays up)
+cp packages/web/.env.local.example packages/web/.env.local   # once: point the dashboard at the local validator
+npm run dev -w @greenroom/web         # in a second terminal; open http://localhost:3000/approvals
+```
+
+The agent stops three times:
+
+1. **Venues.** Every offer, grouped by city, with tickets offered, the venue's share, minimum price, free days, a fit score and the drive from your home city. The planner's picks and a few backups are pre-ticked; untick what you do not want to play. A draft route updates as you tick.
+2. **Route.** The itinerary planned from the approved venues: dates, drive per leg (with warnings for long drives and legs that need a travel day), days off, and money at threshold and at sellout. Approve it to book, or untick stops to get a new route without them. Nothing is on-chain before you approve.
+3. **Replacement** (when a show misses its threshold). Fans are refunded automatically; the agent offers to keep the date with the same venue at a smaller capacity, a smaller room in the same city, or an approved venue in a nearby city, with the extra driving for each. Pick one, or let the date go. Offers lapse after five minutes (`--replacement-timeout`).
+
+Decisions go from the dashboard (`POST /api/approvals`) to `data/runs/<run>/decisions.jsonl`, which the running agent polls; each answer is validated before it is used. The hosted dashboard shows recorded runs, so its decision buttons are off.
+
+The **Venues** page filters the 136 venues by country, size, programme and maximum drive from any city, and the **Route planner** turns any list of venues into a day-by-day schedule with drive times, travel days for the long hauls, days off and a copyable itinerary. Drive times are estimates (road ≈ 1.2 × straight line, a loaded van at ~90 km/h with EU-style breaks), not routing.
 
 ### Devnet
 
@@ -56,12 +76,13 @@ Copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY` (a Claude Console key,
 
 1. The band agent broadcasts a brief with its on-chain track record.
 2. Venue agents in the requested countries answer with offers (capacity, share, minimum price, free days) or decline.
-3. The band agent plans the route (best offer per city, nearest-neighbour + 2-opt, rest days) and proposes shows on-chain.
-4. Venue agents check each proposal against their offer and sign `accept_show`.
-5. Fan agents buy tickets into each show's vault; a real wallet can buy from the dashboard too.
-6. The crank confirms shows that reach the threshold and cancels the ones that miss the deadline; cancelled shows are refunded ticket by ticket.
-7. Crew agents pitch on confirmed shows; the band adds the ones it hires as payees.
-8. After the show date the crank settles: vault split by bps, band's track record updated.
+3. The band approves the venues it is willing to play (auto-pilot takes the agent's recommendation).
+4. The band agent plans the route (best offer per city, nearest-neighbour + 2-opt, rest days, a travel day before any leg over 9 hours of driving) and the band approves it; only then does the agent propose shows on-chain.
+5. Venue agents check each proposal against their offer and sign `accept_show`.
+6. Fan agents buy tickets into each show's vault; a real wallet can buy from the dashboard too.
+7. The crank confirms shows that reach the threshold and cancels the ones that miss the deadline; cancelled shows are refunded ticket by ticket, and the band is offered a replacement show (smaller capacity, smaller room, or a nearby city) that goes on sale if the band picks one.
+8. Crew agents pitch on confirmed shows; the band adds the ones it hires as payees.
+9. After the show date the crank settles: vault split by bps, band's track record updated.
 
 Full spec: [docs/01-program-spec.md](docs/01-program-spec.md). Architecture: [docs/05-architecture.md](docs/05-architecture.md).
 

@@ -19,6 +19,7 @@
     "sync:idl": "node scripts/sync-idl.mjs",
     "demo": "node scripts/demo-local.mjs",
     "demo:fast": "node scripts/demo-local.mjs --fast",
+    "demo:approve": "node scripts/demo-local.mjs --fast --keep --approve",
     "demo:devnet": "npm run demo -w @greenroom/agents -- --rpc https://api.devnet.solana.com",
     "qa:dry": "tsx qa/src/run.ts --no-loop",
     "qa:quick": "tsx qa/src/run.ts --no-loop --skip program-tests,agents-e2e"

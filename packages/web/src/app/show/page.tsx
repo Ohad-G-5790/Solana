@@ -9,7 +9,7 @@ import { Progress, StateBadge } from "@/components/ShowCard";
 import { explorerUrl } from "@/lib/config";
 import { demoDate, short, sol, timeLeft } from "@/lib/format";
 import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, vaultPda, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
-import { getRun, type RunShow } from "@/lib/run";
+import { getRun, getWorld, type RunShow } from "@/lib/run";
 
 export default function ShowPage() {
   return (
@@ -25,6 +25,8 @@ function ShowView() {
   const { publicKey } = useWallet();
   const [acct, setAcct] = useState<ShowAccount | null | undefined>(undefined);
   const [run, setRun] = useState<RunShow | null>(null);
+  const [others, setOthers] = useState<RunShow[]>([]);
+  const [venueName, setVenueName] = useState<string | null>(null);
   const [tickets, setTickets] = useState<{ publicKey: PublicKey; account: TicketAccount }[]>([]);
   const [mine, setMine] = useState<TicketAccount | null>(null);
   const [now, setNow] = useState(0); // set from the chain clock on first poll
@@ -51,7 +53,12 @@ function ShowView() {
 
   useEffect(() => {
     void reload();
-    void getRun().then((r) => setRun(r?.shows.find((s) => s.show === address) ?? null));
+    void getRun().then((r) => {
+      const me = r?.shows.find((s) => s.show === address) ?? null;
+      setRun(me);
+      setOthers(r?.shows ?? []);
+      if (me) void getWorld().then((w) => setVenueName(w.venues.find((v) => v.id === me.venue)?.name ?? me.venueName ?? null));
+    });
     const t = setInterval(reload, 4000);
     const tick = setInterval(() => setNow((n) => n + 1), 1000);
     return () => {
@@ -96,7 +103,7 @@ function ShowView() {
         <div>
           <h1>{run?.city ?? short(address)}</h1>
           <p className="muted">
-            {run ? `${run.venue.replace(/-/g, " ")} · day ${run.day} · ${demoDate(run.day)}` : ""}{" "}
+            {run ? `${venueName ?? run.venueName ?? run.venue.replace(/-/g, " ")} · day ${run.day} · ${demoDate(run.day)}` : ""}{" "}
             <a href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
               show account ↗
             </a>{" "}
@@ -108,6 +115,21 @@ function ShowView() {
         </div>
         <StateBadge state={state} />
       </div>
+      {run?.replaces || run?.replacedBy ? (
+        <p className="small" style={{ marginTop: 8 }}>
+          {run.replaces ? (
+            <>
+              Replacement for the cancelled{" "}
+              <Link href={`/show?address=${run.replaces}`}>{others.find((s) => s.show === run.replaces)?.city ?? "show"}</Link> date, approved by the band.
+            </>
+          ) : null}
+          {run.replacedBy ? (
+            <>
+              This date was replaced by <Link href={`/show?address=${run.replacedBy}`}>{others.find((s) => s.show === run.replacedBy)?.city ?? "another show"}</Link>.
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
       <div className="card" style={{ marginTop: 16 }}>
         <Progress sold={acct.ticketsSold} capacity={acct.capacity} thresholdBps={acct.thresholdBps} state={state} />
