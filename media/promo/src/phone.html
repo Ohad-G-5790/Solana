@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Greenroom vertical promo</title>
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="phone.css" />
+  </head>
+  <body>
+    <div id="stage" class="v"></div>
+    <script src="geo.js"></script>
+    <script src="engine.js"></script>
+    <script src="phone-kit.js"></script>
+    <script>
+      const qs = new URLSearchParams(location.search);
+      const s = document.createElement("script");
+      s.src = `phone/${qs.get("v") || "a1"}.js`;
+      s.onload = async () => {
+        const faces = ["400 30px Inter", "500 30px Inter", "600 30px Inter", "700 30px Inter", "800 30px Inter", "700 30px 'Inter Display'", "800 30px 'Inter Display'"];
+        await Promise.all(faces.map((f) => document.fonts.load(f)));
+        await document.fonts.ready;
+        const stage = document.getElementById("stage");
+        const V = window.VIDEO;
+        const body = V.build(stage);
+        const bar = PK.chromeV(stage, V.tag);
+        const end = PK.endCardV(stage, V);
+        window.render = (t) => {
+          body(t);
+          bar(t);
+          end(t);
+        };
+        window.render(Number(qs.get("t") || 0));
+        window.READY = true;
+      };
+      document.body.appendChild(s);
+    </script>
+  </body>
+</html>

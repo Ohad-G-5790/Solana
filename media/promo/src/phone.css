@@ -1,0 +1,238 @@
+/* Vertical series: the musician's phone. Extends base.css. */
+#stage.v {
+  width: 1080px;
+  height: 1920px;
+  background: radial-gradient(1100px 1300px at 50% 62%, #181818 0%, var(--bg) 60%, #0e0e0e 100%);
+}
+.phone {
+  width: 800px;
+  height: 1700px;
+  border-radius: 116px;
+  background: #0a0a0a;
+  box-shadow: 0 0 0 3px #2c2c2c, inset 0 0 0 3px #161616, rgba(0, 0, 0, 0.6) 0 40px 120px;
+  transform-origin: 0 0;
+}
+.ph-screen {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  right: 20px;
+  bottom: 20px;
+  border-radius: 96px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.ph-cam {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  border-radius: 50%;
+  background: #000;
+  box-shadow: inset 0 0 0 5px #1b1b1b;
+  z-index: 5;
+}
+.ph-status {
+  position: absolute;
+  top: 26px;
+  left: 76px;
+  right: 76px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 28px;
+  font-weight: 700;
+  z-index: 5;
+}
+.ph-appbar {
+  position: absolute;
+  top: 98px;
+  left: 40px;
+  right: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+.ph-appbar .dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+.ph-appbar .me {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #2e2e2e;
+  color: #e6e6e6;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ph-panes {
+  position: absolute;
+  top: 186px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.pane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 760px;
+  height: 1480px;
+  padding: 0 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.pt {
+  font-family: var(--display);
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.ps {
+  font-size: 27px;
+  color: var(--text-muted);
+  margin-top: -6px;
+  margin-bottom: 6px;
+}
+.prow {
+  background: #1d1d1d;
+  border-radius: 28px;
+  padding: 24px 28px;
+  font-size: 28px;
+  color: var(--text-soft);
+}
+.prow b {
+  color: #fff;
+}
+.prow .k {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.prow .big {
+  font-family: var(--display);
+  font-size: 72px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.pbar {
+  position: relative;
+  height: 18px;
+  border-radius: 9999px;
+  background: #2c2c2c;
+  margin-top: 16px;
+}
+.pbar .clip {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.pbar .fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+}
+.pbar .fill.cancelled {
+  background: var(--negative);
+}
+.pbar .thr {
+  position: absolute;
+  top: -6px;
+  width: 4px;
+  height: 30px;
+  margin-left: -2px;
+  background: #fff;
+  border-radius: 2px;
+}
+.pbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: #000;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+}
+.notif {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  background: #262626;
+  border-radius: 44px;
+  padding: 28px 32px;
+  box-shadow: rgba(0, 0, 0, 0.6) 0 24px 64px, inset 0 0 0 2px #333;
+}
+.notif .ic {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #121212;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif .ic span {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.notif .app {
+  font-size: 22px;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+}
+.notif .tt {
+  font-size: 31px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: #fff;
+}
+.notif .bd {
+  font-size: 28px;
+  color: var(--text-soft);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.who-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface-mid);
+  border-radius: 9999px;
+  padding: 12px 24px;
+  font-size: 26px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.who-pill i {
+  font-style: normal;
+  color: var(--text-muted);
+  font-weight: 600;
+}
