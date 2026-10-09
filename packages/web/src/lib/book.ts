@@ -253,19 +253,8 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   }
 
   if (!ixs.length) return { tour: tour.toBase58(), tourId, shows, signatures: [] };
-  // Pack the instructions into as few transactions as fit (1232 bytes each), in order.
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-  const txs: Transaction[] = [];
-  let cur = new Transaction({ feePayer: wallet.publicKey, blockhash, lastValidBlockHeight });
-  for (const ix of ixs) {
-    const trial = new Transaction({ feePayer: wallet.publicKey, blockhash, lastValidBlockHeight }).add(...cur.instructions, ix);
-    const size = trial.serialize({ requireAllSignatures: false, verifySignatures: false }).length;
-    if (cur.instructions.length && size > 1232) {
-      txs.push(cur);
-      cur = new Transaction({ feePayer: wallet.publicKey, blockhash, lastValidBlockHeight }).add(ix);
-    } else cur = trial;
-  }
-  txs.push(cur);
+  const txs = packInstructions(ixs, () => new Transaction({ feePayer: wallet.publicKey, blockhash, lastValidBlockHeight }));
 
   onStatus(`Approve ${txs.length} transaction${txs.length > 1 ? "s" : ""} in your wallet…`);
   const signed = await wallet.signAllTransactions(txs);
@@ -296,3 +285,31 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   return { tour: tour.toBase58(), tourId, shows, signatures };
 }
 
+/**
+ * Pack instructions into as few transactions as fit, in order. A transaction
+ * may be at most 1232 bytes; wallets such as Phantom add a priority-fee
+ * instruction or two before signing, so each one is kept under `limit`.
+ * (Serializing an oversized transaction throws rather than returning its
+ * size, so "too large" is caught, not measured.)
+ */
+export function packInstructions(ixs: TransactionInstruction[], fresh: () => Transaction, limit = 1050): Transaction[] {
+  const size = (tx: Transaction): number => {
+    try {
+      return tx.serialize({ requireAllSignatures: false, verifySignatures: false }).length;
+    } catch {
+      return Infinity;
+    }
+  };
+  const txs: Transaction[] = [];
+  let cur = fresh();
+  for (const ix of ixs) {
+    const trial = fresh().add(...cur.instructions, ix);
+    if (cur.instructions.length && size(trial) > limit) {
+      txs.push(cur);
+      cur = fresh().add(ix);
+    } else cur = trial;
+    if (size(cur) > 1232) throw new Error("One step of the booking is too large for a single transaction.");
+  }
+  txs.push(cur);
+  return txs;
+}

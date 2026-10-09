@@ -30,7 +30,7 @@ export interface UiCheck {
 }
 
 export const UI_CHECKS: { id: string; title: string }[] = [
-  { id: "ux-public-first", title: "the first screen is public: nothing personal until a wallet connects" },
+  { id: "ux-public-first", title: "the first screen is a short pitch with the email sign-up; no app menu or band data until a wallet connects or the visitor explores the demo" },
   { id: "ux-connect-shows-mine", title: "connecting a wallet shows that wallet's own data right away" },
   { id: "ux-next-step", title: "a band without a tour sees one obvious next step" },
   { id: "ux-create-tour", title: "creating a tour takes four answers, shows the route and the drive home before anything is booked, and lets the band reorder it" },
@@ -247,6 +247,8 @@ export async function newPage(browser: Browser, fake: Fake, width = 1280, root =
         }
         case "getSignaturesForAddress":
           return [];
+        case "getLatestBlockhash":
+          return { ...ctx, value: { blockhash: "11111111111111111111111111111111", lastValidBlockHeight: 100 } };
         case "getSlot":
           return 1;
         case "getBlockTime":
@@ -284,7 +286,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       cwd: root,
       encoding: "utf8",
       shell: process.platform === "win32",
-      env: { ...process.env, NEXT_PUBLIC_BASE_PATH: BASE, NEXT_PUBLIC_RPC_URL: "https://api.devnet.solana.com", NEXT_PUBLIC_CLUSTER: "devnet" },
+      env: { ...process.env, NEXT_PUBLIC_BASE_PATH: BASE, NEXT_PUBLIC_RPC_URL: "https://api.devnet.solana.com", NEXT_PUBLIC_CLUSTER: "devnet", NEXT_PUBLIC_SIGNUP_URL: "https://signup.invalid/greenroom" },
     });
     if (r.status !== 0) return UI_CHECKS.map((c) => ({ ...c, ok: false, detail: `static build failed: ${(r.stdout + r.stderr).slice(-400)}` }));
   }
@@ -316,27 +318,46 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       const h1 = (await page.locator("h1").first().textContent()) ?? "";
       const connectBtn = await page.getByRole("button", { name: /connect wallet|select wallet/i }).filter({ visible: true }).count();
       const personal = await page.locator(".stats, .wallet-panel, .itinerary").count();
-      const notice = await page.locator(".demo-notice").count();
-      // the sign-up, when the build has an endpoint: the address goes out and the visitor is thanked
-      let signup = "no form in this build";
-      if (await page.locator(".demo-notice form").count()) {
+      const menu = await page.locator(".sidebar, .nav").filter({ visible: true }).count();
+      const pitch = await page.locator(".landing section").count();
+      const notice = /demo version/i.test((await page.locator(".landing").textContent().catch(() => "")) ?? "");
+      const centred = await page.locator("h1").first().evaluate((h) => {
+        const r = h.getBoundingClientRect();
+        return Math.abs(r.left + r.width / 2 - window.innerWidth / 2) < 40 && getComputedStyle(h).textAlign === "center";
+      });
+      const demo = await page.getByRole("button", { name: /explore the demo band/i }).count();
+      // the sign-up: the address goes out and the visitor is thanked
+      let signup = "no sign-up form";
+      if (await page.locator(".signup-box form").count()) {
         let posted = "";
         await page.route(/script\.google\.com|formspree|signup/, async (r) => {
           posted = r.request().postData() ?? "";
           await r.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' });
         });
+        await shot(page, "1-public");
         await page.getByLabel("Your email").fill("fan@example.com");
         await page.getByRole("button", { name: /notify me/i }).click();
         const thanked = await page.getByText(/thanks/i).waitFor({ timeout: 5000 }).then(() => true, () => false);
         signup = thanked && posted.includes("fan%40example.com") ? "ok" : `sent "${posted}", thanked: ${thanked}`;
       }
-      await shot(page, "1-public");
+      // the same page on a phone: no sideways scrolling
+      const phone = await newPage(browser, { band: true, delay: 0 }, 390);
+      await phone.goto(url("/"), { waitUntil: "domcontentloaded" });
+      await phone.locator(".landing").waitFor({ timeout: 5000 });
+      const over = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      await shot(phone, "phone-public");
+      await phone.close();
       await page.close();
       if (!connectBtn) return `no "Connect wallet" button on the first screen (h1: ${h1})`;
       if (connectBtn > 1) return `${connectBtn} connect buttons compete on the first screen`;
       if (personal) return `${personal} band-data blocks are visible before any wallet is connected`;
-      if (!notice) return "no 'This is a demo version' notice";
-      if (signup !== "ok" && signup !== "no form in this build") return `the email sign-up does not work: ${signup}`;
+      if (menu) return "the app menu shows before a wallet connects or the demo is opened";
+      if (pitch < 3 || pitch > 5) return `the pitch has ${pitch} sections (want 3 to 5: short, but enough to explain)`;
+      if (!centred) return "the main heading is not centred";
+      if (!notice) return "the first page does not say it is a demo version";
+      if (!demo) return "no way to explore the demo band from the first page";
+      if (signup !== "ok") return `the email sign-up does not work: ${signup}`;
+      if (over > 1) return `the first page scrolls sideways on a phone (+${over}px)`;
       return null;
     });
 
@@ -391,6 +412,13 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.getByRole("button", { name: /later$/ }).nth(1).click();
       const after = (await page.locator(".itinerary .stop .city").allTextContents()).join(" → ");
       const compared = (await page.locator("#your-route").textContent())?.includes("Your order") ?? false;
+      // Book: the tour is packed into transactions and handed to the wallet (the test wallet refuses to sign)
+      await page.getByRole("button", { name: /book this tour/i }).click();
+      const bookError = await page
+        .locator("p.bad")
+        .first()
+        .textContent({ timeout: 15_000 })
+        .catch(() => "no answer");
       await page.close();
       if (questions !== 4) return `${questions} questions instead of 4`;
       if (primaries !== 1) return `${primaries} primary buttons on the questions step (want exactly one: Plan my tour)`;
@@ -398,6 +426,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (!money) return "the route preview does not say what the tour earns or risks";
       if (!homeLine) return "the route preview does not say how far the last stop is from home";
       if (before === after || !compared) return `moving a stop does not change the route or compare it (${before} / ${after})`;
+      if (!/cannot sign|cancelled/i.test(bookError ?? "")) return `booking did not reach the wallet: ${bookError}`;
       return null;
     });
 
