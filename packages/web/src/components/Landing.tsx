@@ -40,18 +40,18 @@ const STEPS: { title: string; text: string; icon: ReactNode }[] = [
 ];
 
 /** Names the full version may work with. Listed as potential partners: none of them is confirmed. */
-const PARTNERS: { name: string; logo?: string }[] = [
-  { name: "Solana", logo: "solana" },
-  { name: "Superteam Germany" },
-  { name: "Fuse Wallet" },
-  { name: "Squads", logo: "squads" },
-  { name: "Pigeoning Productions" },
-  { name: "Nomads XYZ" },
-  { name: "Jupiter", logo: "jupiter" },
-  { name: "Solflare", logo: "solflare" },
-  { name: "Phantom", logo: "phantom" },
-  { name: "Backpack", logo: "backpack" },
-  { name: "Bonk" },
+const PARTNERS: { name: string; logo: string }[] = [
+  { name: "Solana", logo: "solana.svg" },
+  { name: "Superteam Germany", logo: "superteam-germany.png" },
+  { name: "Fuse Wallet", logo: "fuse-wallet.png" },
+  { name: "Squads", logo: "squads.svg" },
+  { name: "Pigeoning Productions", logo: "pigeoning-productions.png" },
+  { name: "Nomadz", logo: "nomadz.png" },
+  { name: "Jupiter", logo: "jupiter.svg" },
+  { name: "Solflare", logo: "solflare.svg" },
+  { name: "Phantom", logo: "phantom.svg" },
+  { name: "Backpack", logo: "backpack.svg" },
+  { name: "Bonk", logo: "bonk.png" },
 ];
 
 /** Facts about the product, not market statistics. */
@@ -232,19 +232,9 @@ export function Landing() {
         <ul className="partners">
           {PARTNERS.map((p) => (
             <li key={p.name}>
-              {p.logo ? (
-                // logos live in public/partners/<logo>.svg
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="monogram" src={`${BASE_PATH}/partners/${p.logo}.svg`} alt="" width={34} height={34} />
-              ) : (
-                <span className="monogram" aria-hidden>
-                  {p.name
-                    .split(" ")
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join("")}
-                </span>
-              )}
+              {/* logos live in public/partners/ */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="monogram" src={`${BASE_PATH}/partners/${p.logo}`} alt="" width={34} height={34} />
               {p.name}
             </li>
           ))}
