@@ -42,7 +42,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-plain-language", title: "band-facing pages speak plainly (no lamports, bps, PDAs or shell commands)" },
   { id: "ux-shared-controls", title: "buttons come from the shared set (btn, chip, choice, icon) so they look and behave alike" },
   { id: "ux-activity-grouped", title: "the agent feed tells the tour in phases, says who speaks, and starts compact" },
-  { id: "ux-guest-path", title: "visitors without a wallet can still explore (demo band, venues, route planner)" },
+  { id: "ux-guest-path", title: "visitors without a wallet can still explore (demo band, venues, route planner): a live-demo banner, no wallet asked, and the logo always leads back to the main page" },
 ];
 
 const BASE = "/Solana";
@@ -51,7 +51,7 @@ const ADDRESS = "cSppNhmf1Ng2JAyf5UeNb7Di9mukwRDjBgcRXvTCfsj";
 const PAGES = ["/", "/approvals/", "/venues/", "/planner/", "/band/", "/feed/", "/tour/new/"];
 const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain", ".jsonl": "text/plain", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 
-function serve(dir: string): Promise<Server> {
+export function serve(dir: string): Promise<Server> {
   const server = createServer((req, res) => {
     let p = decodeURIComponent((req.url ?? "/").split("?")[0]);
     if (!p.startsWith(BASE)) {
@@ -373,7 +373,12 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       // innerText applies CSS text-transform: an upper-cased address is a different address
       const button = await page.locator(".wallet-adapter-button-trigger").first().innerText();
       await shot(page, "2-connected");
+      // with a wallet connected the logo still leads to the main page, and back
+      await page.locator(".sidebar .brand").click();
+      const home = await page.locator(".landing").waitFor({ timeout: 8000 }).then(() => true, () => false);
+      const back = await page.getByRole("link", { name: /your dashboard/i }).count();
       await page.close();
+      if (!home || !back) return `with a wallet connected the logo does not lead to the main page and back (landing: ${home}, way back: ${back})`;
       if (!panel.includes(ADDRESS.slice(0, 6))) return `the wallet panel does not show the connected address (${panel.slice(0, 80)})`;
       if (!/Running Pigeons/.test(h1)) return `the heading does not name the wallet's band (h1: ${h1})`;
       if (!button.includes(ADDRESS.slice(0, 4))) return `the wallet button changes the address's case ("${button}")`;
@@ -602,6 +607,12 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.getByRole("button", { name: /explore the demo band/i }).click();
       await page.locator(".stats, .card").first().waitFor({ timeout: 8000 });
       const h1 = (await page.locator("h1").first().textContent()) ?? "";
+      const banner = /live demo/i.test((await page.locator(".demo-banner").textContent().catch(() => "")) ?? "");
+      const askWallet = await page.getByRole("button", { name: /connect wallet|select wallet/i }).filter({ visible: true }).count();
+      // the logo: back to the main page, and from there back into the demo
+      await page.locator(".sidebar .brand").click();
+      const home = await page.locator(".landing").waitFor({ timeout: 8000 }).then(() => true, () => false);
+      const back = await page.getByRole("link", { name: /back to the demo band/i }).count();
       await page.goto(url("/venues/"), { waitUntil: "domcontentloaded" });
       // country → city → rooms, one tap each
       const venues = await (async () => {
@@ -617,6 +628,9 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await shot(page, "6-planner");
       await page.close();
       if (/booked by agents/i.test(h1)) return "Explore the demo band did not open the demo";
+      if (!banner) return "the demo does not say it is a live demo";
+      if (askWallet) return "the demo asks for a wallet";
+      if (!home || !back) return `the logo does not lead back to the main page (landing: ${home}, way back: ${back})`;
       if (!venues) return "Venues does not lead from a country to a city to its rooms";
       if (!/route planner/i.test(planner)) return "the Route planner is not reachable without a wallet";
       return null;
