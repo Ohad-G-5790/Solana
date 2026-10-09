@@ -115,7 +115,7 @@ export class FanSim {
           } catch (e) {
             this.declined.add(key);
             const msg = (e as Error).message;
-            if (!/SoldOut|InvalidState|SalesClosed/.test(msg)) {
+            if (!/SoldOut|InvalidState|SalesClosed|already in use/.test(msg)) {
               this.bus.publish({ kind: "note", from: `fan:${fan.id}`, text: `purchase failed: ${msg.slice(0, 120)}` });
             }
           }

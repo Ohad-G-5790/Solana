@@ -14,3 +14,8 @@ packages/web/.next
 packages/web/out
 *.log
 .local
+
+# UI bot screenshots (uploaded by the qa workflow as an artifact)
+qa/reports/ui/
+# dry runs (npm run qa:dry / qa:quick) do not count and are not committed
+qa/reports/dry-run.*

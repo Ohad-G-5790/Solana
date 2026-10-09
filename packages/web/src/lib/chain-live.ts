@@ -5,7 +5,8 @@ import { PublicKey, type ParsedTransactionWithMeta } from "@solana/web3.js";
 import type { Greenroom } from "@/idl/greenroom";
 import idl from "@/idl/greenroom.json";
 import { bandPda, connection, programId, readProgram, stateName } from "./greenroom";
-import type { FeedMessage, RunShow, RunSummary } from "./run";
+import { getWorld, type FeedMessage, type RunShow, type RunSummary } from "./run";
+import { venueKeys } from "./venue-keys";
 
 /**
  * Live mode: everything the dashboard shows comes from chain state and the
@@ -29,14 +30,16 @@ export interface VenueInfo {
 
 let venueCache: Map<string, VenueInfo> | null = null;
 
+/** Venue names by VenueProfile address, from the published seed venues (no getProgramAccounts on a public RPC). */
 async function venuesByProfile(): Promise<Map<string, VenueInfo>> {
   if (venueCache) return venueCache;
-  const all = await readProgram().account.venueProfile.all();
+  const [{ byProfile }, world] = await Promise.all([venueKeys(), getWorld()]);
+  const byId = new Map(world.venues.map((v) => [v.id, v]));
   venueCache = new Map(
-    all.map((v) => [
-      v.publicKey.toBase58(),
-      { name: v.account.name, city: v.account.city, venueId: `${v.account.name} ${v.account.city}`.toLowerCase().replace(/[^a-z0-9]+/g, "-") },
-    ])
+    [...byProfile].map(([profile, id]) => {
+      const v = byId.get(id);
+      return [profile, { name: v?.name ?? id, city: v?.city ?? "?", venueId: id }];
+    })
   );
   return venueCache;
 }
@@ -70,6 +73,10 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
       show: s.publicKey.toBase58(),
       city: v?.city ?? "?",
       venue: v?.venueId ?? s.account.venueProfile.toBase58().slice(0, 8),
+      venueName: v?.name,
+      ticketPriceLamports: Number(s.account.ticketPriceLamports),
+      venueBps: s.account.venueBps,
+      thresholdBps: s.account.thresholdBps,
       day: Math.max(0, Math.round((Number(s.account.date) - firstDate) / 2)),
       capacity: s.account.capacity,
       ticketsSold: s.account.ticketsSold,

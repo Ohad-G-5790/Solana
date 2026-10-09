@@ -35,9 +35,12 @@ const statePath = join(qaDir, "state.json");
 const state: State = existsSync(statePath) ? (JSON.parse(readFileSync(statePath, "utf8")) as State) : { loops: [] };
 
 const argv = process.argv.slice(2);
+/** `--name value`, or "true" for a bare flag (followed by nothing or another flag). */
 const opt = (name: string) => {
   const i = argv.indexOf(`--${name}`);
-  return i === -1 ? undefined : (argv[i + 1] ?? "true");
+  if (i === -1) return undefined;
+  const next = argv[i + 1];
+  return next === undefined || next.startsWith("--") ? "true" : next;
 };
 const skip = new Set((opt("skip") ?? "").split(",").filter(Boolean));
 const only = opt("only");
@@ -112,10 +115,10 @@ const passed = overall >= rubric.passScore;
 const reportsDir = join(qaDir, "reports");
 mkdirSync(reportsDir, { recursive: true });
 const report = { loop: loopNo, at: new Date().toISOString(), overall, passed, passScore: rubric.passScore, components };
-writeFileSync(join(reportsDir, `loop-${loopNo}.json`), JSON.stringify(report, null, 2));
+writeFileSync(join(reportsDir, noLoop ? "dry-run.json" : `loop-${loopNo}.json`), JSON.stringify(report, null, 2));
 
 const lines: string[] = [];
-lines.push(`# QA report — loop ${loopNo} — overall **${overall.toFixed(2)} / 10** — ${passed ? "PASS" : "FAIL"} (pass ≥ ${rubric.passScore})`, "");
+lines.push(`# QA report — ${noLoop ? "dry run" : `loop ${loopNo}`} — overall **${overall.toFixed(2)} / 10** — ${passed ? "PASS" : "FAIL"} (pass ≥ ${rubric.passScore})`, "");
 lines.push("| Component | Weight | Automated | Judge | Score |", "|---|---|---|---|---|");
 for (const c of components) lines.push(`| ${c.title} | ${c.weight} | ${c.automated} | ${c.judge ?? "–"} | **${c.score}** |`);
 lines.push("", "## Checks", "");
@@ -131,9 +134,9 @@ for (const c of components) {
   }
   lines.push("");
 }
-writeFileSync(join(reportsDir, "latest.md"), lines.join("\n"));
+writeFileSync(join(reportsDir, noLoop ? "dry-run.md" : "latest.md"), lines.join("\n"));
 console.log("\n" + lines.slice(0, 3 + components.length).join("\n"));
-console.log(`\nFull report: qa/reports/latest.md`);
+console.log(`\nFull report: qa/reports/${noLoop ? "dry-run.md" : "latest.md"}`);
 
 if (!noLoop) {
   state.loops.push({ n: loopNo, at: report.at, overall, passed });

@@ -21,3 +21,22 @@ jobs:
       - run: npm test -w @greenroom/agents
       - run: npm run lint -w @greenroom/web
       - run: npm run build -w @greenroom/web
+
+  ui:
+    # The UI bot (qa/src/ui-bot.ts): builds the static dashboard and walks it
+    # in Chromium as a band would. Screenshots are kept as an artifact.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npx tsx qa/src/ui-bot.ts --shots qa/reports/ui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-screenshots
+          path: qa/reports/ui/

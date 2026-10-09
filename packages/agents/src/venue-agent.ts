@@ -3,6 +3,7 @@ import type { Band, Venue } from "@greenroom/world";
 import type { GreenroomClient } from "@greenroom/sdk";
 import type { Brain } from "./brain.ts";
 import type { BusMessage, MessageBus } from "./bus.ts";
+import { venueOfferHeuristic } from "./offers.ts";
 import { venueAvailability, type VenueOffer } from "./planner.ts";
 
 export interface TourRequest {
@@ -75,10 +76,7 @@ export class VenueAgent {
     const req = m.data!;
     if (!req.countries.includes(this.venue.country)) return;
     const v = this.venue;
-    const genreFit = v.genres.includes(req.genre as never);
-    const ratio = req.draw / v.capacity;
     const history = req.trackRecord;
-    const avgPerShow = history.showsCompleted > 0 ? history.ticketsSoldTotal / history.showsCompleted : 0;
 
     const decision = await this.brain.decide<{ offer: boolean; askBps: number; offeredCapacity: number; minPriceLamports: number }>({
       agent: this.id,
@@ -87,22 +85,8 @@ export class VenueAgent {
       prompt: `Tour request from "${req.bandName}" (${req.genre}), typical draw ${req.draw} people, target ticket ${req.targetPriceLamports} lamports. On-chain track record: ${history.showsCompleted} settled shows, ${history.ticketsSoldTotal} tickets sold in total.`,
       schema: { offer: "boolean", askBps: "integer 2500-4000", offeredCapacity: "integer", minPriceLamports: "integer", reasoning: "string" },
       heuristic: () => {
-        // fit: the band should fill between 40% and 250% of the room
-        const fits = ratio >= 0.4 && ratio <= 2.5;
-        const unknownBand = history.showsCompleted === 0;
-        const strongHistory = history.showsCompleted >= 3 && avgPerShow >= 0.5 * req.draw;
-        const offer = fits && (genreFit || strongHistory || ratio >= 0.8);
-        let askBps = 3000;
-        if (unknownBand) askBps += 500;
-        if (strongHistory) askBps -= 300;
-        if (!genreFit) askBps += 200;
-        askBps = Math.min(4000, Math.max(2500, askBps));
-        const offeredCapacity = Math.min(v.capacity, Math.round(Math.max(v.capacity * 0.5, Math.min(v.capacity, req.draw * (strongHistory ? 1.3 : 1.0)))));
-        const minPriceLamports = Math.round(req.targetPriceLamports * (genreFit ? 0.8 : 1.0));
-        const reasoning = offer
-          ? `${v.name}: ${req.genre} ${genreFit ? "fits our programme" : "is off our usual programme"}, draw ${req.draw} vs capacity ${v.capacity}${strongHistory ? ", strong track record" : unknownBand ? ", no history so we ask a higher share" : ""}.`
-          : `${v.name}: declined, draw ${req.draw} ${ratio < 0.4 ? "too small for" : ratio > 2.5 ? "too big for" : "does not fit"} a ${v.capacity}-cap room${genreFit ? "" : " and the genre is off-programme"}.`;
-        return { value: { offer, askBps, offeredCapacity, minPriceLamports }, reasoning };
+        const { reasoning, ...value } = venueOfferHeuristic(v, req);
+        return { value, reasoning };
       },
       validate: (x) =>
         typeof x.offer !== "boolean" || ![x.askBps, x.offeredCapacity, x.minPriceLamports].every((n) => Number.isFinite(n) && n >= 0)

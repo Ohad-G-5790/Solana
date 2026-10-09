@@ -1,0 +1,64 @@
+name: qa
+
+# The QA bot in the cloud: every automated check (program build and tests on a
+# local validator, agents end to end, dashboard build, the UI bot in Chromium,
+# world, docs, devex) plus the committed judge scores, in the same Anchor 1.2.1
+# image as program.yml. A dry run does not count as a loop; a counted run
+# commits qa/state.json and the report back to the branch it ran on.
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "Count this run as a QA loop (commits qa/state.json and the report)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qa-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: quay.io/ottersec/anchor:v1.2.1
+      options: --user root --security-opt seccomp=unconfined
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dev wallet
+        run: |
+          mkdir -p ~/.config/solana
+          solana-keygen new --no-bip39-passphrase -s -o ~/.config/solana/id.json
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Chromium for the UI bot
+        run: npx playwright install --with-deps chromium
+      - name: QA bot
+        run: npm run qa -- ${{ inputs.count && '' || '--no-loop' }}
+      - name: UI screenshots
+        if: always()
+        run: npx tsx qa/src/ui-bot.ts --no-build --shots qa/reports/ui || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-report
+          path: |
+            qa/reports/latest.md
+            qa/reports/dry-run.*
+            qa/reports/loop-*.json
+            qa/reports/ui/
+      - name: Commit the counted loop
+        if: always() && inputs.count
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "greenroom-qa"
+          git config user.email "qa@users.noreply.github.com"
+          git add qa/state.json qa/reports/latest.md qa/reports/loop-*.json
+          git commit -m "QA loop: $(head -1 qa/reports/latest.md | sed 's/^# //')" || exit 0
+          git push origin "HEAD:${GITHUB_REF_NAME}"

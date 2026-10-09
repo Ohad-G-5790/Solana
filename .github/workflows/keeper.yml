@@ -1,0 +1,48 @@
+name: keeper
+
+# The network's keeper for tours booked from the dashboard: venues' agents
+# sign the shows proposed to them, simulated fans buy tickets, and the
+# permissionless crank confirms, cancels, refunds and settles. It runs every
+# 10 minutes for about 7, with the demo wallet (GREENROOM_DEVNET_WALLET) paying
+# fees, venue registration and the fans. No band key is involved: bands sign
+# their own proposals in the browser.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "How long this run keeps going"
+        default: "7"
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Demo wallet from the repository secret
+        env:
+          DEMO_WALLET: ${{ secrets.GREENROOM_DEVNET_WALLET }}
+        run: |
+          test -n "$DEMO_WALLET" || { echo "secret GREENROOM_DEVNET_WALLET is not set"; exit 1; }
+          mkdir -p ~/.config/solana
+          umask 077
+          printf '%s' "$DEMO_WALLET" > ~/.config/solana/demo.json
+      - name: Keep the booked tours moving
+        env:
+          GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
+          MINUTES: ${{ inputs.minutes || '7' }}
+        run: npm run keeper -w @greenroom/agents -- --rpc "$GREENROOM_RPC_URL" --wallet "$HOME/.config/solana/demo.json" --minutes "$MINUTES" 2>&1 | grep -v "429 Too Many"
+      - name: Remove the wallet file
+        if: always()
+        run: rm -f ~/.config/solana/demo.json

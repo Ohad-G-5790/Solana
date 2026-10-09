@@ -36,13 +36,14 @@ export default function ApprovalsPage() {
         <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
           <h3>No questions for {name} yet</h3>
           <p className="small muted" style={{ marginTop: 6 }}>
-            Your band agent asks here once it runs a tour for {name}: which venues you want to play, whether the route works, and what to do if a show does not
-            sell. Start it on your machine with your band&apos;s keypair and <span className="mono">--approve</span>, and keep this page open (locally:{" "}
-            <span className="mono">npm run dev -w @greenroom/web</span>).
+            When you create a tour, you approve the route before anything is booked: that is the first decision. If a show does not sell, the replacement options
+            show up here.
           </p>
-          <pre className="mono" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>
-            {`npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "${session.profile?.name ?? "The Running Pigeons"}" --approve`}
-          </pre>
+          <div className="row" style={{ marginTop: 14 }}>
+            <Link className="btn primary" href="/tour/new">
+              Create a tour
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -64,16 +65,15 @@ export default function ApprovalsPage() {
       {mode === "auto" && view.writable ? (
         <div className="card" style={{ marginBottom: 12 }}>
           <p className="small">
-            <b>Auto-pilot is on for this run:</b> the agent approves its own recommendations. To decide yourself, start the agents with{" "}
-            <span className="mono">npm run demo:approve</span> and keep this page open.
+            <b>Auto-pilot is on for this tour:</b> the agent approved its own recommendations. Tours you create yourself start with your yes on the
+            route.
           </p>
         </div>
       ) : null}
       {!view.writable && view.items.length ? (
         <div className="card" style={{ marginBottom: 12 }}>
           <p className="small muted">
-            This is a recorded run, so you are looking at the decisions as they were made. Run <span className="mono">npm run demo:approve</span> locally to make them
-            yourself.
+            This is a recorded tour, so you are looking at the decisions as they were made. On your own tours you make them.
           </p>
         </div>
       ) : null}

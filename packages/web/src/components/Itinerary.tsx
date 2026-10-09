@@ -3,7 +3,7 @@
 import { drive, formatMinutes, LONG_DRIVE_MIN, TRAVEL_DAY_MIN, type DriveLevel } from "@greenroom/world/geo";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { demoDate } from "@/lib/format";
+import { dayLabel } from "@/lib/format";
 
 export interface ItineraryStop {
   key: string;
@@ -71,7 +71,7 @@ export function Itinerary({ stops, totals = true }: { stops: ItineraryStop[]; to
         <span className="num">{s.off ? "–" : ++n}</span>
         <div style={{ minWidth: 0 }}>
           <div className="micro muted">
-            day {s.day} · {demoDate(s.day)}
+            {dayLabel(s.day)}
           </div>
           <div>{s.href ? <Link href={s.href}>{name}</Link> : name}</div>
           {s.detail ? <div className="micro muted" style={{ marginTop: 2 }}>{s.detail}</div> : null}

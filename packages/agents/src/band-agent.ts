@@ -173,7 +173,7 @@ export class BandAgent {
         });
         const booked: BookedShow = { ...p, show, date, thresholdDeadline, salesOpenAt };
         this.booked.push(booked);
-        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${p.ticketPriceLamports} lamports, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`);
+        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${lamportsToSol(p.ticketPriceLamports)}, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`);
       } catch (e) {
         this.bus.publish({ kind: "note", from: this.id, text: `could not propose ${p.city}: ${(e as Error).message.slice(0, 160)}` });
       }

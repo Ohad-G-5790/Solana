@@ -22,7 +22,8 @@
     "demo:approve": "node scripts/demo-local.mjs --fast --keep --approve",
     "demo:devnet": "npm run demo -w @greenroom/agents -- --rpc https://api.devnet.solana.com",
     "qa:dry": "tsx qa/src/run.ts --no-loop",
-    "qa:quick": "tsx qa/src/run.ts --no-loop --skip program-tests,agents-e2e"
+    "qa:quick": "tsx qa/src/run.ts --no-loop --skip program-tests,agents-e2e",
+    "ui-bot": "tsx qa/src/ui-bot.ts --shots qa/reports/ui"
   },
   "devDependencies": {
     "@anchor-lang/core": "^1.2.1",

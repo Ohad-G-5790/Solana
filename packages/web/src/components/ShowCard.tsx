@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { demoDate, pct, sol, timeLeft } from "@/lib/format";
+import { dayLabel, pct, sol, timeLeft } from "@/lib/format";
 import { HEALTH_LABEL, type Health, type ShowView } from "@/lib/health";
 
 export function StateBadge({ state }: { state: string }) {
@@ -32,7 +32,7 @@ export function ShowCard({ v, now, venueName, replacedByCity }: { v: ShowView; n
         <HealthBadge health={v.health} />
       </div>
       <p className="muted small">
-        {venueName} · day {run.day} · {demoDate(run.day)}
+        {venueName} · {dayLabel(run.day)}
       </p>
       {run.replaces ? <p className="micro good" style={{ marginTop: 4 }}>Replacement show</p> : null}
       <Progress sold={v.sold} capacity={v.capacity} thresholdBps={v.thresholdBps} state={v.state} />

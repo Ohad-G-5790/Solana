@@ -35,7 +35,7 @@
 | World | `packages/world` | `data/venues.json` loader (136 real venues in 35 cities), generators for 100 bands, 100 crew per city, fans per city |
 | Agents | `packages/agents` | message bus, brain, planner, band approvals and replacement options, band/venue agents, fan sim, crew offers, crank, orchestrator, CLI |
 | Dashboard | `packages/web` | the band's view: approvals, attention list, route with drive times, show health, venue finder, route planner, live feed, track record, wallet buy/refund |
-| QA | `qa/` | automated checks + rubric judge → weighted score, five-loop limit |
+| QA | `qa/` | automated checks + rubric judge → weighted score, five-loop limit; UI bot (Chromium) for the user-experience score |
 
 ## How a tour happens
 
@@ -51,6 +51,19 @@
 10. **Refund and replace.** For cancelled shows the crank refunds every ticket to its beneficiary and closes the ticket account. The band agent offers up to three replacements from approved venues (same venue at half the capacity, a smaller room in the same city, a nearby city within 250 km of extra driving) without pausing the other shows; the band's pick is proposed as a new show with its own deadline and linked to the cancelled one. One replacement per date.
 11. **Crew.** For confirmed shows, local crew agents pitch; the band hires up to two different roles within 15% of revenue (`add_payee`).
 12. **Settle.** After the show date the crank calls `settle_show`; the vault is split by bps, dust goes to the band, and the band's track record grows.
+
+## Booking from the browser
+
+The hosted dashboard is static, so a band books without any server of ours:
+
+| Piece | Where | Role |
+|---|---|---|
+| Four answers → plan | `packages/web/src/lib/book.ts` `planFromAnswers` | runs the venue offer heuristic (`packages/agents/src/offers.ts`, pure) for every registered seed venue, then the planner; the route preview is the band's approval |
+| Venue keys | `packages/web/public/venue-profiles.json` (regenerate with `npx tsx src/export-venue-profiles.ts` in `packages/agents`) | venue id → authority and profile PDA, so the browser never scans program accounts |
+| Book | `bookTour` | `create_tour` plus one `propose_show` per stop, packed into as few transactions as fit, signed in one wallet prompt |
+| Keeper | `packages/agents/src/keeper.ts`, `.github/workflows/keeper.yml` | every 10 minutes on Actions: registers missing seed venues, accepts proposed shows with the seed venue keys (deterministic, demo only), simulates fans, runs the crank (confirm, cancel, refund, settle); pauses fans when the demo wallet runs low |
+
+The keeper holds only the demo wallet (an Actions secret) and the seed venues' deterministic demo keys; it never holds a band's key. Everything it does besides accepting is a permissionless crank.
 
 ## Band approvals
 

@@ -9,3 +9,5 @@ export * from "./band-agent.ts";
 export * from "./fan-sim.ts";
 export * from "./crank.ts";
 export * from "./orchestrator.ts";
+export * from "./offers.ts";
+export * from "./keeper.ts";

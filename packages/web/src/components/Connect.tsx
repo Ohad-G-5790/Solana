@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletButton } from "./WalletButton";
 import { useEffect, useState } from "react";
 import { CLUSTER, explorerUrl } from "@/lib/config";
 import { sol } from "@/lib/format";
@@ -23,7 +23,7 @@ export function ConnectScreen() {
         anything is booked.
       </p>
       <div className="row" style={{ marginTop: 20 }}>
-        <WalletMultiButton>Connect wallet</WalletMultiButton>
+        <WalletButton>Connect wallet</WalletButton>
         {runAuthority ? (
           <button className="btn outline" onClick={() => setGuest(true)}>
             Explore the demo band
@@ -35,12 +35,12 @@ export function ConnectScreen() {
       </p>
       <div className="steps">
         <div>
-          <b>1. Approve venues</b>
-          <span className="small muted">Venue agents send offers; you tick the rooms you want to play.</span>
+          <b>1. Answer four questions</b>
+          <span className="small muted">How many people you bring, the ticket price, where to start, how long to go.</span>
         </div>
         <div>
           <b>2. Approve the route</b>
-          <span className="small muted">Dates, drive per leg and money. Nothing is booked before you say yes.</span>
+          <span className="small muted">Venue agents make offers; you see the map, dates and drives. Nothing is booked before you say yes.</span>
         </div>
         <div>
           <b>3. Sell or save the date</b>

@@ -24,6 +24,11 @@ export function pct(part: number, whole: number): number {
 }
 
 /** Demo clocks are compressed; show the planned day as a November date for flavour. */
+/** "Day 1 · Nov 3": days count from 1 for people; the run's day index starts at 0. */
+export function dayLabel(day: number): string {
+  return `Day ${day + 1} · ${demoDate(day)}`;
+}
+
 export function demoDate(day: number): string {
   const d = new Date(Date.UTC(2026, 10, 3 + day));
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });

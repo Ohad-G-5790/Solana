@@ -338,6 +338,63 @@ p {
   border-left: 2px solid var(--accent);
 }
 
+/* ---------- activity (grouped feed) ---------- */
+.activity .group {
+  background: var(--surface);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.activity summary {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.activity summary::-webkit-details-marker {
+  display: none;
+}
+.activity summary::before {
+  content: "›";
+  position: absolute;
+  margin-left: -10px;
+  color: var(--text-muted);
+}
+.activity .group[open] summary {
+  border-bottom: 1px solid var(--surface-mid);
+}
+.activity .g-label {
+  font-weight: 700;
+}
+.activity .g-count {
+  background: var(--surface-mid);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.activity .g-latest {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity .g-items {
+  padding: 4px 16px 10px;
+}
+.activity .entry {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--surface-mid);
+}
+.activity .entry:last-of-type {
+  border-bottom: 0;
+}
+
 /* ---------- inputs ---------- */
 .input {
   background: var(--surface-mid);
@@ -455,6 +512,11 @@ p {
 .wallet-adapter-button-trigger {
   background: var(--accent) !important;
   color: #000 !important;
+}
+/* a connected wallet shows its address: base58 is case-sensitive, keep it as is */
+.wallet-adapter-button:has(.wallet-adapter-button-start-icon) {
+  text-transform: none !important;
+  letter-spacing: 0.4px !important;
 }
 .wallet-adapter-modal-wrapper {
   background: var(--card) !important;
@@ -859,6 +921,66 @@ input[type="checkbox"] {
   gap: 4px;
 }
 
+/* ---------- create your tour ---------- */
+.question {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-top: 14px;
+}
+.question h2 {
+  margin-bottom: 6px;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: center;
+}
+.choice {
+  background: var(--surface-mid);
+  color: var(--text);
+  border: 0;
+  border-radius: 8px;
+  padding: 14px 20px;
+  min-width: 96px;
+  font-family: var(--font);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.choice:hover {
+  background: #2a2a2a;
+}
+.choice.on {
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+.btn.big {
+  padding: 16px 32px;
+  font-size: 15px;
+}
+.select.big {
+  font-size: 16px;
+  padding: 12px 18px;
+  margin-top: 8px;
+}
+.cta {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 28px;
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 /* ---------- wallet panel ---------- */
 .wallet-panel {
   display: grid;
@@ -996,5 +1118,12 @@ input[type="checkbox"] {
   }
   .attention .item {
     flex-wrap: wrap;
+  }
+  .activity summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .activity .g-latest,
+  .activity summary > .micro {
+    display: none;
   }
 }

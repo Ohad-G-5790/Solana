@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Progress, StateBadge } from "@/components/ShowCard";
 import { explorerUrl, POLL_MS } from "@/lib/config";
-import { demoDate, short, sol, timeLeft } from "@/lib/format";
+import { dayLabel, short, sol, timeLeft } from "@/lib/format";
 import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, vaultPda, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { getRun, getWorld, type RunShow } from "@/lib/run";
@@ -115,7 +115,7 @@ function ShowView() {
         <div>
           <h1>{run?.city ?? short(address)}</h1>
           <p className="muted">
-            {run ? `${venueName ?? run.venueName ?? run.venue.replace(/-/g, " ")} · day ${run.day} · ${demoDate(run.day)}` : ""}{" "}
+            {run ? `${venueName ?? run.venueName ?? run.venue.replace(/-/g, " ")} · ${dayLabel(run.day)}` : ""}{" "}
             <a href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
               show account ↗
             </a>{" "}

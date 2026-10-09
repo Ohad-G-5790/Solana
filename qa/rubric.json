@@ -7,13 +7,13 @@
     {
       "id": "program",
       "title": "On-chain program",
-      "weight": 0.25,
+      "weight": 0.2,
       "judge": "State machine clarity, constraint correctness against the Solana security checklist (signers, has_one, PDA seeds, checked math, no init_if_needed, PDA-signed transfers), event coverage, code organisation, error-path test coverage."
     },
     {
       "id": "agents",
       "title": "Agents",
-      "weight": 0.25,
+      "weight": 0.2,
       "judge": "Negotiation quality and realism, route sanity (geographic order, rest days, availability), safety guardrails (LLM output validated, never signs outside allowed instructions), transcript readability, heuristic fallback completeness."
     },
     {
@@ -21,6 +21,12 @@
       "title": "Dashboard",
       "weight": 0.2,
       "judge": "Fidelity to docs/DESIGN.md (near-black surfaces, single green accent, pill buttons, compact type), clarity of threshold/deadline/state per show, live feed usefulness, explorer links, wallet buy and refund flows, phone width."
+    },
+    {
+      "id": "ux",
+      "title": "User experience",
+      "weight": 0.1,
+      "judge": "Is the dashboard intuitive for a band, the way a well-made Apple app is (behaviour, not graphics): one obvious next step on every screen, nothing personal before a wallet connects, plain words instead of chain jargon, few questions with sensible defaults, the result shown before anything is committed, the same controls behaving the same everywhere, empty states that say what to do, compact information that opens on demand, no dead ends, fast first paint on slow networks, usable at phone width."
     },
     {
       "id": "world",

@@ -123,8 +123,7 @@ export default function DashboardPage() {
       <div className="card">
         <h2>No tour yet</h2>
         <p className="muted" style={{ marginTop: 8 }}>
-          Start the agents: <span className="mono">npm run demo:approve</span> to approve venues and the route yourself, or <span className="mono">npm run demo:fast</span> on
-          auto-pilot. The negotiation, your decisions and every transaction show up here.
+          Nothing has been booked for this band yet. <Link href="/tour/new">Create a tour</Link> to get started.
         </p>
       </div>
     );
@@ -244,6 +243,11 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="row">
+          {isWalletBand ? (
+            <Link href="/tour/new" className="btn primary">
+              New tour
+            </Link>
+          ) : null}
           <Link href="/planner" className="btn outline">
             Plan a route
           </Link>
@@ -350,10 +354,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h2 style={{ margin: "24px 0 10px" }}>On-chain, live</h2>
-      <Feed limit={12} compact source="chain" />
+      <h2 style={{ margin: "24px 0 10px" }}>Activity on-chain</h2>
+      <Feed limit={200} compact source="chain" />
       <p className="small" style={{ marginTop: 8 }}>
-        <Link href="/feed">Full feed →</Link>
+        <Link href="/feed">All activity →</Link>
       </p>
     </div>
   );
@@ -394,22 +398,23 @@ function NoTourYet({ name, authority }: { name: string; authority: string }) {
   return (
     <div>
       <h1>{name}</h1>
-      <p className="muted">Your band is registered on-chain. No tour yet.</p>
-      <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
-        <h3>Book your first tour</h3>
-        <p className="small muted" style={{ marginTop: 6 }}>
-          Your band agent books tours with your wallet&apos;s key, so it runs on your machine, not in the browser. Export the wallet&apos;s private key into a file on your
-          machine (keep it out of the repository) and start the agents as your band; this page then shows the tour as it is booked, and the Approvals page asks you about
-          venues and the route.
-        </p>
-        <pre className="mono" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>
-          {`npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "${name}" --approve`}
-        </pre>
-        <p className="small muted" style={{ marginTop: 10 }}>
-          Meanwhile: find rooms on the <Link href="/venues">Venues</Link> page and sketch a run in the <Link href="/planner">Route planner</Link>. Your record lives at{" "}
-          <Link href={`/band?authority=${authority}`}>Band record</Link>.
-        </p>
+      <p className="muted">Your band is on-chain. Time for the first tour.</p>
+      <div className="cta">
+        <div>
+          <h2>Create your first tour</h2>
+          <p className="small muted" style={{ marginTop: 6, maxWidth: 520 }}>
+            Tell your agent how many people you bring, the ticket price, where to start and how long to go. It asks the venues, plans the route, and books it
+            when you say yes.
+          </p>
+        </div>
+        <Link className="btn primary big" href="/tour/new">
+          Create your first tour
+        </Link>
       </div>
+      <p className="small muted" style={{ marginTop: 14 }}>
+        Want to look around first? Find rooms on the <Link href="/venues">Venues</Link> page, sketch a run in the <Link href="/planner">Route planner</Link>, or open
+        your <Link href={`/band?authority=${authority}`}>band record</Link>.
+      </p>
     </div>
   );
 }
