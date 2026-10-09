@@ -39,6 +39,9 @@ const STEPS: { title: string; text: string; icon: ReactNode }[] = [
   },
 ];
 
+/** Names the full version may work with. Listed as potential partners: none of them is confirmed. */
+const PARTNERS = ["Solana", "Superteam Germany", "Fuse Wallet", "Squads", "Pigeoning Productions", "Nomads XYZ", "Jupiter", "Solflare", "Phantom", "Backpack", "Bonk"];
+
 /** Facts about the product, not market statistics. */
 const FACTS = [
   { big: "4", text: "questions to plan a whole tour" },
@@ -208,6 +211,27 @@ export function Landing() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="pitch" id="partners">
+        <span className="eyebrow">Potential partners</span>
+        <h2>Built in the Solana ecosystem.</h2>
+        <p className="muted">The teams and communities we would like to build the full version with.</p>
+        <ul className="partners">
+          {PARTNERS.map((p) => (
+            <li key={p}>
+              <span className="monogram" aria-hidden>
+                {p
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")}
+              </span>
+              {p}
+            </li>
+          ))}
+        </ul>
+        <p className="micro muted">Potential partners only: no partnership is confirmed, and names belong to their owners.</p>
       </section>
 
       <section className="closing">

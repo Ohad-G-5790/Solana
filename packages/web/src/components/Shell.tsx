@@ -59,6 +59,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <>
                 <Link href="/#why">Why Greenroom</Link>
                 <Link href="/#how">How it works</Link>
+                <Link href="/#partners">Partners</Link>
               </>
             ) : null}
             {session.reconnecting ? null : <WalletButton>Connect wallet</WalletButton>}
