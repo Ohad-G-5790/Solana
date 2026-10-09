@@ -54,6 +54,9 @@ function BandView() {
 
   if (band === undefined) return <p className="muted">Loading…</p>;
   if (band === null && !error && session.wallet && authority === session.wallet) return <RegisterBand />;
+  // the demo band without an answer from devnet: its record as the recorded tour left it
+  const recorded = band === null && run && (!authority || authority === run.band.authority) ? recordFromRun(run) : null;
+  if (recorded) return <BandRecord band={recorded} profile={run!.band.profile} run={run} authority={authority} note="From the recorded tour; devnet is not answering right now." />;
   if (band === null)
     return (
       <div className="card">
@@ -62,11 +65,34 @@ function BandView() {
       </div>
     );
 
+  return <BandRecord band={band} profile={profile} run={run} authority={authority} />;
+}
+
+/** What the record page shows: the on-chain profile's numbers, or the recorded tour's. */
+type BandNumbers = Pick<BandAccount, "name" | "genre" | "showsCompleted" | "toursCreated"> & {
+  ticketsSoldTotal: { toString(): string } | number;
+  grossSettledLamports: { toString(): string } | number;
+};
+
+function recordFromRun(run: RunSummary): BandNumbers {
+  const played = run.shows.filter((s) => s.state === "settled");
+  return {
+    name: run.band.name,
+    genre: run.band.genre ?? "",
+    showsCompleted: played.length,
+    toursCreated: 1,
+    ticketsSoldTotal: played.reduce((n, s) => n + s.ticketsSold, 0),
+    grossSettledLamports: played.reduce((n, s) => n + s.ticketsSold * (s.ticketPriceLamports ?? 0), 0),
+  };
+}
+
+function BandRecord({ band, profile, run, authority, note }: { band: BandNumbers; profile: string; run: RunSummary | null; authority: string | null; note?: string }) {
   const avg = band.showsCompleted > 0 ? Math.round(Number(band.ticketsSoldTotal) / band.showsCompleted) : 0;
   const rep = reputation(band);
   return (
     <div>
       <h1>{band.name}</h1>
+      {note ? <p className="small muted">{note}</p> : null}
       <p className="muted">
         {band.genre} ·{" "}
         <a href={explorerUrl("address", profile)} target="_blank" rel="noreferrer">

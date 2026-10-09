@@ -2066,3 +2066,312 @@ img.monogram {
   margin-top: 2px;
   line-height: 1.45;
 }
+
+/* ---------- app polish: sidebar, demo banner, band header, numbers (matches the landing) ---------- */
+.sidebar {
+  background: #0d0d0d;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+a.brand:hover {
+  text-decoration: none;
+  opacity: 0.85;
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav a {
+  position: relative;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.nav a svg {
+  flex: none;
+  opacity: 0.8;
+}
+.nav a:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.nav a.active {
+  background: rgba(30, 215, 96, 0.1);
+  color: var(--text);
+}
+.nav a.active svg {
+  color: var(--accent);
+  opacity: 1;
+}
+.nav a.active::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
+.main {
+  padding: 24px 32px 80px;
+}
+
+/* live demo banner: unmistakable, no wallet needed */
+.demo-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 22px;
+  margin-bottom: 28px;
+  padding: 18px 22px;
+  border-radius: 16px;
+  background: radial-gradient(ellipse 60% 140% at 0% 0%, rgba(30, 215, 96, 0.22), transparent 70%), var(--surface);
+  box-shadow: 0 0 0 1px rgba(30, 215, 96, 0.35) inset;
+}
+.demo-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.live-badge,
+.net-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.live-badge {
+  background: var(--accent);
+  color: #000;
+  font-size: 15px;
+}
+.live-badge i,
+.net-badge i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: blink 1.6s ease-in-out infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+.net-badge {
+  background: rgba(83, 157, 245, 0.12);
+  color: #8fbfff;
+  box-shadow: 0 0 0 1px rgba(83, 157, 245, 0.4) inset;
+}
+.net-badge i {
+  background: var(--accent);
+}
+.demo-banner p {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+.demo-banner p b {
+  display: block;
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.demo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.topbar .net-badge {
+  font-size: 12px;
+  padding: 7px 12px;
+}
+
+/* the band header: a cover, like an artist page */
+.band-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 20px;
+  background: radial-gradient(ellipse 70% 120% at 10% 0%, rgba(30, 215, 96, 0.28), transparent 65%),
+    radial-gradient(ellipse 50% 100% at 100% 100%, rgba(83, 157, 245, 0.12), transparent 70%), var(--surface);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+.band-avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: #000;
+  background: linear-gradient(135deg, #1ed760, #8ef0b0);
+  box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.8);
+}
+.band-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.band-hero h1 {
+  font-size: clamp(30px, 4.4vw, 54px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.band-hero p {
+  font-size: 14px;
+}
+.band-hero-actions {
+  justify-content: flex-end;
+}
+
+/* numbers: big and calm */
+.stats {
+  gap: 14px;
+  margin: 22px 0;
+}
+.stat {
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+.stat .label {
+  font-size: 11px;
+}
+.stat .value {
+  font-size: clamp(26px, 2.6vw, 34px);
+  letter-spacing: -0.02em;
+  margin-top: 8px;
+  color: var(--text);
+}
+.stat .value.warn {
+  color: var(--warning);
+}
+.stat .value.bad {
+  color: var(--negative);
+}
+.attention {
+  gap: 8px;
+  margin: 22px 0;
+}
+.attention .item {
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+.attention .dot {
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+}
+.stepper {
+  gap: 6px;
+}
+.stepper .step,
+.stepper .step:first-child,
+.stepper .step:last-child {
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.stepper .step.done {
+  box-shadow: 0 -3px 0 0 var(--accent) inset;
+}
+.stepper .step.now {
+  background: rgba(30, 215, 96, 0.12);
+  box-shadow: 0 0 0 1px rgba(30, 215, 96, 0.5) inset;
+}
+.stepper .step .n {
+  font-size: 22px;
+}
+.section-title h2,
+.main > div > h2 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.card {
+  border-radius: 14px;
+}
+.split > .map,
+.main .map {
+  border-radius: 14px;
+}
+
+@media (max-width: 896px) {
+  .nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .nav a {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .nav a svg {
+    width: 16px;
+    height: 16px;
+  }
+  .nav a.active::before {
+    display: none;
+  }
+  .topbar,
+  .topbar .status {
+    flex-wrap: wrap;
+  }
+  .topbar .net-badge {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  /* the stepper's columns are set inline; on a phone it wraps in threes */
+  .stepper {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .main {
+    padding: 16px 16px 60px;
+  }
+  .demo-banner {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .demo-tags {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .demo-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .demo-banner p b {
+    font-size: 18px;
+  }
+  .band-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 20px;
+    gap: 16px;
+  }
+  .band-avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 26px;
+  }
+  .band-hero-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}

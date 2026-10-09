@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { BASE_PATH, SIGNUP_URL } from "@/lib/config";
@@ -95,7 +96,7 @@ function Icon({ children }: { children: ReactNode }) {
  * The app's menu appears once a wallet connects or the visitor explores the demo band.
  */
 export function Landing() {
-  const { setGuest, runAuthority } = useBandSession();
+  const { setGuest, runAuthority, wallet, guest } = useBandSession();
   const path = usePathname();
   const router = useRouter();
   const explore = () => {
@@ -122,7 +123,12 @@ export function Landing() {
           <SignupForm big />
           {SIGNUP_URL ? <p className="micro muted">One email when the full version opens. Nothing else.</p> : null}
         </div>
-        {runAuthority ? (
+        {wallet || guest ? (
+          // already inside the app (the logo leads here): straight back to it
+          <Link href="/" className="btn outline big rise d3">
+            {wallet ? "Open your dashboard →" : "Back to the demo band →"}
+          </Link>
+        ) : runAuthority ? (
           <button className="btn outline big rise d3" onClick={explore}>
             Explore the demo band →
           </button>
@@ -246,7 +252,7 @@ export function Landing() {
         <h2>Be first on the road.</h2>
         <p>The full version books real venues with real money. Get one email when it opens.</p>
         <SignupForm big source="greenroom-demo-bottom" />
-        {runAuthority ? (
+        {runAuthority && !wallet ? (
           <button className="btn outline big" onClick={explore}>
             Try the demo
           </button>

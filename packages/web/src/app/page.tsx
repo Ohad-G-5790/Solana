@@ -254,8 +254,17 @@ export default function DashboardPage() {
   const cities = new Set(run.shows.map((s) => s.city));
   return (
     <div>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
-        <div>
+      <header className="band-hero">
+        <div className="band-avatar" aria-hidden>
+          {run.band.name
+            .split(/\s+/)
+            .filter((w) => /^[A-Z0-9]/.test(w)) // "Cinema of Royal Street" → CR
+            .slice(0, 2)
+            .map((w) => w[0].toUpperCase())
+            .join("")}
+        </div>
+        <div className="band-hero-text">
+          <span className="eyebrow">{isWalletBand ? "Your band" : live ? "Band on devnet" : session.guest ? "Demo band · recorded tour" : "Recorded tour"}</span>
           <h1>{run.band.name}</h1>
           <p className="muted">
             {run.brief ? `${run.brief.wantedShows}-show tour · ${run.brief.countries.join("/")} · ${run.brief.windowDays}-day window` : `Central Europe tour · ${cities.size} cities`}
@@ -272,7 +281,7 @@ export default function DashboardPage() {
             {run.partial ? " · run in progress" : ""}
           </p>
         </div>
-        <div className="row">
+        <div className="row band-hero-actions">
           {isWalletBand ? (
             // while this tour still sells, a new one is not the next step
             <Link href="/tour/new" className={`btn ${count.proposed + count.onSale + count.confirmed - count.settled > 0 ? "outline" : "primary"}`}>
@@ -286,10 +295,11 @@ export default function DashboardPage() {
             Track record
           </Link>
         </div>
-      </div>
+      </header>
 
       {rpcError ? (
-        <p className="small warn" style={{ marginTop: 8 }}>
+        // a recorded tour still reads well without the chain: no alarm colour for it
+        <p className={`small ${live ? "warn" : "muted"}`} style={{ marginTop: 12 }}>
           {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
