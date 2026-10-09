@@ -48,7 +48,7 @@ export function Feed({ limit = 60, compact = false, source = "transcript" }: { l
     return (
       <p className="muted small">
         {error
-          ? `Feed unavailable (${error}).`
+          ? `Waiting for the RPC (${error.slice(0, 60)}); retrying.`
           : source === "chain"
             ? "No program transactions on this cluster yet."
             : "No agent messages yet. Run `npm run demo:fast` and they will appear here."}

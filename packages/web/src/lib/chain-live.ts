@@ -148,13 +148,20 @@ let lastEvents: { at: number; value: FeedMessage[] } | null = null;
 export async function fetchChainEvents(limit = 25): Promise<FeedMessage[]> {
   if (lastEvents && Date.now() - lastEvents.at < 12_000) return lastEvents.value;
   const sigs = await connection.getSignaturesForAddress(programId, { limit: Math.min(limit, 25) }, "confirmed");
-  const missing = sigs.filter((s) => !seen.has(s.signature) && !s.err).map((s) => s.signature);
+  // Newest first, at most 6 new transactions per poll, one request at a time
+  // with a pause: public RPCs cap getTransaction calls per second, and a
+  // transaction we could not fetch now is simply fetched on a later poll.
+  const missing = sigs.filter((s) => !seen.has(s.signature) && !s.err).map((s) => s.signature).slice(0, 6);
   if (missing.length) {
     const venues = await venuesByProfile();
-    for (let i = 0; i < missing.length; i += 5) {
-      const batch = missing.slice(i, i + 5);
-      const txs = await connection.getParsedTransactions(batch, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
-      batch.forEach((sig, j) => seen.set(sig, decode(sig, txs[j], venues)));
+    for (const sig of missing) {
+      try {
+        const tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+        seen.set(sig, decode(sig, tx, venues));
+      } catch {
+        break; // rate limited: try again next poll
+      }
+      await new Promise((r) => setTimeout(r, 350));
     }
   }
   const ordered = [...sigs].reverse();
