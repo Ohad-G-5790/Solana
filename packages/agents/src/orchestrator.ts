@@ -226,7 +226,14 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
     if (rec.showsCompleted === 0 || opts.historyOnly) {
       bus.publish({ kind: "note", from: "orchestrator", text: `Replaying last year's tour so ${band.name} has a real on-chain track record.` });
       await runTour(
-        { ...brief, wantedShows: opts.historyShows ?? 3, deadlineAfterSec: 25, showAfterSec: 45, tourName: `${band.name} 2025`.slice(0, 32) },
+        // a local validator takes a purchase per tick; devnet about one per 2 s, so there the past tour sells as long as the main one
+        {
+          ...brief,
+          wantedShows: opts.historyShows ?? 3,
+          deadlineAfterSec: isLocal ? 25 : brief.deadlineAfterSec,
+          showAfterSec: isLocal ? 45 : brief.showAfterSec,
+          tourName: `${band.name} 2025`.slice(0, 32),
+        },
         { hub: opts.payer.publicKey, connection, bandAgent, crank, fans, bus, client, world, crewAddress, log, tickMs: 1000, collectMs: 800, hireCrew: false }
       );
     }
