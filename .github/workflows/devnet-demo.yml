@@ -18,6 +18,12 @@ on:
       fans:
         description: "Base fans per city (scaled by population)"
         default: "10"
+      deadline:
+        description: "Seconds from sales opening to each show's threshold deadline (devnet purchases run ~1 per 2 s)"
+        default: "240"
+      show_after:
+        description: "Seconds from sales opening to the show date (settlement)"
+        default: "360"
       history:
         description: "Replay a short previous tour first (true/false)"
         default: "false"
@@ -35,7 +41,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,7 +60,7 @@ jobs:
           GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline 75 --show 150"
+          ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline ${{ inputs.deadline }} --show ${{ inputs.show_after }}"
           if [ "${{ inputs.history }}" = "true" ]; then ARGS="$ARGS --history"; fi
           npm run demo -w @greenroom/agents -- $ARGS 2>&1 | tee demo.log | grep -v "^\[fan.bought\]\|^\[venue\.\|429 Too Many"
       - name: Upload the run
