@@ -373,13 +373,19 @@ export async function runTour(brief: TourBrief, d: TourDeps): Promise<TourOutcom
 
   // The chain is the source of truth: a show is live when its account exists
   // and is on sale (rejected shows are closed).
+  // Only a missing account means "rejected"; any other error (rate limit,
+  // timeout) is retried so a public RPC cannot silently empty the tour.
   const live: BookedShow[] = [];
   for (const b of bandAgent.booked) {
-    try {
-      const acct = await client.fetchShow(b.show);
-      if (showStateName(acct.state) !== "proposed") live.push(b);
-    } catch {
-      /* closed by reject_show */
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const acct = await client.fetchShow(b.show);
+        if (showStateName(acct.state) !== "proposed") live.push(b);
+        break;
+      } catch (e) {
+        if (/does not exist|has no data/i.test((e as Error).message)) break;
+        await sleep(2000 * (attempt + 1));
+      }
     }
   }
   bus.publish({ kind: "note", from: "orchestrator", text: `${live.length} of ${bandAgent.booked.length} proposed shows are on sale; fans are buying.` });

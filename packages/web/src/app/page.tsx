@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Feed } from "@/components/Feed";
+import { fetchLiveTour } from "@/lib/chain-live";
 import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary";
 import { RouteMap, type MapStop } from "@/components/RouteMap";
 import { HealthBadge, ShowCard } from "@/components/ShowCard";
@@ -24,7 +25,20 @@ export default function DashboardPage() {
   useEffect(() => {
     let alive = true;
     const load = async () => {
-      const r = await getRun();
+      const bundled = await getRun();
+      if (!alive) return;
+      // Live mode on static hosting: the band's latest tour and shows straight
+      // from chain state, so a run executing anywhere is visible as it happens.
+      let r = bundled;
+      const authority = new URLSearchParams(window.location.search).get("band") ?? bundled?.band.authority;
+      if (authority && (isStaticMode() || new URLSearchParams(window.location.search).has("band"))) {
+        try {
+          const live = await fetchLiveTour(authority);
+          if (live && live.shows.length) r = { ...bundled, ...live, band: { ...bundled?.band, ...live.band } };
+        } catch {
+          /* chain unreachable; keep the bundle */
+        }
+      }
       if (!alive) return;
       setRun(r);
       void getApprovals().then((a) => alive && setApprovals(a));
@@ -291,8 +305,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h2 style={{ margin: "24px 0 10px" }}>Agents, live</h2>
-      <Feed limit={12} compact />
+      <h2 style={{ margin: "24px 0 10px" }}>On-chain, live</h2>
+      <Feed limit={12} compact source="chain" />
       <p className="small" style={{ marginTop: 8 }}>
         <Link href="/feed">Full feed →</Link>
       </p>

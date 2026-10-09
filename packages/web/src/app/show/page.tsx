@@ -9,6 +9,7 @@ import { Progress, StateBadge } from "@/components/ShowCard";
 import { explorerUrl } from "@/lib/config";
 import { demoDate, short, sol, timeLeft } from "@/lib/format";
 import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, vaultPda, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
+import { fetchLiveTour } from "@/lib/chain-live";
 import { getRun, getWorld, type RunShow } from "@/lib/run";
 
 export default function ShowPage() {
@@ -53,10 +54,21 @@ function ShowView() {
 
   useEffect(() => {
     void reload();
-    void getRun().then((r) => {
-      const me = r?.shows.find((s) => s.show === address) ?? null;
+    void getRun().then(async (r) => {
+      let me = r?.shows.find((s) => s.show === address) ?? null;
+      let all = r?.shows ?? [];
+      if (!me && r) {
+        // not in the bundle: look the show up in the band's live tour on chain
+        try {
+          const live = await fetchLiveTour(r.band.authority);
+          me = live?.shows.find((s) => s.show === address) ?? null;
+          if (live) all = live.shows;
+        } catch {
+          /* chain unreachable */
+        }
+      }
       setRun(me);
-      setOthers(r?.shows ?? []);
+      setOthers(all);
       if (me) void getWorld().then((w) => setVenueName(w.venues.find((v) => v.id === me.venue)?.name ?? me.venueName ?? null));
     });
     const t = setInterval(reload, 4000);
