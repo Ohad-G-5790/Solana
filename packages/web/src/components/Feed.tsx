@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchChainEvents } from "@/lib/chain-live";
+import { fetchChainEvents, fetchShowEvents } from "@/lib/chain-live";
 import { explorerUrl, POLL_MS } from "@/lib/config";
 import { getFeed, type FeedMessage } from "@/lib/run";
 
@@ -17,7 +17,7 @@ export function plain(text: string): string {
 
 /** What happened, in the band's words. Every message kind belongs to one group. */
 export const CATEGORIES: { id: string; label: string; kinds: string[] }[] = [
-  { id: "decisions", label: "Your decisions", kinds: ["approval.request", "approval.decision"] },
+  { id: "decisions", label: "Band decisions", kinds: ["approval.request", "approval.decision"] },
   { id: "bookings", label: "Bookings", kinds: ["tour.request", "band.plan", "show.proposed", "show.accepted", "show.rejected"] },
   { id: "offers", label: "Venue offers", kinds: ["venue.offer"] },
   { id: "declines", label: "Venue declines", kinds: ["venue.decline"] },
@@ -43,9 +43,10 @@ const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digi
  * Activity grouped by what it is about. source "chain": the program's own
  * events from recent transactions (live, wherever the agents run).
  * source "transcript": the agents' dialogue of the run (also offers and
- * declines, which never touch the chain). compact: only the group rows.
+ * declines, which never touch the chain). shows: with source "chain", only
+ * the events of these shows (one band's tour). compact: only the group rows.
  */
-export function Feed({ limit = 2000, compact = false, source = "transcript" }: { limit?: number; compact?: boolean; source?: "chain" | "transcript" }) {
+export function Feed({ limit = 2000, compact = false, source = "transcript", shows, empty }: { limit?: number; compact?: boolean; source?: "chain" | "transcript"; shows?: string[]; empty?: string }) {
   const [items, setItems] = useState<FeedMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
@@ -57,7 +58,7 @@ export function Feed({ limit = 2000, compact = false, source = "transcript" }: {
     const load = async () => {
       try {
         if (source === "chain") {
-          const all = await fetchChainEvents(25);
+          const all = shows ? await fetchShowEvents(shows) : await fetchChainEvents(25);
           if (alive) {
             setItems(all.slice(-limit));
             setError(null);
@@ -78,7 +79,9 @@ export function Feed({ limit = 2000, compact = false, source = "transcript" }: {
       alive = false;
       clearInterval(t);
     };
-  }, [limit, source]);
+    // shows is a fresh array each render; its content is what matters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limit, source, shows?.join(",")]);
 
   const groups = useMemo(() => {
     const by = new Map<string, FeedMessage[]>();
@@ -92,7 +95,7 @@ export function Feed({ limit = 2000, compact = false, source = "transcript" }: {
   if (items.length === 0)
     return (
       <p className="muted small">
-        {error ? `Waiting for the network (${error.slice(0, 60)}); retrying.` : source === "chain" ? "No program transactions on this cluster yet." : "Nothing has happened yet."}
+        {error ? `Waiting for the network (${error.slice(0, 60)}); retrying.` : (empty ?? (source === "chain" ? "Nothing has happened on-chain yet." : "Nothing has happened yet."))}
       </p>
     );
 
@@ -134,7 +137,7 @@ export function Feed({ limit = 2000, compact = false, source = "transcript" }: {
                     </div>
                     {m.tx ? (
                       <a className="micro muted nowrap" href={explorerUrl("tx", m.tx)} target="_blank" rel="noreferrer">
-                        tx ↗
+                        receipt ↗
                       </a>
                     ) : (
                       <span />

@@ -2,6 +2,7 @@
 
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { WalletButton } from "./WalletButton";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CLUSTER, explorerUrl } from "@/lib/config";
 import { sol } from "@/lib/format";
@@ -12,6 +13,13 @@ const GENRES = ["rock", "metal", "punk", "indie", "electronic", "hiphop", "jazz"
 /** First screen of the band pages when no wallet is connected. */
 export function ConnectScreen() {
   const { setGuest, runAuthority } = useBandSession();
+  const path = usePathname();
+  const router = useRouter();
+  // creating a tour needs your own wallet; the demo band lives on the dashboard
+  const explore = () => {
+    setGuest(true);
+    if (path.startsWith("/tour")) router.push("/");
+  };
   return (
     <div className="welcome">
       <div className="brand big">
@@ -25,7 +33,7 @@ export function ConnectScreen() {
       <div className="row" style={{ marginTop: 20 }}>
         <WalletButton>Connect wallet</WalletButton>
         {runAuthority ? (
-          <button className="btn outline" onClick={() => setGuest(true)}>
+          <button className="btn outline" onClick={explore}>
             Explore the demo band
           </button>
         ) : null}
@@ -44,11 +52,11 @@ export function ConnectScreen() {
         </div>
         <div>
           <b>3. Sell or save the date</b>
-          <span className="small muted">Fans pay into escrow. Miss the threshold and you pick a replacement.</span>
+          <span className="small muted">Fans pay into a safe on Solana. A show that misses its target is cancelled and every fan is refunded automatically.</span>
         </div>
         <div>
           <b>4. Get paid</b>
-          <span className="small muted">After the show the escrow splits between band, venue and crew on-chain.</span>
+          <span className="small muted">After the show the ticket money is split between band, venue and crew, automatically.</span>
         </div>
       </div>
     </div>
@@ -59,7 +67,7 @@ export function ConnectScreen() {
 export function RegisterBand() {
   const wallet = useAnchorWallet();
   const { refreshProfile, profileError } = useBandSession();
-  const [name, setName] = useState("The Running Pigeons");
+  const [name, setName] = useState("");
   const [genre, setGenre] = useState("indie");
   const [balance, setBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -109,7 +117,7 @@ export function RegisterBand() {
       <div className="form">
         <label>
           <span className="small muted">Band name</span>
-          <input className="input wide" value={name} maxLength={32} onChange={(e) => setName(e.target.value)} />
+          <input className="input wide" value={name} maxLength={32} placeholder="Your band's name" onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
           <span className="small muted">Genre</span>

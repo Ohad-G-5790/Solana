@@ -7,8 +7,9 @@ import type { Brain } from "./brain.ts";
 import type { MessageBus } from "./bus.ts";
 import { describePlan, planTour, type PlannedShow, type VenueOffer } from "./planner.ts";
 import type { ShowProposedData, TourRequest } from "./venue-agent.ts";
+import { formatSol } from "./sol.ts";
 
-const lamportsToSol = (l: number) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 3 })} SOL`;
+const lamportsToSol = formatSol;
 
 export interface TourBrief {
   countries: string[];

@@ -33,7 +33,7 @@ function ShowView() {
   const [now, setNow] = useState(0); // set from the chain clock on first poll
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string; network?: boolean } | null>(null);
 
   const reload = async () => {
     if (!address) {
@@ -46,8 +46,10 @@ function ShowView() {
       setTickets(await fetchTicketsForShow(address));
       if (publicKey) setMine(await fetchTicket(address, publicKey));
       setNow(await chainTime());
+      // a good poll clears an earlier network error
+      setMsg((m) => (m && !m.ok && m.network ? null : m));
     } catch (e) {
-      setMsg({ ok: false, text: `RPC unreachable: ${(e as Error).message.slice(0, 120)}` });
+      setMsg({ ok: false, network: true, text: `Could not reach the network (${(e as Error).message.slice(0, 100)}); retrying` });
       setAcct((a) => (a === undefined ? null : a));
     }
   };
@@ -85,7 +87,7 @@ function ShowView() {
     return (
       <div className="card">
         <h2>Show not found</h2>
-        <p className="muted">{msg && !msg.ok ? `${msg.text}. Is the validator running?` : "It may have been rejected by the venue (the account is closed) or belong to another cluster."}</p>
+        <p className="muted">{msg && !msg.ok ? `${msg.text}.` : "It may have been rejected by the venue (the account is closed) or belong to another cluster."}</p>
       </div>
     );
 
@@ -171,7 +173,7 @@ function ShowView() {
             <div className="value">{sol(acct.ticketPriceLamports)}</div>
           </div>
           <div className="stat">
-            <div className="label">In escrow</div>
+            <div className="label">Ticket money held</div>
             <div className="value">{sol(acct.escrowLamports)}</div>
           </div>
         </div>
@@ -231,6 +233,7 @@ function ShowView() {
       </div>
 
       <h2 style={{ margin: "20px 0 10px" }}>Tickets ({tickets.length})</h2>
+      <div className="table-wrap">
       <table className="table">
         <thead>
           <tr>
@@ -255,6 +258,7 @@ function ShowView() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

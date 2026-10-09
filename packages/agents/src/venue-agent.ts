@@ -1,4 +1,4 @@
-import type { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey, type Keypair } from "@solana/web3.js";
 import type { Band, Venue } from "@greenroom/world";
 import type { GreenroomClient } from "@greenroom/sdk";
 import type { Brain } from "./brain.ts";
@@ -89,7 +89,7 @@ export class VenueAgent {
         return { value, reasoning };
       },
       validate: (x) =>
-        typeof x.offer !== "boolean" || ![x.askBps, x.offeredCapacity, x.minPriceLamports].every((n) => Number.isFinite(n) && n >= 0)
+        typeof x.offer !== "boolean" || ![x.askBps, x.offeredCapacity, x.minPriceLamports].every((n) => Number.isInteger(n) && n >= 0)
           ? "malformed numbers"
           : x.askBps < 2500 || x.askBps > 4000
             ? "askBps out of range"
@@ -131,8 +131,8 @@ export class VenueAgent {
     const p = m.data!;
     const bandId = m.from.replace(/^band:/, "");
     const offer = this.lastOffer.get(bandId);
-    const show = new (await import("@solana/web3.js")).PublicKey(p.show);
-    const bandAuthority = new (await import("@solana/web3.js")).PublicKey(p.bandAuthority);
+    const show = new PublicKey(p.show);
+    const bandAuthority = new PublicKey(p.bandAuthority);
 
     const problems: string[] = [];
     if (!offer) problems.push("no offer on file");

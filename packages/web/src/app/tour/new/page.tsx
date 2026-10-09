@@ -8,7 +8,7 @@ import { useBandSession } from "@/components/BandSession";
 import { RegisterBand } from "@/components/Connect";
 import { DriveNote, Itinerary } from "@/components/Itinerary";
 import { RouteMap } from "@/components/RouteMap";
-import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, PRICES, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
+import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
 import { explorerUrl } from "@/lib/config";
 import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
 
@@ -21,6 +21,8 @@ export default function NewTourPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<BookedTour | null>(null);
+  /** A booking that stopped part-way: the tour exists, some shows are missing. */
+  const [partial, setPartial] = useState<{ tourId: number; message: string } | null>(null);
 
   useEffect(() => {
     void getWorld().then(setWorld);
@@ -45,9 +47,9 @@ export default function NewTourPage() {
       setPlan(p);
       // the answer sits below the questions: bring it into view
       if (p.plan.length) setTimeout(() => document.getElementById("your-route")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-      if (!p.plan.length) setError("No venue can take a band of this size on these dates. Try a different size or a longer tour.");
+      if (!p.plan.length) setError((await import("@/lib/book")).emptyPlanReason(p));
     } catch (e) {
-      setError((e as Error).message.slice(0, 200));
+      setError((await import("@/lib/book")).bookingErrorText(e));
     } finally {
       setBusy(null);
     }
@@ -56,11 +58,13 @@ export default function NewTourPage() {
   const book = async () => {
     if (!plan) return;
     setError(null);
+    const { bookTour, bookingErrorText, PartialBooking } = await import("@/lib/book");
     try {
-      const { bookTour } = await import("@/lib/book");
-      setBooked(await bookTour(wallet, profile, plan, setBusy));
+      setBooked(await bookTour(wallet, profile, plan, setBusy, partial ? { tourId: partial.tourId } : undefined));
+      setPartial(null);
     } catch (e) {
-      setError((e as Error).message.slice(0, 240));
+      if (e instanceof PartialBooking) setPartial({ tourId: e.tourId, message: e.message });
+      else setError(bookingErrorText(e));
     } finally {
       setBusy(null);
     }
@@ -71,15 +75,15 @@ export default function NewTourPage() {
       <div className="card" style={{ maxWidth: 720 }}>
         <h1>Your tour is booked</h1>
         <p className="muted" style={{ marginTop: 8 }}>
-          {booked.shows.length} shows are proposed on-chain. Each venue&apos;s agent signs its show within about 10 minutes, then fans start buying. Sales close{" "}
-          {SALES_MINUTES} minutes from now: a show that sells half its tickets by then is confirmed, the rest refund their fans automatically.
+          {booked.shows.length} shows are booked. Each venue signs its show within about 10 minutes, then fans start buying. Ticket sales run for about{" "}
+          {SALES_MINUTES} minutes: a show that sells half its tickets by then goes ahead; the others are cancelled and their fans refunded automatically.
         </p>
         <div className="row" style={{ marginTop: 16 }}>
           <Link className="btn primary" href="/">
             Watch it on the dashboard
           </Link>
           <a className="small muted" href={explorerUrl("address", booked.tour)} target="_blank" rel="noreferrer">
-            tour on explorer ↗
+            receipt on Solana ↗
           </a>
         </div>
       </div>
@@ -184,13 +188,28 @@ export default function NewTourPage() {
               <DriveNote />
             </div>
           </div>
+          <Money plan={plan} />
+          {partial ? (
+            <p className="small warn" style={{ marginTop: 12 }}>
+              Your tour is open, but not every show went through ({partial.message}) Press Finish booking to add the missing shows to the same tour.
+            </p>
+          ) : null}
           <div className="row" style={{ marginTop: 16 }}>
             <button className="btn primary big" disabled={!!busy} onClick={book}>
-              {busy ?? "Book this tour"}
+              {busy ?? (partial ? "Finish booking" : "Book this tour")}
             </button>
-            <button className="btn outline" disabled={!!busy} onClick={() => setPlan(null)}>
-              Change answers
-            </button>
+            {partial ? null : (
+              <button
+                className="btn outline"
+                disabled={!!busy}
+                onClick={() => {
+                  setPlan(null);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                Change answers
+              </button>
+            )}
           </div>
           <p className="micro muted" style={{ marginTop: 10, maxWidth: 720 }}>
             Your wallet asks you once and pays a small deposit to store the tour on Solana (about 0.005 SOL per show). On devnet each show sells a sample of the room, one ticket per 20 people,
@@ -198,6 +217,31 @@ export default function NewTourPage() {
           </p>
         </section>
       ) : null}
+    </div>
+  );
+}
+
+/** What the band takes home and what it risks, before it books. */
+function Money({ plan }: { plan: TourPlan }) {
+  const m = planMoney(plan);
+  const euro = (n: number) => `€${n.toLocaleString()}`;
+  return (
+    <div className="money" aria-label="Money">
+      <div>
+        <span className="label">Full house</span>
+        <b>about {euro(m.selloutEuro)}</b>
+        <span className="micro muted">for you, after the venues&apos; share (you keep about {m.bandPct}%)</span>
+      </div>
+      <div>
+        <span className="label">Each show goes ahead at</span>
+        <b>half the tickets</b>
+        <span className="micro muted">about {euro(m.targetEuro)} for you if every show just makes it</span>
+      </div>
+      <div>
+        <span className="label">If a show misses</span>
+        <b>fans get refunds</b>
+        <span className="micro muted">automatically; you lose only the small deposit</span>
+      </div>
     </div>
   );
 }

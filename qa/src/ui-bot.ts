@@ -34,6 +34,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-connect-shows-mine", title: "connecting a wallet shows that wallet's own data right away" },
   { id: "ux-next-step", title: "a band without a tour sees one obvious next step" },
   { id: "ux-create-tour", title: "creating a tour takes four answers and shows the route before anything is booked" },
+  { id: "ux-booked-tour", title: "after booking, the dashboard shows your own tour: planned days, booked by you, what waits on whom, your activity only" },
   { id: "ux-fast-paint", title: "every page shows its heading within 1.5 s even when the chain answers slowly" },
   { id: "ux-phone-width", title: "no sideways scrolling at phone width (390 px)" },
   { id: "ux-names", title: "every button, link and field has an accessible name" },
@@ -45,6 +46,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
 ];
 
 const BASE = "/Solana";
+const ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
 const ADDRESS = "cSppNhmf1Ng2JAyf5UeNb7Di9mukwRDjBgcRXvTCfsj";
 const PAGES = ["/", "/approvals/", "/venues/", "/planner/", "/band/", "/feed/", "/tour/new/"];
 const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain", ".jsonl": "text/plain", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2" };
@@ -99,6 +101,8 @@ function bandProfile(name: string, genre: string, toursCreated: number): string 
 
 interface Fake {
   band: boolean;
+  /** The band has booked a tour from the dashboard: three shows on chain. */
+  tour?: boolean;
   /** ms every RPC answer waits (a slow public devnet). */
   delay: number;
 }
@@ -134,23 +138,80 @@ const WALLET_SCRIPT = `(function (address) {
   window.dispatchEvent(new CustomEvent("wallet-standard:register-wallet", { detail: register }));
 })`;
 
-export async function newPage(browser: Browser, fake: Fake, width = 1280): Promise<Page> {
+/**
+ * Three shows as a dashboard booking leaves them on chain, encoded with the
+ * program's IDL: Berlin on sale (day 1), Leipzig waiting for its venue (day 3),
+ * Hamburg confirmed (day 6). Dates follow the demo clock (2 s per tour day).
+ */
+async function bookedShows(root: string): Promise<Map<string, string>> {
+  // CommonJS packages: the namespace or its default, whichever the loader gives
+  const anchorMod = await import("@anchor-lang/core");
+  const anchor = ((anchorMod as unknown as { default?: typeof anchorMod }).default ?? anchorMod) as typeof anchorMod;
+  const bnMod = await import("bn.js");
+  const BN = ((bnMod as { default?: unknown }).default ?? bnMod) as typeof import("bn.js");
+  const { PublicKey, Keypair } = await import("@solana/web3.js");
+  const idl = JSON.parse(readFileSync(join(root, "packages/web/src/idl/greenroom.json"), "utf8"));
+  const venues = JSON.parse(readFileSync(join(root, "packages/web/public/venue-profiles.json"), "utf8")).venues as Record<string, { authority: string; profile: string }>;
+  const coder = new anchor.BorshAccountsCoder(idl);
+  const band = new PublicKey(ADDRESS);
+  const now = Math.floor(Date.now() / 1000);
+  const plan: [string, number, string, number][] = [
+    ["huxleys-neue-welt-berlin", 0, "OnSale", 4],
+    ["taeubchenthal-leipzig", 2, "Proposed", 0],
+    ["grosse-freiheit-36-hamburg", 5, "Confirmed", 12],
+  ];
+  const out = new Map<string, string>();
+  for (const [id, day, state, sold] of plan) {
+    const v = venues[id];
+    const deadline = now + 1800 + day * 2;
+    const data = await coder.encode("Show", {
+      tour: PublicKey.default,
+      band_profile: PublicKey.default,
+      venue_profile: new PublicKey(v.profile),
+      band_authority: band,
+      venue_authority: new PublicKey(v.authority),
+      date: new BN(deadline + 1800),
+      ticket_price_lamports: new BN(200_000),
+      capacity: 20,
+      threshold_bps: 5000,
+      threshold_deadline: new BN(deadline),
+      band_bps: 6500,
+      venue_bps: 3500,
+      tickets_sold: sold,
+      tickets_refunded: 0,
+      escrow_lamports: new BN(sold * 200_000),
+      state: { [state]: {} },
+      bump: 255,
+      vault_bump: 255,
+      payees: [],
+    });
+    out.set(Keypair.generate().publicKey.toBase58(), Buffer.from(data).toString("base64"));
+  }
+  return out;
+}
+
+export async function newPage(browser: Browser, fake: Fake, width = 1280, root = ROOT): Promise<Page> {
   const page = await browser.newPage({ viewport: { width, height: 900 } });
   await page.addInitScript({ content: `${WALLET_SCRIPT}(${JSON.stringify(ADDRESS)});` });
-  const profile = fake.band ? bandProfile("The Running Pigeons", "indie", 0) : null;
+  const profile = fake.band ? bandProfile("The Running Pigeons", "indie", fake.tour ? 1 : 0) : null;
+  const shows = fake.tour ? await bookedShows(root) : new Map<string, string>();
   await page.route(/api\.devnet\.solana\.com/, async (route) => {
     const req = JSON.parse(route.request().postData() || "{}") as { id: number; method: string; params: unknown[] } | { id: number; method: string; params: unknown[] }[];
     const answer = (r: { method: string; params: unknown[] }) => {
       const ctx = { context: { slot: 1 } };
       const owner = "4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8";
       switch (r.method) {
-        case "getAccountInfo":
-          return { ...ctx, value: profile ? { data: [profile, "base64"], executable: false, lamports: 2_000_000, owner, rentEpoch: 0, space: 100 } : null };
+        case "getAccountInfo": {
+          const data = shows.get(r.params[0] as string) ?? profile;
+          return { ...ctx, value: data ? { data: [data, "base64"], executable: false, lamports: 2_000_000, owner, rentEpoch: 0, space: 100 } : null };
+        }
         case "getMultipleAccounts":
-          return { ...ctx, value: (r.params[0] as string[]).map(() => ({ data: ["", "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 })) };
+          return { ...ctx, value: (r.params[0] as string[]).map((k) => ({ data: [shows.get(k) ?? "", "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 })) };
         case "getBalance":
           return { ...ctx, value: 1_500_000_000 };
         case "getProgramAccounts":
+          // the band's tour (memcmp on the show's tour field): the booked shows
+          return [...shows].map(([pubkey, data]) => ({ pubkey, account: { data: [data, "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 } }));
         case "getSignaturesForAddress":
           return [];
         case "getSlot":
@@ -169,6 +230,9 @@ export async function newPage(browser: Browser, fake: Fake, width = 1280): Promi
 }
 
 async function connect(page: Page): Promise<void> {
+  // a wallet used earlier in this page reconnects by itself
+  const signedIn = page.getByText("Signed in as");
+  if (await signedIn.waitFor({ timeout: 3000 }).then(() => true, () => false)) return;
   await page.getByRole("button", { name: /connect wallet|select wallet/i }).first().click();
   await page.getByText("Test Wallet").first().click();
   await page.waitForTimeout(1200);
@@ -270,11 +334,36 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.getByRole("button", { name: /plan my tour/i }).click();
       await page.getByRole("button", { name: /book this tour/i }).waitFor({ timeout: 20_000 });
       const stops = await page.locator(".itinerary .stop").count();
+      const money = await page.locator(".money").count();
       await shot(page, "4-route-preview");
       await page.close();
       if (questions !== 4) return `${questions} questions instead of 4`;
       if (primaries !== 1) return `${primaries} primary buttons on the questions step (want exactly one: Plan my tour)`;
       if (stops < 2) return `the route preview shows ${stops} stops`;
+      if (!money) return "the route preview does not say what the tour earns or risks";
+      return null;
+    });
+
+    await check("ux-booked-tour", async () => {
+      const page = await newPage(browser, { band: true, tour: true, delay: 0 });
+      await page.goto(url("/"), { waitUntil: "domcontentloaded" });
+      await connect(page);
+      await page.locator(".itinerary .stop").first().waitFor({ timeout: 10_000 });
+      await page.waitForTimeout(1500);
+      const main = (await page.locator("main").textContent()) ?? "";
+      await shot(page, "7-booked-dashboard");
+      await page.goto(url("/feed/"), { waitUntil: "domcontentloaded" });
+      await connect(page);
+      await page.waitForTimeout(1500);
+      const feed = (await page.locator("main").textContent()) ?? "";
+      await page.close();
+      const days = [...main.matchAll(/Day (\d+)/g)].map((m) => Number(m[1]));
+      if (!days.includes(1) || !days.includes(3) || !days.includes(6)) return `planned days 1, 3, 6 not shown (saw ${[...new Set(days)].join(", ") || "none"})`;
+      if (days.some((d) => d > 31)) return `impossible day numbers: ${days.filter((d) => d > 31).slice(0, 3).join(", ")}`;
+      if (!/booked by you/.test(main)) return "the band's own tour is not labelled as booked by the band";
+      if (/auto-pilot|Recorded run/i.test(main)) return "the band's own tour is labelled as auto-pilot or a recording";
+      if (!/wait for their venue/.test(main)) return "nothing says the Leipzig show is waiting for its venue";
+      if (/demo band/i.test(feed)) return "Activity shows the demo band to a connected band";
       return null;
     });
 
@@ -379,7 +468,10 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
     });
 
     await check("ux-activity-grouped", async () => {
-      const page = await newPage(browser, { band: true, delay: 0 });
+      // Activity is a band page: look at the demo band's
+      const page = await newPage(browser, { band: false, delay: 0 });
+      await page.goto(url("/"), { waitUntil: "domcontentloaded" });
+      await page.getByRole("button", { name: /explore the demo band/i }).click();
       await page.goto(url("/feed/"), { waitUntil: "domcontentloaded" });
       await page.locator(".activity .group").first().waitFor({ timeout: 8000 });
       const groups = await page.locator(".activity .group").count();

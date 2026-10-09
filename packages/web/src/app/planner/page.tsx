@@ -7,7 +7,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { DriveNote } from "@/components/Itinerary";
 import { RouteMap } from "@/components/RouteMap";
 import { loadPlan, savePlan } from "@/lib/planner-store";
-import { getRun, getWorld, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
+import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
+import { useBandTour } from "@/components/useBandTour";
 
 export default function PlannerPage() {
   return (
@@ -87,7 +88,7 @@ const fmtDate = (start: string, day: number) => {
 function Planner() {
   const fromTour = useSearchParams().get("from") === "tour";
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
-  const [run, setRun] = useState<RunSummary | null>(null);
+  const { tour: run, mine } = useBandTour();
   const [ids, setIds] = useState<string[]>([]);
   const [restEvery, setRestEvery] = useState(3);
   const [start, setStart] = useState("2026-11-03");
@@ -97,7 +98,6 @@ function Planner() {
 
   useEffect(() => {
     void getWorld().then(setWorld);
-    void getRun().then(setRun);
     setIds(loadPlan());
   }, []);
 
@@ -178,6 +178,9 @@ function Planner() {
             here or from <Link href="/venues">Venues</Link>. Saved in this browser only.
           </p>
         </div>
+        <Link href="/tour/new" className="btn outline">
+          Ready to book? Create a tour
+        </Link>
       </div>
 
       <div className="toolbar">
@@ -218,7 +221,7 @@ function Planner() {
         <span className="spacer" />
         {tourIds.length ? (
           <button className="btn small outline" onClick={() => update(tourIds)}>
-            Load my tour
+            {mine ? "Load my tour" : "Load the demo tour"}
           </button>
         ) : null}
         <button className="btn small outline" disabled={stops.length < 3} onClick={optimize} title="Shortest order that keeps the first stop">

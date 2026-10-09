@@ -146,12 +146,15 @@ export default function DashboardPage() {
   let sold = 0;
   let escrow = 0;
   let take = 0;
-  const count = { onSale: 0, atRisk: 0, confirmed: 0, settled: 0, cancelled: 0 };
+  // a tour read from chain state was booked by the band itself (wizard or its own agents), not a recording
+  const live = run.cluster === "live";
+  const count = { proposed: 0, onSale: 0, atRisk: 0, confirmed: 0, settled: 0, cancelled: 0 };
   for (const v of views) {
     if (v.state === "rejected") continue;
     sold += v.sold;
     escrow += v.escrowLamports;
     take += bandTake(v);
+    if (v.state === "proposed") count.proposed++;
     if (v.state === "onSale") count.onSale++;
     if (v.health === "at-risk") count.atRisk++;
     if (v.state === "confirmed" || v.state === "settled") count.confirmed++;
@@ -162,8 +165,18 @@ export default function DashboardPage() {
   // ---------- what needs the band ----------
   const attention: { key: string; tone: "wait" | "risk" | "bad" | "info"; text: ReactNode; cta?: ReactNode }[] = [];
   for (const i of pending) attention.push({ key: i.request.id, tone: "wait", text: <PendingLine item={i} />, cta: <Link className="btn primary small" href={`/approvals#${i.request.id}`}>Review</Link> });
+  if (count.proposed)
+    attention.push({
+      key: "proposed",
+      tone: "wait",
+      text: (
+        <>
+          {count.proposed} of {views.length} shows wait for their venue to sign. Venues answer within about 10 minutes; nothing for you to do.
+        </>
+      ),
+    });
   for (const v of views) {
-    if (v.health === "at-risk") attention.push({ key: v.run.show, tone: "risk", text: <><b>{v.run.city}</b> is at risk: {v.status.toLowerCase()}. If it misses, fans are refunded and you get replacement options.</>, cta: <Link className="btn outline small" href={`/show?address=${v.run.show}`}>Open</Link> });
+    if (v.health === "at-risk") attention.push({ key: v.run.show, tone: "risk", text: <><b>{v.run.city}</b> is at risk: {v.status.toLowerCase()}. If it misses, every fan is refunded automatically{live ? "" : " and you get replacement options"}.</>, cta: <Link className="btn outline small" href={`/show?address=${v.run.show}`}>Open</Link> });
     if (v.state === "cancelled") {
       const rep = v.run.replacedBy ? byShow.get(v.run.replacedBy) : undefined;
       attention.push({
@@ -185,7 +198,15 @@ export default function DashboardPage() {
   }
 
   // ---------- stepper ----------
-  const steps = [
+  const steps = live
+    ? [
+        { label: "Route OK", n: views.length, done: true },
+        { label: "Venues signed", n: views.length - count.proposed - views.filter((v) => v.state === "rejected").length, done: count.proposed === 0, now: count.proposed > 0 },
+        { label: "On sale", n: count.onSale, done: count.onSale + count.confirmed + count.cancelled > 0 },
+        { label: "Confirmed", n: count.confirmed, done: count.confirmed > 0 },
+        { label: "Settled", n: count.settled, done: count.settled > 0 },
+      ]
+    : [
     { label: "Offers", n: venuesItem?.request.payload.step === "venues" ? venuesItem.request.payload.offers.length : "–", done: !!venuesItem },
     { label: "Venues OK", n: venuesItem?.decision?.answer.step === "venues" ? venuesItem.decision.answer.venueIds.length : "–", done: !!venuesItem?.decision, now: !!venuesItem && !venuesItem.decision },
     { label: "Route OK", n: routeItem?.decision?.answer.approve && routeItem.request.payload.step === "route" ? routeItem.request.payload.stops.length : "–", done: !!routeItem?.decision?.answer.approve, now: !!routeItem && !routeItem.decision },
@@ -193,8 +214,9 @@ export default function DashboardPage() {
     { label: "Confirmed", n: count.confirmed, done: count.confirmed > 0 },
     { label: "Settled", n: count.settled, done: count.settled > 0 },
   ];
-  if (!steps.some((s) => s.now)) {
-    const idx = count.onSale > 0 ? 3 : views.length && count.confirmed > count.settled ? 4 : count.settled > 0 ? 5 : -1;
+  if (!steps.some((s) => (s as { now?: boolean }).now)) {
+    const shift = live ? 1 : 0; // the live stepper has no "Offers" step
+    const idx = count.onSale > 0 ? 3 - shift : views.length && count.confirmed > count.settled ? 4 - shift : count.settled > 0 ? 5 - shift : -1;
     if (idx >= 0) (steps[idx] as { now?: boolean }).now = true;
   }
 
@@ -230,12 +252,12 @@ export default function DashboardPage() {
           <p className="muted">
             {run.brief ? `${run.brief.wantedShows}-show tour · ${run.brief.countries.join("/")} · ${run.brief.windowDays}-day window` : `Central Europe tour · ${cities.size} cities`}
             {" · "}
-            {run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
+            {live ? "booked by you" : run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
             {run.tour ? (
               <>
                 {" · "}
                 <a href={explorerUrl("address", run.tour)} target="_blank" rel="noreferrer">
-                  tour on explorer ↗
+                  tour on Solana ↗
                 </a>
               </>
             ) : null}
@@ -262,7 +284,7 @@ export default function DashboardPage() {
           {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
-      {isStaticMode() ? (
+      {isStaticMode() && !live ? (
         <p className="small muted" style={{ marginTop: 8 }}>
           Recorded run. Show states are read live from {run.cluster.includes("devnet") ? "devnet" : "the chain"}; decisions are off here.
         </p>
@@ -300,7 +322,7 @@ export default function DashboardPage() {
       {views.length > 0 ? (
         <div className="stats">
           <Stat label="Tickets sold" value={sold} />
-          <Stat label="In escrow" value={sol(escrow, 2)} />
+          <Stat label="Ticket money held" value={sol(escrow, 2)} hint="refunded if a show is cancelled" />
           <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
           <Stat label="Confirmed" value={count.confirmed} />
           <Stat label="At risk" value={count.atRisk} tone={count.atRisk ? "warn" : undefined} />
@@ -354,8 +376,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h2 style={{ margin: "24px 0 10px" }}>Activity on-chain</h2>
-      <Feed limit={200} compact source="chain" />
+      <h2 style={{ margin: "24px 0 10px" }}>{live ? "What happened" : "What happened on this recorded tour"}</h2>
+      {live ? (
+        <Feed limit={500} compact source="chain" shows={run.shows.map((s) => s.show)} empty="Your shows are booked; nothing else has happened yet." />
+      ) : (
+        <Feed limit={2000} compact source="transcript" />
+      )}
       <p className="small" style={{ marginTop: 8 }}>
         <Link href="/feed">All activity →</Link>
       </p>

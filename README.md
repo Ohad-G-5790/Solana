@@ -45,7 +45,7 @@ No command line needed. On the [live dashboard](https://ohad-g-5790.github.io/So
 4. **Plan my tour.** The venue agents' offers are computed in the browser and the route appears on the map with dates, drive per leg and days off. Nothing is booked yet; change any answer and plan again.
 5. **Book this tour.** Your wallet asks once and creates the tour and every show on devnet.
 
-From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper.yml`, every 10 minutes on GitHub Actions, using the demo wallet secret) lets the seed venues accept the shows, simulates fans buying, confirms or cancels each show at its deadline, refunds cancelled ones and settles the rest. Devnet clocks are compressed: sales run 40 minutes, each show sells a 5% sample of the room (12–40 tickets) at 1 € = 0.00001 SOL of play money. Follow it on the Dashboard and on **Activity**, which groups everything that happened (your decisions, bookings, venue offers and declines, ticket sales, confirmed and cancelled shows, refunds, crew, payouts) into sections that open on demand.
+From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper.yml`, every 10 minutes on GitHub Actions, using the demo wallet secret) lets the seed venues sign the shows whose terms they would offer themselves (and decline the rest), simulates fans buying (with a spending cap per band), confirms or cancels each show at its deadline, refunds cancelled ones and settles the rest. Devnet clocks are compressed: sales run 40 minutes, each show sells a 5% sample of the room (12–40 tickets) at 1 € = 0.00001 SOL of play money. Follow it on the Dashboard and on **Activity**, which groups everything that happened (your decisions, bookings, venue offers and declines, ticket sales, confirmed and cancelled shows, refunds, crew, payouts) into sections that open on demand.
 
 Developers can still run the agents as their own band from a terminal (`npm run demo:devnet -- --band-keypair <file> --band-name ... --genre ... --draw ... --home-city ... --approve`); keep key files out of the repository.
 
@@ -125,7 +125,8 @@ The **UI bot** (`qa/src/ui-bot.ts`, `npm run ui-bot`) checks that the dashboard 
 - the first screen is public, with a single connect button
 - connecting shows that wallet's band, with its address in the right case
 - a band without a tour sees one obvious next step
-- a tour takes four answers and shows the route before anything is booked
+- a tour takes four answers and shows the route, money and risk before anything is booked
+- after booking, the dashboard shows your own tour: the planned days, "booked by you", which shows wait on a venue, and only your activity
 - every page shows its heading within 1.5 s on a slow chain
 - nothing scrolls sideways at 390 px
 - every control has a name

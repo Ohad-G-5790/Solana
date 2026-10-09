@@ -36,8 +36,8 @@ export default function ApprovalsPage() {
         <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
           <h3>No questions for {name} yet</h3>
           <p className="small muted" style={{ marginTop: 6 }}>
-            When you create a tour, you approve the route before anything is booked: that is the first decision. If a show does not sell, the replacement options
-            show up here.
+            When you create a tour, the route on the map is your decision: nothing is booked until you press Book. After that the tour runs by itself; a show
+            that misses its target is cancelled and every fan is refunded automatically, so there is nothing to approve here.
           </p>
           <div className="row" style={{ marginTop: 14 }}>
             <Link className="btn primary" href="/tour/new">

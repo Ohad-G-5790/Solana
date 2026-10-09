@@ -1,6 +1,7 @@
 import type { PublicKey } from "@solana/web3.js";
 import { showStateName, type GreenroomClient, type ShowAccount } from "@greenroom/sdk";
 import type { MessageBus } from "./bus.ts";
+import { formatSol } from "./sol.ts";
 
 export interface CrankResult {
   confirmed: PublicKey[];
@@ -59,7 +60,7 @@ export class Crank {
           try {
             const tx = await this.client.refundTicket(show, t.account.buyer);
             result.refunded++;
-            this.bus.publish({ kind: "crank.refunded", from: "crank", text: `Refunded ${(Number(t.account.amountLamports) / 1e9).toLocaleString("en", { maximumFractionDigits: 5 })} SOL to ${t.account.buyer.toBase58().slice(0, 6)}…`, tx, data: { show: show.toBase58(), buyer: t.account.buyer.toBase58(), amountLamports: Number(t.account.amountLamports) } });
+            this.bus.publish({ kind: "crank.refunded", from: "crank", text: `Refunded ${formatSol(Number(t.account.amountLamports))} to ${t.account.buyer.toBase58().slice(0, 6)}…`, tx, data: { show: show.toBase58(), buyer: t.account.buyer.toBase58(), amountLamports: Number(t.account.amountLamports) } });
           } catch (e) {
             this.bus.publish({ kind: "note", from: "crank", text: `refund failed: ${(e as Error).message.slice(0, 120)}` });
           }
@@ -75,7 +76,7 @@ export class Crank {
           this.bus.publish({
             kind: "crank.settled",
             from: "crank",
-            text: `Show date passed: ${(total / 1e9).toLocaleString("en", { maximumFractionDigits: 4 })} SOL split ${acct.bandBps / 100}% band / ${acct.venueBps / 100}% venue${acct.payees.length ? ` / ${acct.payees.map((p) => `${p.bps / 100}% ${p.label}`).join(", ")}` : ""}.`,
+            text: `Show date passed: ${formatSol(total)} split ${acct.bandBps / 100}% band / ${acct.venueBps / 100}% venue${acct.payees.length ? ` / ${acct.payees.map((p) => `${p.bps / 100}% ${p.label}`).join(", ")}` : ""}.`,
             tx,
             data: { show: show.toBase58(), total, bandBps: acct.bandBps, venueBps: acct.venueBps, payees: acct.payees.map((p) => ({ address: p.address.toBase58(), bps: p.bps, label: p.label })) },
           });

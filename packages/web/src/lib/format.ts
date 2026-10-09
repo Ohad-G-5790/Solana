@@ -2,7 +2,9 @@ export const LAMPORTS_PER_SOL = 1_000_000_000;
 
 export function sol(lamports: number | bigint | { toString(): string }, digits = 3): string {
   const n = Number(lamports.toString()) / LAMPORTS_PER_SOL;
-  return `${n.toLocaleString(undefined, { maximumFractionDigits: digits })} SOL`;
+  // devnet play money is tiny: never round a real amount down to "0 SOL"
+  const d = n !== 0 && Math.abs(n) < 10 ** -digits ? 5 : digits;
+  return `${n.toLocaleString(undefined, { maximumFractionDigits: d })} SOL`;
 }
 
 export function short(address: string, n = 4): string {

@@ -77,7 +77,7 @@ export function bandTake(v: ShowView): number {
 }
 
 export const HEALTH_LABEL: Record<Health, string> = {
-  proposed: "proposed",
+  proposed: "waiting for venue",
   "on-track": "on sale",
   "at-risk": "at risk",
   confirmed: "confirmed",

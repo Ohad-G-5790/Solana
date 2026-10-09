@@ -7,6 +7,7 @@ import { BN } from "@anchor-lang/core";
 import { PublicKey, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { bandPda, connection, vaultPda, walletProgram, type BandAccount, type WalletLike } from "./greenroom";
 import type { WorldCity, WorldVenue } from "./run";
+import { DEMO_DAY_SEC } from "./config";
 import { venueKeys } from "./venue-keys";
 
 /** How many people the band can bring: the one number the venues care about most. */
@@ -35,7 +36,30 @@ export interface TourPlan {
   answers: TourAnswers;
   offers: VenueOffer[];
   declined: number;
+  /** Seed venues on-chain right now (0: the keeper has not registered them yet). */
+  registered: number;
   plan: PlannedShow[];
+}
+
+/** Why a plan came back empty, in the band's words. */
+export function emptyPlanReason(p: TourPlan): string {
+  if (p.registered === 0) return "The venues are not on devnet yet. The keeper registers them every 10 minutes; try again shortly.";
+  if (p.offers.length === 0) return `No venue near your route takes a band that brings ${p.answers.draw.toLocaleString()} people. Try the next size up or down.`;
+  return `${p.offers.length} venues said yes, but no route fits ${p.answers.days} days from ${p.answers.startCity}. Try a longer tour or another first city.`;
+}
+
+/** Money at a full house and at the 50% target, in euros, for the real rooms (not the devnet sample). */
+export function planMoney(p: TourPlan): { selloutEuro: number; targetEuro: number; bandPct: number } {
+  const offerOf = new Map(p.offers.map((o) => [o.venueId, o]));
+  let sellout = 0;
+  let bandBps = 0;
+  for (const s of p.plan) {
+    const room = Math.min(p.answers.draw, offerOf.get(s.venueId)?.offeredCapacity ?? p.answers.draw);
+    sellout += room * p.answers.priceEuro * (s.bandBps / 10_000);
+    bandBps += s.bandBps;
+  }
+  const n = Math.max(1, p.plan.length);
+  return { selloutEuro: Math.round(sellout), targetEuro: Math.round(sellout / 2), bandPct: Math.round(bandBps / n / 100) };
 }
 
 /** Shows for a tour of `days` days: about two in three nights, with travel and rest days between. */
@@ -81,7 +105,7 @@ export async function planFromAnswers(a: TourAnswers, band: Pick<BandAccount, "g
     capacityScale: SAMPLE,
     minCapacity: MIN_TICKETS,
   }).map((p) => ({ ...p, capacity: Math.min(MAX_TICKETS, p.capacity) }));
-  return { answers: a, offers, declined, plan };
+  return { answers: a, offers, declined, registered: registered.size, plan };
 }
 
 const enc = (s: string) => Buffer.from(s);
@@ -99,32 +123,63 @@ const i64 = (n: number) => {
 
 export interface BookedTour {
   tour: string;
+  tourId: number;
   shows: string[];
   signatures: string[];
+}
+
+/** A booking that stopped part-way: the tour exists with some of its shows; bookTour(…, resume) adds the rest. */
+export class PartialBooking extends Error {
+  constructor(
+    message: string,
+    readonly tourId: number,
+    readonly tour: string,
+    readonly signatures: string[]
+  ) {
+    super(message);
+  }
+}
+
+/** Wallet and RPC errors, said plainly. */
+export function bookingErrorText(e: unknown): string {
+  const m = String((e as Error)?.message ?? e);
+  if (/reject|denied|cancel/i.test(m)) return "You cancelled in your wallet. Nothing new was booked.";
+  if (/insufficient|0x1\b|debit an account/i.test(m)) return "Your wallet needs a little more devnet SOL (about 0.005 per show). Top it up and try again.";
+  if (/429|rate|fetch|network|timed out|not confirmed/i.test(m)) return "Devnet is busy right now. Wait a minute and try again.";
+  return m.slice(0, 200);
 }
 
 /**
  * Open the tour and propose every show, signed by the band's wallet in one
  * approval. Venues' agents sign their shows when the keeper next runs.
  */
-export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPlan, onStatus: (s: string) => void): Promise<BookedTour> {
+export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPlan, onStatus: (s: string) => void, resume?: { tourId: number }): Promise<BookedTour> {
   const program = walletProgram(wallet);
   const programId = program.programId;
   const bandProfile = bandPda(wallet.publicKey);
   const fresh = await program.account.bandProfile.fetch(bandProfile);
-  const tourId = fresh.toursCreated;
+  const tourId = resume?.tourId ?? fresh.toursCreated;
   const tour = PublicKey.findProgramAddressSync([enc("tour"), bandProfile.toBuffer(), u32(tourId)], programId)[0];
   const now = Math.floor(Date.now() / 1000);
   const ixs: TransactionInstruction[] = [];
-  ixs.push(
-    await program.methods
-      .createTour(tourId, `${band.name} tour ${tourId + 1}`.slice(0, 32), "Central EU", new BN(now - 120), new BN(now + 8 * 3600))
-      .accountsPartial({ bandAuthority: wallet.publicKey, bandProfile, tour, systemProgram: SystemProgram.programId })
-      .instruction()
-  );
+  // finishing an earlier attempt: skip the tour and the venues that already have their show
+  const done = new Set<string>();
+  if (resume) {
+    const existing = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);
+    for (const e of existing) done.add(e.account.venueProfile.toBase58());
+  } else {
+    ixs.push(
+      await program.methods
+        .createTour(tourId, `${band.name} tour ${tourId + 1}`.slice(0, 32), "Central EU", new BN(now - 120), new BN(now + 8 * 3600))
+        .accountsPartial({ bandAuthority: wallet.publicKey, bandProfile, tour, systemProgram: SystemProgram.programId })
+        .instruction()
+    );
+  }
   const shows: string[] = [];
-  for (const [i, s] of p.plan.entries()) {
-    const deadline = now + SALES_MINUTES * 60 + i * 180;
+  for (const s of p.plan) {
+    if (done.has(s.venuePubkey)) continue;
+    // planned days ride on the demo clock, so "Day 6" on the preview is "Day 6" on the dashboard
+    const deadline = now + SALES_MINUTES * 60 + (s.day - p.plan[0].day) * DEMO_DAY_SEC;
     const date = deadline + SHOW_AFTER_DEADLINE_MIN * 60;
     const venueProfile = new PublicKey(s.venuePubkey);
     const show = PublicKey.findProgramAddressSync([enc("show"), tour.toBuffer(), venueProfile.toBuffer(), i64(date)], programId)[0];
@@ -137,6 +192,7 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
     );
   }
 
+  if (!ixs.length) return { tour: tour.toBase58(), tourId, shows, signatures: [] };
   // Pack the instructions into as few transactions as fit (1232 bytes each), in order.
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
   const txs: Transaction[] = [];
@@ -156,16 +212,22 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   const signatures: string[] = [];
   for (const [i, tx] of signed.entries()) {
     onStatus(`Sending ${i + 1} of ${signed.length}…`);
-    const sig = await connection.sendRawTransaction(tx.serialize(), { maxRetries: 3 });
-    signatures.push(sig);
-    // the tour must exist before the next batch proposes into it
-    for (let t = 0; t < 60; t++) {
-      await new Promise((r) => setTimeout(r, 1500));
-      const st = (await connection.getSignatureStatuses([sig])).value[0];
-      if (st?.err) throw new Error(`Transaction ${i + 1} failed: ${JSON.stringify(st.err)}`);
-      if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) break;
-      if (t === 59) throw new Error(`Transaction ${i + 1} was not confirmed in 90 s; check the explorer for ${sig}`);
+    try {
+      const sig = await connection.sendRawTransaction(tx.serialize(), { maxRetries: 3 });
+      // the tour must exist before the next batch proposes into it
+      for (let t = 0; t < 60; t++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const st = (await connection.getSignatureStatuses([sig])).value[0];
+        if (st?.err) throw new Error(`Transaction ${i + 1} failed: ${JSON.stringify(st.err)}`);
+        if (st && (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized")) break;
+        if (t === 59) throw new Error(`Transaction ${i + 1} was not confirmed in 90 s; check the explorer for ${sig}`);
+      }
+      signatures.push(sig);
+    } catch (e) {
+      // once the tour exists, a failure leaves it with some shows: say so and offer to finish
+      if (resume || i > 0) throw new PartialBooking(bookingErrorText(e), tourId, tour.toBase58(), signatures);
+      throw e;
     }
   }
-  return { tour: tour.toBase58(), shows, signatures };
+  return { tour: tour.toBase58(), tourId, shows, signatures };
 }

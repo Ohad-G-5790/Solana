@@ -24,13 +24,21 @@ export interface BandSession {
   refreshProfile: () => void;
   /** The band of the run the dashboard bundle or local agents recorded. */
   runAuthority: string | null;
+  /** A wallet used here before is reconnecting: do not flash the connect screen. */
+  reconnecting: boolean;
 }
 
 const Ctx = createContext<BandSession | null>(null);
 const GUEST_KEY = "greenroom.guest";
 
 export function BandSessionProvider({ children }: { children: ReactNode }) {
-  const { publicKey } = useWallet();
+  const { publicKey, wallet: remembered, connecting } = useWallet();
+  // auto-connect takes a moment after load; give a remembered wallet that long
+  const [grace, setGrace] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setGrace(false), 2500);
+    return () => clearTimeout(t);
+  }, []);
   const wallet = publicKey?.toBase58() ?? null;
   const [guest, setGuestState] = useState(false);
   const [profile, setProfile] = useState<BandAccount | null | undefined>(undefined);
@@ -100,7 +108,7 @@ export function BandSessionProvider({ children }: { children: ReactNode }) {
 
   const authority = wallet ?? (guest ? runAuthority : null);
   return (
-    <Ctx.Provider value={{ wallet, guest, setGuest, authority, profile, profileError, refreshProfile: () => setTick((n) => n + 1), runAuthority }}>
+    <Ctx.Provider value={{ wallet, guest, setGuest, authority, profile, profileError, refreshProfile: () => setTick((n) => n + 1), runAuthority, reconnecting: !wallet && (connecting || (grace && !!remembered)) }}>
       {children}
     </Ctx.Provider>
   );

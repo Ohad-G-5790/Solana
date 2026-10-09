@@ -12,7 +12,7 @@ import { useBandSession } from "./BandSession";
 import { ConnectScreen } from "./Connect";
 
 /** Pages that are about one band; they need a connected wallet (or demo mode). */
-const BAND_PAGES = ["/", "/approvals", "/band"];
+const BAND_PAGES = ["/", "/approvals", "/band", "/feed"];
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -85,7 +85,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* the connect screen has its own button; one call to action at a time */}
           {gated ? null : <WalletButton>{session.wallet ? undefined : "Connect wallet"}</WalletButton>}
         </div>
-        {gated ? <ConnectScreen /> : children}
+        {gated ? session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <ConnectScreen /> : children}
       </main>
     </div>
   );

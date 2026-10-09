@@ -6,6 +6,7 @@ import type { Greenroom } from "@/idl/greenroom";
 import idl from "@/idl/greenroom.json";
 import { bandPda, connection, programId, readProgram, stateName } from "./greenroom";
 import { getWorld, type FeedMessage, type RunShow, type RunSummary } from "./run";
+import { DEMO_DAY_SEC } from "./config";
 import { venueKeys } from "./venue-keys";
 
 /**
@@ -33,15 +34,19 @@ let venueCache: Map<string, VenueInfo> | null = null;
 /** Venue names by VenueProfile address, from the published seed venues (no getProgramAccounts on a public RPC). */
 async function venuesByProfile(): Promise<Map<string, VenueInfo>> {
   if (venueCache) return venueCache;
-  const [{ byProfile }, world] = await Promise.all([venueKeys(), getWorld()]);
+  const [keys, world] = await Promise.all([venueKeys(), getWorld()]);
   const byId = new Map(world.venues.map((v) => [v.id, v]));
-  venueCache = new Map(
-    [...byProfile].map(([profile, id]) => {
-      const v = byId.get(id);
-      return [profile, { name: v?.name ?? id, city: v?.city ?? "?", venueId: id }];
-    })
-  );
-  return venueCache;
+  const map = new Map<string, VenueInfo>();
+  for (const [profile, id] of keys.byProfile) {
+    const v = byId.get(id);
+    const info = { name: v?.name ?? id, city: v?.city ?? "?", venueId: id };
+    map.set(profile, info);
+    // events such as ShowAccepted name the venue's authority, not its profile
+    const authority = keys.byId.get(id)?.authority;
+    if (authority) map.set(authority, info);
+  }
+  if (map.size) venueCache = map; // an empty answer (failed load) is retried next time
+  return map;
 }
 
 const tourCache = new Map<string, { at: number; value: RunSummary | null }>();
@@ -77,7 +82,7 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
       ticketPriceLamports: Number(s.account.ticketPriceLamports),
       venueBps: s.account.venueBps,
       thresholdBps: s.account.thresholdBps,
-      day: Math.max(0, Math.round((Number(s.account.date) - firstDate) / 2)),
+      day: Math.max(0, Math.round((Number(s.account.date) - firstDate) / DEMO_DAY_SEC)),
       capacity: s.account.capacity,
       ticketsSold: s.account.ticketsSold,
       state: stateName(s.account.state),
@@ -98,6 +103,7 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
 
 // ---------- program events from recent transactions ----------
 
+const sol = (l: number) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 5 })} SOL`;
 const parser = new EventParser(programId, new BorshCoder(idl as Idl));
 const seen = new Map<string, FeedMessage[]>(); // signature -> decoded messages
 let nextId = 1_000_000;
@@ -107,13 +113,13 @@ const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, 
   VenueRegistered: (d) => `${d.name} (${d.city}) registered as a venue, capacity ${d.capacity}.`,
   TourCreated: (d) => `Tour "${d.name}" opened (#${d.tourId}).`,
   ShowProposed: (d, v) => `Proposed ${v.get(String(d.venueProfile))?.city ?? "a show"}: ${d.capacity} tickets, ${Number(d.thresholdBps) / 100}% threshold.`,
-  ShowAccepted: () => `Venue signed: the show is on sale.`,
+  ShowAccepted: (d, v) => `${v.get(String(d.venueAuthority))?.name ?? "The venue"} signed: ${v.get(String(d.venueAuthority))?.city ?? "the show"} is on sale.`,
   ShowRejected: () => `Venue declined the proposal; the show was closed.`,
   TicketBought: (d) => `Fan ${String(d.buyer).slice(0, 6)}… bought ${d.quantity} ticket${Number(d.quantity) > 1 ? "s" : ""} (${d.ticketsSold} sold so far).`,
   ShowConfirmed: (d) => `Threshold met (${d.ticketsSold}/${d.capacity}): show confirmed.`,
   ShowCancelled: (d) => `Deadline passed with ${d.ticketsSold} sold (needed ${d.ticketsRequired}): show cancelled, refunds follow.`,
-  TicketRefunded: (d) => `Refunded ${Number(d.amountLamports) / 1e9} SOL to ${String(d.buyer).slice(0, 6)}….`,
-  ShowSettled: (d) => `Settled ${Number(d.totalLamports) / 1e9} SOL: band ${Number(d.bandLamports) / 1e9}, venue ${Number(d.venueLamports) / 1e9}, crew ${Number(d.payeeLamports) / 1e9}.`,
+  TicketRefunded: (d) => `Refunded ${sol(Number(d.amountLamports))} to ${String(d.buyer).slice(0, 6)}….`,
+  ShowSettled: (d) => `Paid out ${sol(Number(d.totalLamports))}: band ${sol(Number(d.bandLamports))}, venue ${sol(Number(d.venueLamports))}${Number(d.payeeLamports) ? `, crew ${sol(Number(d.payeeLamports))}` : ""}.`,
   PayeeAdded: (d) => `Crew hired: ${d.label} for ${Number(d.bps) / 100}% of the show.`,
 };
 
@@ -183,6 +189,46 @@ export async function fetchChainEvents(limit = 25): Promise<FeedMessage[]> {
   for (const s of ordered) for (const m of seen.get(s.signature) ?? []) out.push(m);
   lastEvents = { at: Date.now(), value: out };
   return out;
+}
+
+/**
+ * Events for one band's shows only (every instruction on a show touches its
+ * account): the band's own activity, not the whole network's. Same caching and
+ * pacing as fetchChainEvents.
+ */
+const showSigs = new Map<string, { at: number; sigs: { signature: string; err: unknown }[] }>();
+
+export async function fetchShowEvents(shows: string[]): Promise<FeedMessage[]> {
+  const all = new Map<string, number>(); // signature -> slot order
+  for (const show of shows.slice(0, 20)) {
+    let cached = showSigs.get(show);
+    if (!cached || Date.now() - cached.at > 20_000) {
+      try {
+        const sigs = await connection.getSignaturesForAddress(new PublicKey(show), { limit: 40 }, "confirmed");
+        cached = { at: Date.now(), sigs: sigs.map((s) => ({ signature: s.signature, err: s.err })) };
+        showSigs.set(show, cached);
+      } catch {
+        if (!cached) continue; // busy RPC: this show's history comes on a later poll
+      }
+    }
+    cached.sigs.forEach((s, i) => !s.err && all.set(s.signature, Math.min(all.get(s.signature) ?? Infinity, i)));
+  }
+  const missing = [...all.keys()].filter((s) => !seen.has(s)).slice(0, 8);
+  if (missing.length) {
+    const venues = await venuesByProfile();
+    for (const sig of missing) {
+      try {
+        const tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 0, commitment: "confirmed" });
+        seen.set(sig, decode(sig, tx, venues));
+      } catch {
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 350));
+    }
+  }
+  const out: FeedMessage[] = [];
+  for (const sig of all.keys()) for (const m of seen.get(sig) ?? []) out.push(m);
+  return out.sort((a, b) => a.at - b.at || a.id - b.id);
 }
 
 export type { Greenroom };
