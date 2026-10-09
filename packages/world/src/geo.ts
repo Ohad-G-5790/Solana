@@ -143,20 +143,25 @@ export function nearestNeighbourOrder(points: LatLng[], startIndex = 0): number[
   return order;
 }
 
-/** Classic 2-opt improvement on an open path; the first stop stays first. */
-export function twoOpt(points: LatLng[], order: number[]): number[] {
+/**
+ * Classic 2-opt improvement on an open path; the first stop stays first. With
+ * `returnTo`, the drive from the last stop back there counts too, so the route
+ * ends near it (a round trip home) instead of wherever it happens to stop.
+ */
+export function twoOpt(points: LatLng[], order: number[], returnTo?: LatLng, keepLast = false): number[] {
+  const len = (o: number[]) => pathKm(points, o) + (returnTo && o.length ? distanceKm(points[o[o.length - 1]], returnTo) : 0);
   let best = order.slice();
-  let bestLen = pathKm(points, best);
+  let bestLen = len(best);
   let improved = true;
   while (improved) {
     improved = false;
     for (let i = 1; i < best.length - 1; i++) {
-      for (let k = i + 1; k < best.length; k++) {
+      for (let k = i + 1; k < best.length - (keepLast ? 1 : 0); k++) {
         const candidate = best.slice(0, i).concat(best.slice(i, k + 1).reverse(), best.slice(k + 1));
-        const len = pathKm(points, candidate);
-        if (len < bestLen - 1e-9) {
+        const l = len(candidate);
+        if (l < bestLen - 1e-9) {
           best = candidate;
-          bestLen = len;
+          bestLen = l;
           improved = true;
         }
       }
@@ -165,7 +170,24 @@ export function twoOpt(points: LatLng[], order: number[]): number[] {
   return best;
 }
 
-/** Shortest-looking open route through every point, starting at `startIndex`. */
-export function optimizeOrder(points: LatLng[], startIndex = 0): number[] {
-  return twoOpt(points, nearestNeighbourOrder(points, startIndex));
+/**
+ * Shortest-looking route through every point, starting at `startIndex`. With
+ * `returnTo` (a round trip), the stop nearest to it is played last and the
+ * others are ordered in between, so the tour ends a short drive from home.
+ */
+export function optimizeOrder(points: LatLng[], startIndex = 0, returnTo?: LatLng): number[] {
+  if (!returnTo || points.length < 3) return twoOpt(points, nearestNeighbourOrder(points, startIndex), returnTo);
+  let end = -1;
+  let bestD = Infinity;
+  points.forEach((p, i) => {
+    const d = distanceKm(p, returnTo);
+    if (i !== startIndex && d < bestD) {
+      bestD = d;
+      end = i;
+    }
+  });
+  // order everything but the last stop, then put it last and improve the middle
+  const middle = points.map((_, i) => i).filter((i) => i !== end);
+  const sub = nearestNeighbourOrder(middle.map((i) => points[i]), middle.indexOf(startIndex)).map((j) => middle[j]);
+  return twoOpt(points, [...sub, end], returnTo, true);
 }

@@ -53,6 +53,8 @@ export interface PlanInput {
   windowDays: number;
   /** Optional preferred start city. */
   startCity?: string;
+  /** Finish near the start city (a round trip home) rather than wherever the shortest path ends. */
+  roundTrip?: boolean;
   thresholdBps?: number;
   /** Scale applied to capacities for demos (e.g. 0.05 so 400 becomes 20). */
   capacityScale?: number;
@@ -108,14 +110,30 @@ export function planTour(input: PlanInput): PlannedShow[] {
       }
     });
   }
-  const order = optimizeOrder(points, startIndex);
+  const order = optimizeOrder(points, startIndex, input.roundTrip && home ? home : undefined);
+  return scheduleRoute(
+    input,
+    order.map((i) => ranked[i].offer)
+  );
+}
 
+/**
+ * Days for a route in the given order (the planner's, or one the band
+ * rearranged): one show per day, a rest day after every third show or before
+ * a leg too long to drive on a show day, each venue's free days respected.
+ * A venue with no free day left is skipped.
+ */
+export function scheduleRoute(input: Pick<PlanInput, "band" | "windowDays" | "thresholdBps" | "capacityScale" | "minCapacity">, route: VenueOffer[]): PlannedShow[] {
+  const { band } = input;
+  const thresholdBps = input.thresholdBps ?? 5000;
+  const scale = input.capacityScale ?? 1;
+  const minCap = input.minCapacity ?? 10;
   const plan: PlannedShow[] = [];
   let day = 0;
   let showsSinceRest = 0;
   let prev: { lat: number; lng: number } | null = null;
-  for (const idx of order) {
-    const { offer, score } = ranked[idx];
+  for (const offer of route) {
+    const score = scoreOffer(band, offer);
     if (showsSinceRest === 3) {
       day += 1; // rest day
       showsSinceRest = 0;

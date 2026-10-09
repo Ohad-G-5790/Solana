@@ -17,7 +17,7 @@ Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 20
 | Anchor program: profiles, tours, shows with escrow vaults, tickets, threshold/refund/settlement cranks, crew payees | `programs/greenroom` | 11 instructions, 13 integration tests on a local validator; deployed on devnet |
 | Agents: band, venues, fans, crew, crank, message bus, pluggable brain (heuristic or Claude) | `packages/agents` | end-to-end demo on localnet and devnet |
 | Seed world: 136 real venues in 35 cities across DE/AT/FR/PL/CZ, 100 generated bands, 100 crew and 60 fans per city | `packages/world`, `data/venues.json` | deterministic |
-| Dashboard for the band: connect a wallet, create a tour from four answers and book it with one approval, approvals (venues, route, replacement shows), route with drive times, show health, venue finder, route planner, grouped activity, wallet buy/refund, track record | `packages/web` | Next.js, design per `docs/DESIGN.md`; live on GitHub Pages |
+| Dashboard for the band: connect a wallet, create a tour from four answers and book it with one approval, approvals (venues, route, replacement shows), route with drive times (round trips home, reorder or drop stops before booking), show health, venues by country → city → room, route planner, agent feed, wallet buy/refund, track record with a 0–10 reputation | `packages/web` | Next.js, design per `docs/DESIGN.md`; live on GitHub Pages |
 | Keeper: lets seed venues accept, fans buy, and the crank confirm, refund and settle the shows bands book from the browser | `packages/agents/src/keeper.ts` | GitHub Actions, every 10 minutes |
 | QA bot: automated checks + rubric judge, weighted score, pass at 8.5, five-loop limit; UI bot that walks the dashboard in Chromium as a band would | `qa/` | `npm run qa`, `npm run ui-bot` |
 
@@ -45,7 +45,11 @@ No command line needed. On the [live dashboard](https://ohad-g-5790.github.io/So
 4. **Plan my tour.** The venue agents' offers are computed in the browser and the route appears on the map with dates, drive per leg and days off. Nothing is booked yet; change any answer and plan again.
 5. **Book this tour.** Your wallet asks once and creates the tour and every show on devnet.
 
-From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper.yml`, every 10 minutes on GitHub Actions, using the demo wallet secret) lets the seed venues sign the shows whose terms they would offer themselves (and decline the rest), simulates fans buying (each show sells at most 40 tickets of at most 200 €, and each run spends at most 0.3 SOL, ticket rent included), confirms or cancels each show at its deadline, refunds cancelled ones and settles the rest. Devnet clocks are compressed: sales run 40 minutes, each show sells a 5% sample of the room (12–40 tickets) at 1 € = 0.00001 SOL of play money. The seed venues' and simulated fans' keys derive from the public world seed, so they are demo keys for devnet only; the keeper refuses to run on mainnet and caps what the demo wallet spends on fans per run. Follow it on the Dashboard and on **Activity**, which groups everything that happened (your decisions, bookings, venue offers and declines, ticket sales, confirmed and cancelled shows, refunds, crew, payouts) into sections that open on demand.
+From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper.yml`, every 10 minutes on GitHub Actions, using the demo wallet secret) lets the seed venues sign the shows whose terms they would offer themselves (and decline the rest), simulates fans buying (each show sells at most 40 tickets of at most 200 €, and each run spends at most 0.3 SOL, ticket rent included), confirms or cancels each show at its deadline, refunds cancelled ones and settles the rest. Devnet clocks are compressed: sales run 40 minutes, each show sells a 5% sample of the room (12–40 tickets) at 1 € = 0.00001 SOL of play money. The seed venues' and simulated fans' keys derive from the public world seed, so they are demo keys for devnet only; the keeper refuses to run on mainnet and caps what the demo wallet spends on fans per run. Follow it on the Dashboard and in the **Agent feed**, which tells the tour in four phases (planning, booking, ticket sales, results): who said what (your agent, each venue, the fans, the settlement), one running line per show for ticket sales, and the latest few messages per phase with the rest a tap away. The negotiation (every venue's offer or decline with its reason, and your agent's plan) is recorded in the browser that booked the tour.
+
+The route preview asks whether the tour should finish near the first city (the default: the stop closest to home is played last) and lets you move stops earlier or later or drop them; days, drives and the drive home update as you go, compared with the agent's suggestion. The **Band record** shows a 0–10 reputation computed only from the on-chain record (fans per played show and shows played, both on a log scale: a stadium star with hundreds of shows is a 10). The `devnet-demo` workflow with `band = mine` and `history = only` plays a short past tour as your band to build that record.
+
+The site shows a "This is a demo version" notice with an email sign-up for the full release. Sign-ups land in a Google Sheet through a small Apps Script web app: paste `scripts/signup-sheet.gs` into the sheet (Extensions → Apps Script), deploy it as a web app that anyone can call, and put its URL in the repository variable `GREENROOM_SIGNUP_URL`. Each sign-up becomes a row (time, email, source), repeats are added once. Any other endpoint that takes a POSTed `email` field (Formspree and the like) works too; without one the notice shows without the form.
 
 Developers can still run the agents as their own band from a terminal (`npm run demo:devnet -- --band-keypair <file> --band-name ... --genre ... --draw ... --home-city ... --approve`); keep key files out of the repository.
 
@@ -67,7 +71,7 @@ The agent stops three times:
 
 Decisions go from the dashboard (`POST /api/approvals`) to `data/runs/<run>/decisions.jsonl`, which the running agent polls; each answer is validated before it is used. The hosted dashboard shows recorded runs, so its decision buttons are off.
 
-Maps show country borders (Natural Earth 1:50m, public domain; regenerate with `packages/web/scripts/build-borders.mjs`). The **Venues** page filters the 136 venues by country, size, programme and maximum drive from any city, and the **Route planner** turns any list of cities or venues (a city stop keeps every venue there open until you pin one) into a day-by-day schedule with drive times, travel days for the long hauls, days off and a copyable itinerary. Drive times are estimates (road ≈ 1.2 × straight line, a loaded van at ~90 km/h with EU-style breaks), not routing.
+Maps show country borders (Natural Earth 1:50m, public domain; regenerate with `packages/web/scripts/build-borders.mjs`). The **Venues** page goes from a country to its cities to their rooms (or a search by name), with filters for size, programme and maximum drive from any city folded away, and the **Route planner** turns any list of cities or venues (a city stop keeps every venue there open until you pin one) into a day-by-day schedule with drive times, travel days for the long hauls, days off and a copyable itinerary. Drive times are estimates (road ≈ 1.2 × straight line, a loaded van at ~90 km/h with EU-style breaks), not routing.
 
 ### Devnet
 
@@ -125,7 +129,7 @@ The **UI bot** (`qa/src/ui-bot.ts`, `npm run ui-bot`) checks that the dashboard 
 - the first screen is public, with a single connect button
 - connecting shows that wallet's band, with its address in the right case
 - a band without a tour sees one obvious next step
-- a tour takes four answers and shows the route, money and risk before anything is booked
+- a tour takes four answers and shows the route, the drive home, money and risk before anything is booked, and the band can reorder it
 - after booking, the dashboard shows your own tour: the planned days, "booked by you", which shows wait on a venue, and only your activity
 - every page shows its heading within 1.5 s on a slow chain
 - nothing scrolls sideways at 390 px
@@ -133,8 +137,8 @@ The **UI bot** (`qa/src/ui-bot.ts`, `npm run ui-bot`) checks that the dashboard 
 - each page has one heading and a marked nav item
 - no chain jargon on band pages
 - buttons come from one shared set
-- activity starts grouped and closed
-- visitors can explore without a wallet
+- the agent feed tells the tour in phases, says who speaks and starts compact
+- visitors can explore without a wallet, and Venues goes country → city → rooms
 
 Each check is part of the **User experience** score, and `--shots <dir>` saves screenshots for a reviewer. On GitHub, the **qa** workflow (Actions → qa → Run workflow) runs the whole QA bot in the Anchor image, with the validator checks; tick *count* to record the loop.
 

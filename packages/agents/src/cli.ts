@@ -20,7 +20,7 @@ if (existsSync(envFile)) {
 /**
  * npm run demo -w @greenroom/agents -- [--rpc https://api.devnet.solana.com] [--band <id>]
  *   [--shows 8] [--countries DE,AT,FR,PL,CZ] [--deadline 60] [--show 120]
- *   [--history] [--brain heuristic|claude] [--max-venues 40] [--fast]
+ *   [--history] [--history-only --history-shows 8] [--brain heuristic|claude] [--max-venues 40] [--fast]
  *   [--approve] [--replacement-timeout 300]
  *
  * --approve: the band decides in the dashboard (venues, route, replacement
@@ -64,7 +64,9 @@ const summary = await runDemo({
   deadlineAfterSec: Number(arg("deadline", fast ? "40" : "90")),
   showAfterSec: Number(arg("show", fast ? "75" : "180")),
   maxVenues: arg("max-venues") ? Number(arg("max-venues")) : undefined,
-  history: arg("history") === "true",
+  history: arg("history") === "true" || arg("history-only") === "true",
+  historyOnly: arg("history-only") === "true",
+  historyShows: arg("history-shows") ? Number(arg("history-shows")) : undefined,
   tickMs: fast ? 1000 : 2000,
   maxBuysPerTick: Number(arg("buys-per-tick", "36")),
   fansPerCity: Number(arg("fans", "60")),

@@ -35,6 +35,9 @@ jobs:
           # dashboard at a faster devnet RPC than the rate-limited public one.
           NEXT_PUBLIC_RPC_URL: ${{ vars.GREENROOM_PUBLIC_RPC_URL || 'https://api.devnet.solana.com' }}
           NEXT_PUBLIC_CLUSTER: devnet
+          # where the "demo version" notice sends sign-up emails (a form endpoint; empty hides the form)
+          # the Google Sheet's Apps Script web app (scripts/signup-sheet.gs); a repository variable overrides it
+          NEXT_PUBLIC_SIGNUP_URL: ${{ vars.GREENROOM_SIGNUP_URL || 'https://script.google.com/macros/s/AKfycbzA2vwWOATCPKEMqpTcOjjEcKwOm6aiWfSRMFGj7r7VIoSqpueM6YbcHJ_hPVHnkFlF/exec' }}
           NEXT_PUBLIC_PROGRAM_ID: 4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8
       - uses: actions/upload-pages-artifact@v3
         with:

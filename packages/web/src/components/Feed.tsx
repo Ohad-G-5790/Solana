@@ -31,27 +31,41 @@ export function showsFeed(shows: { show: string; state: string; ticketsSold: num
     .map((s, i) => ({ id: -1 - i, at: 0, kind: line[s.state][0], from: "chain", text: line[s.state][1](s), data: { show: s.show } }) as FeedMessage);
 }
 
-/** What happened, in the band's words. Every message kind belongs to one group. */
-export const CATEGORIES: { id: string; label: string; kinds: string[] }[] = [
-  { id: "decisions", label: "Band decisions", kinds: ["approval.request", "approval.decision"] },
-  { id: "bookings", label: "Bookings", kinds: ["tour.request", "band.plan", "show.proposed", "show.accepted", "show.rejected"] },
-  { id: "offers", label: "Venue offers", kinds: ["venue.offer"] },
-  { id: "declines", label: "Venue declines", kinds: ["venue.decline"] },
+/**
+ * The story in four phases, in the order a tour lives them. Every message kind
+ * belongs to one phase; inside a phase, messages read top to bottom.
+ */
+export const PHASES: { id: string; label: string; kinds: string[] }[] = [
+  { id: "plan", label: "Planning", kinds: ["tour.request", "venue.offer", "venue.decline", "band.plan", "approval.request", "approval.decision"] },
+  { id: "book", label: "Booking", kinds: ["show.proposed", "show.accepted", "show.rejected", "crew.offer", "crew.hired"] },
   { id: "sales", label: "Ticket sales", kinds: ["fan.bought"] },
-  { id: "outcomes", label: "Confirmed and cancelled", kinds: ["crank.confirmed", "crank.cancelled"] },
-  { id: "refunds", label: "Refunds", kinds: ["crank.refunded"] },
-  { id: "crew", label: "Crew", kinds: ["crew.offer", "crew.hired"] },
-  { id: "payouts", label: "Payouts", kinds: ["crank.settled"] },
-  { id: "notes", label: "System notes", kinds: ["note"] },
+  { id: "results", label: "Results", kinds: ["crank.confirmed", "crank.cancelled", "crank.refunded", "crank.settled"] },
+  { id: "notes", label: "Notes", kinds: ["note"] },
 ];
-const categoryOf = (kind: string) => CATEGORIES.find((c) => c.kinds.includes(kind))?.id ?? "notes";
+const phaseOf = (kind: string) => PHASES.find((p) => p.kinds.includes(kind))?.id ?? "notes";
 
-/** "venue:lido-berlin" -> "Lido Berlin" (role kept as a small label). */
-function who(from: string): { role: string; name: string } {
-  const [role, rest] = from.includes(":") ? from.split(/:(.*)/) : ["", from];
-  const name = (rest ?? "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return { role: role || from, name };
+/** Who is speaking: the band's agent, a venue's agent, the fans, the money (settlement), the band itself. */
+type Speaker = { name: string; tone: "band" | "you" | "venue" | "fans" | "pay" | "crew" | "system" };
+export const WHO_FILTERS: { id: Speaker["tone"] | "all"; label: string }[] = [
+  { id: "all", label: "Everyone" },
+  { id: "band", label: "Your agent" },
+  { id: "venue", label: "Venues" },
+  { id: "fans", label: "Fans" },
+  { id: "pay", label: "Money" },
+];
+function speaker(m: FeedMessage): Speaker {
+  const [role, rest] = m.from.includes(":") ? m.from.split(/:(.*)/) : [m.from, ""];
+  const pretty = (rest ?? "").replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  if (role === "you" || role === "auto-pilot") return { name: role === "you" ? "You" : "Auto-pilot", tone: "you" };
+  if (role === "band") return { name: "Your agent", tone: "band" };
+  if (role === "venue") return { name: pretty, tone: "venue" };
+  if (role === "fan" || m.kind === "fan.bought") return { name: "Fans", tone: "fans" };
+  if (role === "crew") return { name: pretty || "Crew", tone: "crew" };
+  if (m.kind === "show.accepted" || m.kind === "show.rejected") return { name: "Venue", tone: "venue" };
+  if (m.kind.startsWith("crank.")) return { name: "Settlement", tone: "pay" };
+  return { name: "Greenroom", tone: "system" };
 }
+const initial: Record<Speaker["tone"], string> = { band: "A", you: "Y", venue: "V", fans: "F", pay: "€", crew: "C", system: "G" };
 
 // at 0: a "where it stands" line, not an event with a time
 const time = (ms: number) => (ms ? new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "now");
@@ -74,6 +88,7 @@ export function Feed({
   fallback,
   title,
   hideWhenEmpty,
+  story,
 }: {
   limit?: number;
   compact?: boolean;
@@ -89,6 +104,8 @@ export function Feed({
   /** a heading shown with the feed; with hideWhenEmpty, neither shows until there is something */
   title?: ReactNode;
   hideWhenEmpty?: boolean;
+  /** the negotiation recorded when the tour was booked (offers, declines, the plan), shown first */
+  story?: FeedMessage[];
 }) {
   const [items, setItems] = useState<FeedMessage[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -100,7 +117,7 @@ export function Feed({
   };
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
-  const [expanded, setExpanded] = useState<Record<string, number>>({});
+  const [open, setOpen] = useState<Record<string, boolean>>({});
   const lastId = useRef(0);
 
   useEffect(() => {
@@ -140,13 +157,7 @@ export function Feed({
   const withEvents = new Set(items.map((m) => String((m.data as { show?: string } | undefined)?.show ?? "")));
   const missing = (loaded || !!error) && fallback ? fallback.filter((m) => !withEvents.has(String((m.data as { show?: string }).show))) : [];
   const usingFallback = missing.length > 0;
-  const list = usingFallback ? [...missing, ...items] : items;
-  const by = new Map<string, FeedMessage[]>();
-  for (const m of list) {
-    const c = categoryOf(m.kind);
-    by.set(c, [...(by.get(c) ?? []), m]);
-  }
-  const groups = CATEGORIES.filter((c) => by.has(c.id)).map((c) => ({ ...c, items: by.get(c.id)!.slice().reverse() }));
+  const list = [...(story ?? []), ...(usingFallback ? [...missing, ...items] : items)];
 
   if (list.length === 0 && hideWhenEmpty) return null;
   if (list.length === 0)
@@ -156,61 +167,82 @@ export function Feed({
       </p>
     );
 
-  const shown = filter === "all" ? groups : groups.filter((g) => g.id === filter);
+  // Fan purchases come by the hundred: one running line per show (its latest count) keeps the feed calm.
+  const latestSale = new Map<string, FeedMessage>();
+  const purchases = new Map<string, number>();
+  for (const m of list) {
+    if (m.kind !== "fan.bought") continue;
+    const show = String((m.data as { show?: string; city?: string } | undefined)?.show ?? (m.data as { city?: string } | undefined)?.city ?? m.id);
+    latestSale.set(show, m);
+    purchases.set(show, (purchases.get(show) ?? 0) + 1);
+  }
+  const salesLine = (m: FeedMessage, show: string): FeedMessage => {
+    const d = (m.data ?? {}) as { ticketsSold?: number; capacity?: number; city?: string };
+    const city = cityOf?.[show] ?? d.city;
+    const count = (t: number) => (inFans ? `${fans(t)} fans` : `${t} ticket${t === 1 ? "" : "s"}`);
+    const text =
+      d.ticketsSold !== undefined
+        ? `${count(d.ticketsSold)} so far${d.capacity ? ` of ${count(d.capacity)}` : ""} · ${purchases.get(show)} purchase${purchases.get(show) === 1 ? "" : "s"}.`
+        : m.text;
+    return { ...m, text: city && !text.includes(city) ? `${city}: ${text}` : text };
+  };
+  const calm: FeedMessage[] = list.filter((m) => m.kind !== "fan.bought");
+  for (const [show, m] of latestSale) calm.push(salesLine(m, show));
+
+  const visible = filter === "all" ? calm : calm.filter((m) => speaker(m).tone === filter);
+  const phases = PHASES.map((p) => ({ ...p, items: visible.filter((m) => phaseOf(m.kind) === p.id).sort((x, y) => x.at - y.at || x.id - y.id) })).filter((p) => p.items.length);
+  const SHOWN = 4;
+
   return (
-    <div className="activity">
+    <div className="agent-feed">
       {title}
-      {usingFallback ? <p className="micro muted" style={{ marginBottom: 6 }}>Where each show stands now; the step-by-step story loads from devnet when it answers.</p> : null}
+      {usingFallback ? <p className="micro muted" style={{ marginBottom: 8 }}>Where each show stands now; the step-by-step story loads from devnet when it answers.</p> : null}
       {!compact ? (
-        <div className="toolbar" role="tablist" aria-label="Filter activity">
-          <button className={`chip ${filter === "all" ? "on" : ""}`} onClick={() => setFilter("all")} role="tab" aria-selected={filter === "all"}>
-            All {list.length}
-          </button>
-          {groups.map((g) => (
-            <button key={g.id} className={`chip ${filter === g.id ? "on" : ""}`} onClick={() => setFilter(g.id)} role="tab" aria-selected={filter === g.id}>
-              {g.label} {g.items.length}
+        <div className="toolbar" role="tablist" aria-label="Who is speaking">
+          {WHO_FILTERS.filter((w) => w.id === "all" || calm.some((m) => speaker(m).tone === w.id)).map((w) => (
+            <button key={w.id} className={`chip ${filter === w.id ? "on" : ""}`} onClick={() => setFilter(w.id)} role="tab" aria-selected={filter === w.id}>
+              {w.label}
             </button>
           ))}
         </div>
       ) : null}
-      {shown.map((g) => {
-        const latest = g.items[0];
-        const n = expanded[g.id] ?? 15;
+      {phases.map((p) => {
+        const all = open[p.id] ?? false;
+        const rows = compact ? p.items.slice(-1) : all ? p.items : p.items.slice(-SHOWN);
         return (
-          <details key={g.id} className="group" open={!compact && filter !== "all"}>
-            <summary>
-              <span className="g-label">{g.label}</span>
-              <span className="g-count">{g.items.length}</span>
-              <span className="g-latest small muted">{say(latest)}</span>
-              <span className="micro muted nowrap">{time(latest.at)}</span>
-            </summary>
-            <div className="g-items">
-              {g.items.slice(0, n).map((m) => {
-                const w = who(m.from);
-                return (
-                  <div key={`${m.id}-${m.tx ?? ""}`} className={`entry ${m.tx ? "tx" : ""}`}>
-                    <span className="micro muted nowrap">{time(m.at)}</span>
-                    <div style={{ minWidth: 0 }}>
-                      <span className="micro muted">{w.role}</span> <b className="small">{w.name}</b>
-                      <div className="small">{say(m)}</div>
+          <section key={p.id} className="phase" aria-label={p.label}>
+            <header>
+              <span className="phase-label">{p.label}</span>
+              <span className="phase-count">{p.items.length}</span>
+            </header>
+            {!compact && !all && p.items.length > SHOWN ? (
+              <button className="link-btn micro phase-more" onClick={() => setOpen((o) => ({ ...o, [p.id]: true }))}>
+                Show {p.items.length - SHOWN} earlier
+              </button>
+            ) : null}
+            {rows.map((m) => {
+              const w = speaker(m);
+              return (
+                <div key={`${m.id}-${m.tx ?? ""}`} className="msg">
+                  <span className={`avatar ${w.tone}`} aria-hidden>
+                    {initial[w.tone]}
+                  </span>
+                  <div className="msg-body">
+                    <div className="msg-head">
+                      <b className="small">{w.name}</b>
+                      <span className="micro muted">{time(m.at)}</span>
+                      {m.tx ? (
+                        <a className="micro muted" href={explorerUrl("tx", m.tx)} target="_blank" rel="noreferrer">
+                          receipt ↗
+                        </a>
+                      ) : null}
                     </div>
-                    {m.tx ? (
-                      <a className="micro muted nowrap" href={explorerUrl("tx", m.tx)} target="_blank" rel="noreferrer">
-                        receipt ↗
-                      </a>
-                    ) : (
-                      <span />
-                    )}
+                    <div className="small msg-text">{say(m)}</div>
                   </div>
-                );
-              })}
-              {g.items.length > n ? (
-                <button className="btn small outline" style={{ margin: "8px 0 4px" }} onClick={() => setExpanded((e) => ({ ...e, [g.id]: n + 50 }))}>
-                  Show {Math.min(50, g.items.length - n)} more of {g.items.length - n}
-                </button>
-              ) : null}
-            </div>
-          </details>
+                </div>
+              );
+            })}
+          </section>
         );
       })}
     </div>

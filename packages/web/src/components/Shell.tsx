@@ -1,5 +1,6 @@
 "use client";
 
+import { DemoNotice } from "./DemoNotice";
 import { WalletButton } from "./WalletButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,7 +21,7 @@ const NAV = [
   { href: "/venues", label: "Venues" },
   { href: "/planner", label: "Route planner" },
   { href: "/band", label: "Band record" },
-  { href: "/feed", label: "Activity" },
+  { href: "/feed", label: "Agent feed" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -65,6 +66,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </aside>
       <main className="main">
+        <DemoNotice />
         <div className="topbar">
           <div className="status">
             <span className="pill">{CLUSTER}</span>

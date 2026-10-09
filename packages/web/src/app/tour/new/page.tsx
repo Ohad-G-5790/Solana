@@ -9,7 +9,7 @@ import { useBandTour } from "@/components/useBandTour";
 import { RegisterBand } from "@/components/Connect";
 import { DriveNote, Itinerary } from "@/components/Itinerary";
 import { RouteMap } from "@/components/RouteMap";
-import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
+import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, replan, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
 import { explorerUrl, FANS_PER_TICKET } from "@/lib/config";
 import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
 
@@ -17,7 +17,7 @@ export default function NewTourPage() {
   const wallet = useAnchorWallet();
   const { profile, profileError } = useBandSession();
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
-  const [a, setA] = useState<TourAnswers>({ draw: 500, priceEuro: 20, startCity: "Berlin", days: 14 });
+  const [a, setA] = useState<TourAnswers>({ draw: 500, priceEuro: 20, startCity: "Berlin", days: 14, roundTrip: true });
   const [plan, setPlan] = useState<TourPlan | null>(null);
   const [priceText, setPriceText] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -134,6 +134,14 @@ export default function NewTourPage() {
   const stops = plan?.plan ?? [];
   const where = new Map(plan?.offers.map((o) => [o.venueId, o]) ?? []);
   const t = routeTotals(legs(stops.map((s) => where.get(s.venueId)!)));
+  const reorder = (ids: string[]) => plan && setPlan(replan(plan, ids));
+  const move = (i: number, by: number) => {
+    const ids = stops.map((s) => s.venueId);
+    [ids[i], ids[i + by]] = [ids[i + by], ids[i]];
+    reorder(ids);
+  };
+  const drop = (i: number) => reorder(stops.map((s) => s.venueId).filter((_, j) => j !== i));
+  const reset = () => plan && reorder(plan.suggested);
   return (
     <div style={{ maxWidth: 980 }}>
       <h1>Create your tour</h1>
@@ -205,6 +213,14 @@ export default function NewTourPage() {
             </option>
           ))}
         </select>
+        <div className="choices" style={{ marginTop: 10 }} role="group" aria-label="Where it ends">
+          <button className={`chip ${a.roundTrip !== false ? "on" : ""}`} onClick={() => set({ roundTrip: true })} aria-pressed={a.roundTrip !== false}>
+            Finish near {a.startCity}
+          </button>
+          <button className={`chip ${a.roundTrip === false ? "on" : ""}`} onClick={() => set({ roundTrip: false })} aria-pressed={a.roundTrip === false}>
+            Finish wherever the route ends
+          </button>
+        </div>
       </section>
 
       <section className="question">
@@ -244,7 +260,7 @@ export default function NewTourPage() {
             <RouteMap stops={stops.map((s) => ({ key: s.venueId, label: s.city, lat: where.get(s.venueId)!.lat, lng: where.get(s.venueId)!.lng }))} venues={world.venues} height={360} />
             <div>
               <Itinerary
-                stops={stops.map((s) => ({
+                stops={stops.map((s, i) => ({
                   key: s.venueId,
                   day: s.day,
                   city: s.city,
@@ -252,8 +268,23 @@ export default function NewTourPage() {
                   lat: where.get(s.venueId)!.lat,
                   lng: where.get(s.venueId)!.lng,
                   detail: `up to ${(s.capacity * FANS_PER_TICKET).toLocaleString()} fans (room ${where.get(s.venueId)!.capacity.toLocaleString()}) · venue takes ${s.venueBps / 100}%`,
+                  // the band arranges the route itself: earlier, later, or not at all
+                  right: busy ? null : (
+                    <span className="row" style={{ gap: 4, flexWrap: "nowrap" }}>
+                      <button className="icon-btn" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Play ${s.city} earlier`} title="Earlier">
+                        ↑
+                      </button>
+                      <button className="icon-btn" disabled={i === stops.length - 1} onClick={() => move(i, 1)} aria-label={`Play ${s.city} later`} title="Later">
+                        ↓
+                      </button>
+                      <button className="icon-btn" disabled={stops.length <= 2} onClick={() => drop(i)} aria-label={`Drop ${s.city}`} title="Drop this stop">
+                        ✕
+                      </button>
+                    </span>
+                  ),
                 }))}
               />
+              <RouteCheck plan={plan} home={cities.find((c) => c.name === a.startCity)} onReset={reset} />
               <DriveNote />
             </div>
           </div>
@@ -320,6 +351,45 @@ function Money({ plan }: { plan: TourPlan }) {
         <b>fans get refunds</b>
         <span className="micro muted">automatically; you lose only the small deposit</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Does the route make sense? The drive home from the last stop, the longest
+ * leg, and how the band's own order compares with the agent's suggestion.
+ */
+function RouteCheck({ plan, home, onReset }: { plan: TourPlan; home?: { name: string; lat: number; lng: number }; onReset: () => void }) {
+  const where = new Map(plan.offers.map((o) => [o.venueId, o]));
+  const km = (ids: string[]) => routeTotals(legs(ids.map((id) => where.get(id)!).filter(Boolean))).km;
+  const ids = plan.plan.map((s) => s.venueId);
+  const mine = km(ids);
+  const theirs = km(plan.suggested.filter((id) => where.has(id)));
+  const changed = ids.join() !== plan.suggested.join();
+  const last = where.get(ids[ids.length - 1]);
+  const homeLeg = home && last ? legs([last, home])[0] : null;
+  return (
+    <div className="micro" style={{ margin: "10px 0 6px", display: "grid", gap: 4 }}>
+      {homeLeg ? (
+        <span className={homeLeg.level === "travel-day" ? "bad" : homeLeg.level === "long" ? "warn" : "muted"}>
+          Home from {last!.city}: {homeLeg.km.toLocaleString()} km, {formatMinutes(homeLeg.minutes)} to {home!.name}
+          {homeLeg.level === "travel-day" ? ": a full day of driving after the last show" : homeLeg.level === "long" ? ": a long drive after the last show" : ""}.
+        </span>
+      ) : null}
+      {plan.plan.some((s, i) => i > 0 && s.day - plan.plan[i - 1].day > 2) ? (
+        <span className="muted">Days off come from the venues: the next room on the route had no free night sooner (and every third show is followed by a rest day).</span>
+      ) : null}
+      {changed ? (
+        <span className={mine > theirs * 1.15 ? "warn" : "muted"}>
+          Your order: {mine.toLocaleString()} km
+          {mine > theirs ? `, ${(mine - theirs).toLocaleString()} km more than the agent's route` : mine < theirs ? `, ${(theirs - mine).toLocaleString()} km less than the agent's route` : ", same as the agent's route"}.{" "}
+          <button className="link-btn micro" onClick={onReset}>
+            Back to the agent&apos;s route
+          </button>
+        </span>
+      ) : (
+        <span className="muted">Use ↑ ↓ to change the order or ✕ to drop a stop; days and drives update as you go.</span>
+      )}
     </div>
   );
 }
