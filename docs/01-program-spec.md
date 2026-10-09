@@ -43,6 +43,8 @@ The band's "proof of past concerts" is the `BandProfile` counters, which only `s
 
 Threshold check: `tickets_sold * 10_000 ≥ capacity * threshold_bps` (u64 math, checked).
 
+Settlement dust rule: a share that would leave its recipient below the rent-exempt minimum for an empty account (system transfers to such a balance are rejected) is paid to the band instead, so an unfunded venue or payee wallet can never block a settlement.
+
 ## Errors
 
 `Unauthorized`, `InvalidState`, `TooEarly`, `SalesClosed`, `SoldOut`, `InvalidQuantity`, `InvalidSplit`, `InvalidThreshold`, `InvalidDates`, `CapacityExceedsVenue`, `InvalidPrice`, `AlreadyRefunded`, `TooManyPayees`, `PayeeMismatch`, `DuplicatePayee`, `TextLength`, `MathOverflow`, `WrongTourId`, `InvalidCapacity`.

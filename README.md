@@ -80,7 +80,7 @@ npm run demo:devnet -- --shows 8 --history
 
 The public devnet RPC rate-limits bursts, so the agents slow down off-localnet (one transaction at a time, short pauses) and retry transient errors; a run of 8 shows takes about 10 minutes there. A free Helius, RPC Fast or FluxRPC endpoint in `GREENROOM_RPC_URL` removes most of the waiting. Budget: about 0.003 SOL per simulated ticket (price plus the ticket account's rent, paid by the hub wallet) and 0.003 SOL per venue, so a full 136-venue, 8-show run needs roughly 1 SOL.
 
-The program is deployed on devnet as `4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8` ([explorer](https://explorer.solana.com/address/4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8?cluster=devnet), deployed 2026-10-08, slot 508938533, tx `2RJsTWwsfgLoxCSgZWd4Mk4GamF3wUCE5btCHAv9ywCrX5P8fELyNyPTDhjoTdNFrcWVQikGta5PEdaYPLTPwYNY`).
+The program is deployed on devnet as `4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8` ([explorer](https://explorer.solana.com/address/4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8?cluster=devnet), deployed 2026-10-08, slot 508938533, tx `2RJsTWwsfgLoxCSgZWd4Mk4GamF3wUCE5btCHAv9ywCrX5P8fELyNyPTDhjoTdNFrcWVQikGta5PEdaYPLTPwYNY`). The devnet build predates one change in this repo, the settlement dust rule in `settle_show` (covered by the test suite); redeploying needs about 1.7 SOL of temporary buffer rent and happens at the next faucet top-up.
 
 ### Letting the agents think with Claude
 

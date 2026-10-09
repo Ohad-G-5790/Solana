@@ -1,62 +1,192 @@
 {
-  "runId": "2026-10-08T20-37-29-239Z",
+  "runId": "2026-10-09T05-19-01-876Z",
   "cluster": "https://api.devnet.solana.com",
   "band": {
     "id": "cinema-of-royal-street",
     "name": "Cinema of Royal Street",
     "authority": "6MmxuASTJPWLxJhUhDi3xtQT7cTJGxNnncrfjXrXFVGZ",
-    "profile": "4YsyPCFzwTxYRdzM4a6fPNx9DhwdD52eMK615AC3HM38"
+    "profile": "4YsyPCFzwTxYRdzM4a6fPNx9DhwdD52eMK615AC3HM38",
+    "homeCity": "Warsaw",
+    "genre": "metal",
+    "draw": 511
   },
-  "tour": "CYaYAfJLe3amYXKX9gDera8Gi9iB9kNpTEjpsZ3jbqz2",
+  "brief": {
+    "countries": [
+      "DE",
+      "AT",
+      "FR",
+      "PL",
+      "CZ"
+    ],
+    "wantedShows": 5,
+    "windowDays": 21
+  },
+  "approvals": "auto",
+  "tour": "DYFmMRTrqzu8qoEBsFEVAujaE9D6yG6GD7qe5bXqHjQn",
   "shows": [
     {
-      "show": "3zJBK5P3VHXfmaSUTYrTn3CbLbhH1yFsZZEovQ8yAhkA",
-      "city": "Berlin",
-      "venue": "lido-berlin",
+      "show": "i9hL9sRYbeRpxAphQN8wQCGGKFtdNYNYrWS44X3fGWm",
+      "city": "Dresden",
+      "venue": "tante-ju-dresden",
+      "venueName": "Tante JU",
       "day": 0,
-      "capacity": 26,
-      "ticketsSold": 2,
-      "state": "cancelled",
-      "date": 1791492003,
-      "thresholdDeadline": 1791491928,
-      "payees": []
+      "capacity": 25,
+      "ticketsSold": 14,
+      "state": "settled",
+      "date": 1791523446,
+      "thresholdDeadline": 1791523346,
+      "salesOpenAt": 1791523146,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [
+        {
+          "label": "tour driver",
+          "bps": 190
+        },
+        {
+          "label": "session keys",
+          "bps": 228
+        }
+      ]
     },
     {
-      "show": "pYDJhwJ7V4vcDNYfUMXqhsDANj9ST76tUGiEvMwtfbx",
-      "city": "Hamburg",
-      "venue": "molotow-hamburg",
-      "day": 1,
-      "capacity": 20,
-      "ticketsSold": 8,
-      "state": "cancelled",
-      "date": 1791492005,
-      "thresholdDeadline": 1791491929,
-      "payees": []
-    },
-    {
-      "show": "AK9uJPK1jEgXYccDNT24xuvxp1iwXvmVMuFpknGsYJ4G",
-      "city": "Cologne",
-      "venue": "gebaeude-9-cologne",
+      "show": "Fm8uaFkoytzvrN32iPozcyQ9ayrufNB9ogaxVNoRduCU",
+      "city": "Hannover",
+      "venue": "musikzentrum-hannover",
+      "venueName": "Musikzentrum Hannover",
       "day": 3,
       "capacity": 25,
       "ticketsSold": 7,
       "state": "cancelled",
-      "date": 1791492009,
-      "thresholdDeadline": 1791491931,
-      "payees": []
+      "date": 1791523452,
+      "thresholdDeadline": 1791523349,
+      "salesOpenAt": 1791523146,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [],
+      "replacedBy": "FBfKwafv8ZBt5WbRCRdoJSKehzwRrs8Y8Gh6Tec4PZZu"
+    },
+    {
+      "show": "9FbEKshAAUsFRVeJQa55ftCL2fW1gaaARMEmyfhffzKz",
+      "city": "Nuremberg",
+      "venue": "hirsch-nuremberg",
+      "venueName": "Hirsch",
+      "day": 5,
+      "capacity": 26,
+      "ticketsSold": 5,
+      "state": "cancelled",
+      "date": 1791523456,
+      "thresholdDeadline": 1791523351,
+      "salesOpenAt": 1791523146,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [],
+      "replacedBy": "3B6GxPi2UT9Q7s8gdrNnfE6KCMUWJSHKRJwdAEc8iXE8"
+    },
+    {
+      "show": "DzRMhX8uGYtCUnRcW5BpSWeMaW3YwBdSr49fYLUcwinF",
+      "city": "Graz",
+      "venue": "explosiv-graz",
+      "venueName": "Explosiv",
+      "day": 7,
+      "capacity": 18,
+      "ticketsSold": 10,
+      "state": "settled",
+      "date": 1791523460,
+      "thresholdDeadline": 1791523353,
+      "salesOpenAt": 1791523146,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [
+        {
+          "label": "lighting tech",
+          "bps": 217
+        },
+        {
+          "label": "sound engineer",
+          "bps": 237
+        }
+      ]
+    },
+    {
+      "show": "dA2SJGSaixe4snu65t1vn7wXdraJhhrLkBWo5zdzbNo",
+      "city": "Vienna",
+      "venue": "arena-wien-vienna",
+      "venueName": "Arena Wien",
+      "day": 8,
+      "capacity": 26,
+      "ticketsSold": 20,
+      "state": "settled",
+      "date": 1791523462,
+      "thresholdDeadline": 1791523354,
+      "salesOpenAt": 1791523146,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [
+        {
+          "label": "session drummer",
+          "bps": 114
+        },
+        {
+          "label": "videographer",
+          "bps": 172
+        }
+      ]
+    },
+    {
+      "show": "FBfKwafv8ZBt5WbRCRdoJSKehzwRrs8Y8Gh6Tec4PZZu",
+      "city": "Hannover",
+      "venue": "musikzentrum-hannover",
+      "venueName": "Musikzentrum Hannover",
+      "day": 3,
+      "capacity": 13,
+      "ticketsSold": 0,
+      "state": "cancelled",
+      "date": 1791523609,
+      "thresholdDeadline": 1791523509,
+      "salesOpenAt": 1791523359,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [],
+      "replaces": "Fm8uaFkoytzvrN32iPozcyQ9ayrufNB9ogaxVNoRduCU"
+    },
+    {
+      "show": "3B6GxPi2UT9Q7s8gdrNnfE6KCMUWJSHKRJwdAEc8iXE8",
+      "city": "Nuremberg",
+      "venue": "hirsch-nuremberg",
+      "venueName": "Hirsch",
+      "day": 5,
+      "capacity": 13,
+      "ticketsSold": 0,
+      "state": "cancelled",
+      "date": 1791523609,
+      "thresholdDeadline": 1791523509,
+      "salesOpenAt": 1791523359,
+      "ticketPriceLamports": 5674866,
+      "venueBps": 3000,
+      "thresholdBps": 5000,
+      "payees": [],
+      "replaces": "9FbEKshAAUsFRVeJQa55ftCL2fW1gaaARMEmyfhffzKz"
     }
   ],
   "stats": {
-    "proposed": 3,
-    "accepted": 3,
+    "proposed": 7,
+    "accepted": 7,
     "rejected": 0,
-    "confirmed": 0,
-    "cancelled": 3,
+    "confirmed": 3,
+    "cancelled": 4,
     "refunded": 9,
-    "settled": 0,
-    "ticketsSold": 17,
-    "crewHired": 0,
-    "messages": 59,
+    "settled": 3,
+    "ticketsSold": 56,
+    "crewHired": 6,
+    "replacements": 2,
+    "messages": 169,
     "brain": "heuristic"
   }
 }

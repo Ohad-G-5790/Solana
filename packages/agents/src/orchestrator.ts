@@ -130,7 +130,7 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
 
   // Demo ticket prices: 0.01 SOL locally, 0.001 SOL on public clusters so a
   // faucet-sized balance covers the whole run (the hub pays for every fan).
-  const basePriceLamports = isLocal ? 0.01 * LAMPORTS_PER_SOL : 0.001 * LAMPORTS_PER_SOL;
+  const basePriceLamports = isLocal ? 0.01 * LAMPORTS_PER_SOL : 0.005 * LAMPORTS_PER_SOL;
   const world: World = generateWorld({ seed, fansPerCity: opts.fansPerCity ?? 60, crewPerCity: opts.crewPerCity ?? 100, basePriceLamports });
   const base = opts.bandId ? world.bands.find((b) => b.id === opts.bandId) : world.bands[0];
   if (!base) throw new Error(`band ${opts.bandId} not found`);

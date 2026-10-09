@@ -122,11 +122,18 @@ const kindOf: Record<string, string> = {
   PayeeAdded: "crew.hired",
 };
 
+/** Event fields come back in the IDL's snake_case; expose them as camelCase too. */
+function camel(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...data };
+  for (const [k, v] of Object.entries(data)) out[k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())] = v;
+  return out;
+}
+
 function decode(sig: string, tx: ParsedTransactionWithMeta | null, venues: Map<string, VenueInfo>): FeedMessage[] {
   if (!tx?.meta?.logMessages) return [];
   const out: FeedMessage[] = [];
   for (const ev of parser.parseLogs(tx.meta.logMessages)) {
-    const data = ev.data as Record<string, unknown>;
+    const data = camel(ev.data as Record<string, unknown>);
     const text = describe[ev.name]?.(data, venues) ?? `${ev.name}`;
     const show = typeof data.show === "object" && data.show ? String(data.show) : undefined;
     out.push({

@@ -18,6 +18,12 @@ on:
       fans:
         description: "Base fans per city (scaled by population)"
         default: "10"
+      deadline:
+        description: "Seconds from sales opening to each show's threshold deadline (devnet purchases run ~1 per 2 s)"
+        default: "240"
+      show_after:
+        description: "Seconds from sales opening to the show date (settlement)"
+        default: "360"
       history:
         description: "Replay a short previous tour first (true/false)"
         default: "false"
@@ -27,6 +33,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: devnet-demo
@@ -35,7 +42,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,7 +61,7 @@ jobs:
           GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline 75 --show 150"
+          ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline ${{ inputs.deadline }} --show ${{ inputs.show_after }}"
           if [ "${{ inputs.history }}" = "true" ]; then ARGS="$ARGS --history"; fi
           npm run demo -w @greenroom/agents -- $ARGS 2>&1 | tee demo.log | grep -v "^\[fan.bought\]\|^\[venue\.\|429 Too Many"
       - name: Upload the run
@@ -73,8 +80,17 @@ jobs:
           git config user.name "greenroom-devnet-demo[bot]"
           git config user.email "noreply@github.com"
           git add packages/web/public/demo
-          git commit -m "Dashboard bundle: devnet run $(basename "$dir")" || echo "nothing to publish"
-          git push
+          git commit -m "Dashboard bundle: devnet run $(basename "$dir")" || { echo "nothing to publish"; exit 0; }
+          # main may have moved during the run; the bundle files are ours alone
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && break
+            sleep 10
+          done
+          # Pushes made with the workflow token do not trigger other workflows,
+          # so rebuild the Pages site explicitly.
+          gh workflow run pages.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Remove the wallet file
         if: always()
         run: rm -f ~/.config/solana/demo.json
