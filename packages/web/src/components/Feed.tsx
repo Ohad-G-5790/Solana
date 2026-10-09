@@ -46,8 +46,29 @@ const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digi
  * declines, which never touch the chain). shows: with source "chain", only
  * the events of these shows (one band's tour). compact: only the group rows.
  */
-export function Feed({ limit = 2000, compact = false, source = "transcript", shows, empty }: { limit?: number; compact?: boolean; source?: "chain" | "transcript"; shows?: string[]; empty?: string }) {
+export function Feed({
+  limit = 2000,
+  compact = false,
+  source = "transcript",
+  shows,
+  empty,
+  cityOf,
+}: {
+  limit?: number;
+  compact?: boolean;
+  source?: "chain" | "transcript";
+  shows?: string[];
+  empty?: string;
+  /** show address -> city, so chain events say where they happened */
+  cityOf?: Record<string, string>;
+}) {
   const [items, setItems] = useState<FeedMessage[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const say = (m: FeedMessage) => {
+    const city = cityOf?.[String((m.data as { show?: string } | undefined)?.show ?? "")];
+    const t = plain(m.text);
+    return city && !t.includes(city) ? `${city}: ${t}` : t;
+  };
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<Record<string, number>>({});
@@ -62,10 +83,12 @@ export function Feed({ limit = 2000, compact = false, source = "transcript", sho
           if (alive) {
             setItems(all.slice(-limit));
             setError(null);
+            setLoaded(true);
           }
           return;
         }
         const fresh = await getFeed(lastId.current, 2000);
+        if (alive) setLoaded(true);
         if (!alive || fresh.length === 0) return;
         lastId.current = fresh[fresh.length - 1].id;
         setItems((prev) => [...prev, ...fresh].slice(-limit));
@@ -95,7 +118,7 @@ export function Feed({ limit = 2000, compact = false, source = "transcript", sho
   if (items.length === 0)
     return (
       <p className="muted small">
-        {error ? `Waiting for the network (${error.slice(0, 60)}); retrying.` : (empty ?? (source === "chain" ? "Nothing has happened on-chain yet." : "Nothing has happened yet."))}
+        {error ? `Waiting for the network (${error.slice(0, 60)}); retrying.` : !loaded ? "Loading…" : (empty ?? (source === "chain" ? "Nothing has happened on-chain yet." : "Nothing has happened yet."))}
       </p>
     );
 
@@ -122,7 +145,7 @@ export function Feed({ limit = 2000, compact = false, source = "transcript", sho
             <summary>
               <span className="g-label">{g.label}</span>
               <span className="g-count">{g.items.length}</span>
-              <span className="g-latest small muted">{plain(latest.text)}</span>
+              <span className="g-latest small muted">{say(latest)}</span>
               <span className="micro muted nowrap">{time(latest.at)}</span>
             </summary>
             <div className="g-items">
@@ -133,7 +156,7 @@ export function Feed({ limit = 2000, compact = false, source = "transcript", sho
                     <span className="micro muted nowrap">{time(m.at)}</span>
                     <div style={{ minWidth: 0 }}>
                       <span className="micro muted">{w.role}</span> <b className="small">{w.name}</b>
-                      <div className="small">{plain(m.text)}</div>
+                      <div className="small">{say(m)}</div>
                     </div>
                     {m.tx ? (
                       <a className="micro muted nowrap" href={explorerUrl("tx", m.tx)} target="_blank" rel="noreferrer">

@@ -7,7 +7,7 @@ import { BN } from "@anchor-lang/core";
 import { PublicKey, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { bandPda, connection, vaultPda, walletProgram, type BandAccount, type WalletLike } from "./greenroom";
 import type { WorldCity, WorldVenue } from "./run";
-import { DEMO_DAY_SEC } from "./config";
+import { DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO } from "./config";
 import { venueKeys } from "./venue-keys";
 
 /** How many people the band can bring: the one number the venues care about most. */
@@ -15,10 +15,9 @@ export const DRAWS = [100, 200, 500, 1000, 2500, 5000];
 export const LENGTHS = [7, 10, 14, 21, 30];
 export const PRICES = [10, 15, 20, 30, 50];
 export const COUNTRIES = ["DE", "AT", "FR", "PL", "CZ"];
-/** Devnet play money: a euro of ticket price is 10,000 lamports, so simulated fans can afford whole tours. */
-export const LAMPORTS_PER_EURO = 10_000;
+export { LAMPORTS_PER_EURO };
 /** On devnet each show sells a sample of the room (1 on-chain ticket per 20 people), at least 12 and at most 40. */
-export const SAMPLE = 0.05;
+export const SAMPLE = 1 / FANS_PER_TICKET;
 const MIN_TICKETS = 12;
 const MAX_TICKETS = 40;
 /** Demo clock: sales run 40 minutes (the keeper visits every 10), the show is 30 minutes after the deadline. */
@@ -164,9 +163,18 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   const ixs: TransactionInstruction[] = [];
   // finishing an earlier attempt: skip the tour and the venues that already have their show
   const done = new Set<string>();
+  const shows: string[] = [];
+  const firstDay = p.plan[0]?.day ?? 0;
+  // the clock the tour's deadlines count from: now, or the one the first attempt used
+  let base = now + SALES_MINUTES * 60;
   if (resume) {
     const existing = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);
-    for (const e of existing) done.add(e.account.venueProfile.toBase58());
+    for (const e of existing) {
+      done.add(e.account.venueProfile.toBase58());
+      shows.push(e.publicKey.toBase58());
+      const stop = p.plan.find((s) => s.venuePubkey === e.account.venueProfile.toBase58());
+      if (stop) base = Number(e.account.thresholdDeadline) - (stop.day - firstDay) * DEMO_DAY_SEC;
+    }
   } else {
     ixs.push(
       await program.methods
@@ -175,11 +183,10 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
         .instruction()
     );
   }
-  const shows: string[] = [];
   for (const s of p.plan) {
     if (done.has(s.venuePubkey)) continue;
     // planned days ride on the demo clock, so "Day 6" on the preview is "Day 6" on the dashboard
-    const deadline = now + SALES_MINUTES * 60 + (s.day - p.plan[0].day) * DEMO_DAY_SEC;
+    const deadline = base + (s.day - firstDay) * DEMO_DAY_SEC;
     const date = deadline + SHOW_AFTER_DEADLINE_MIN * 60;
     const venueProfile = new PublicKey(s.venuePubkey);
     const show = PublicKey.findProgramAddressSync([enc("show"), tour.toBuffer(), venueProfile.toBuffer(), i64(date)], programId)[0];

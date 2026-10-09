@@ -1,3 +1,4 @@
+import { FANS_PER_TICKET, LAMPORTS_PER_EURO } from "./config";
 export const LAMPORTS_PER_SOL = 1_000_000_000;
 
 export function sol(lamports: number | bigint | { toString(): string }, digits = 3): string {
@@ -5,6 +6,17 @@ export function sol(lamports: number | bigint | { toString(): string }, digits =
   // devnet play money is tiny: never round a real amount down to "0 SOL"
   const d = n !== 0 && Math.abs(n) < 10 ** -digits ? 5 : digits;
   return `${n.toLocaleString(undefined, { maximumFractionDigits: d })} SOL`;
+}
+
+/**
+ * A band's own devnet tour in the band's units: on-chain tickets are a 1-in-20
+ * sample and lamports are play money, so show fans and euros at full scale.
+ */
+export function fans(tickets: number): string {
+  return (tickets * FANS_PER_TICKET).toLocaleString();
+}
+export function euros(lamports: number | bigint | { toString(): string }): string {
+  return `€${Math.round((Number(lamports.toString()) / LAMPORTS_PER_EURO) * FANS_PER_TICKET).toLocaleString()}`;
 }
 
 export function short(address: string, n = 4): string {

@@ -29,3 +29,5 @@ const stats = await runKeeper({
   registerVenues: num("register", "40", 0, 136),
 });
 console.log(JSON.stringify(stats));
+// a run in which nothing worked (RPC down, wrong program) should fail the scheduled job
+if (stats.failedTicks > 0 && stats.okTicks === 0) process.exit(1);

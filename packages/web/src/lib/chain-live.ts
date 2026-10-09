@@ -115,10 +115,10 @@ const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, 
   ShowProposed: (d, v) => `Proposed ${v.get(String(d.venueProfile))?.city ?? "a show"}: ${d.capacity} tickets, ${Number(d.thresholdBps) / 100}% threshold.`,
   ShowAccepted: (d, v) => `${v.get(String(d.venueAuthority))?.name ?? "The venue"} signed: ${v.get(String(d.venueAuthority))?.city ?? "the show"} is on sale.`,
   ShowRejected: () => `Venue declined the proposal; the show was closed.`,
-  TicketBought: (d) => `Fan ${String(d.buyer).slice(0, 6)}… bought ${d.quantity} ticket${Number(d.quantity) > 1 ? "s" : ""} (${d.ticketsSold} sold so far).`,
+  TicketBought: (d) => `A fan bought ${d.quantity} ticket${Number(d.quantity) > 1 ? "s" : ""} (${d.ticketsSold} sold so far).`,
   ShowConfirmed: (d) => `Threshold met (${d.ticketsSold}/${d.capacity}): show confirmed.`,
   ShowCancelled: (d) => `Deadline passed with ${d.ticketsSold} sold (needed ${d.ticketsRequired}): show cancelled, refunds follow.`,
-  TicketRefunded: (d) => `Refunded ${sol(Number(d.amountLamports))} to ${String(d.buyer).slice(0, 6)}….`,
+  TicketRefunded: (d) => `A fan got ${sol(Number(d.amountLamports))} back.`,
   ShowSettled: (d) => `Paid out ${sol(Number(d.totalLamports))}: band ${sol(Number(d.bandLamports))}, venue ${sol(Number(d.venueLamports))}${Number(d.payeeLamports) ? `, crew ${sol(Number(d.payeeLamports))}` : ""}.`,
   PayeeAdded: (d) => `Crew hired: ${d.label} for ${Number(d.bps) / 100}% of the show.`,
 };
@@ -200,6 +200,7 @@ const showSigs = new Map<string, { at: number; sigs: { signature: string; err: u
 
 export async function fetchShowEvents(shows: string[]): Promise<FeedMessage[]> {
   const all = new Map<string, number>(); // signature -> slot order
+  let reached = 0;
   for (const show of shows.slice(0, 20)) {
     let cached = showSigs.get(show);
     if (!cached || Date.now() - cached.at > 20_000) {
@@ -207,12 +208,15 @@ export async function fetchShowEvents(shows: string[]): Promise<FeedMessage[]> {
         const sigs = await connection.getSignaturesForAddress(new PublicKey(show), { limit: 40 }, "confirmed");
         cached = { at: Date.now(), sigs: sigs.map((s) => ({ signature: s.signature, err: s.err })) };
         showSigs.set(show, cached);
+        reached++;
       } catch {
         if (!cached) continue; // busy RPC: this show's history comes on a later poll
       }
-    }
+    } else reached++;
     cached.sigs.forEach((s, i) => !s.err && all.set(s.signature, Math.min(all.get(s.signature) ?? Infinity, i)));
   }
+  // nothing reachable at all: say so instead of "nothing happened"
+  if (shows.length && reached === 0) throw new Error("devnet is busy");
   const missing = [...all.keys()].filter((s) => !seen.has(s)).slice(0, 8);
   if (missing.length) {
     const venues = await venuesByProfile();

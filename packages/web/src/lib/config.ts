@@ -10,6 +10,10 @@ export const POLL_MS = CLUSTER === "localnet" ? 4000 : 15_000;
  * turn dates back into "Day 3".
  */
 export const DEMO_DAY_SEC = 2;
+/** Devnet play money: a euro of ticket price is 10,000 lamports, so simulated fans can afford whole tours. */
+export const LAMPORTS_PER_EURO = 10_000;
+/** On devnet a show sells a sample of the room: one on-chain ticket stands for this many fans. */
+export const FANS_PER_TICKET = 20;
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export function explorerUrl(kind: "address" | "tx", value: string): string {

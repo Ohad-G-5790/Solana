@@ -34,7 +34,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-connect-shows-mine", title: "connecting a wallet shows that wallet's own data right away" },
   { id: "ux-next-step", title: "a band without a tour sees one obvious next step" },
   { id: "ux-create-tour", title: "creating a tour takes four answers and shows the route before anything is booked" },
-  { id: "ux-booked-tour", title: "after booking, the dashboard shows your own tour: planned days, booked by you, what waits on whom, your activity only" },
+  { id: "ux-booked-tour", title: "after booking, the dashboard shows your own tour in fans and euros: planned days, booked by you, what waits on whom, your show pages, your activity only, also on a phone" },
   { id: "ux-fast-paint", title: "every page shows its heading within 1.5 s even when the chain answers slowly" },
   { id: "ux-phone-width", title: "no sideways scrolling at phone width (390 px)" },
   { id: "ux-names", title: "every button, link and field has an accessible name" },
@@ -70,6 +70,22 @@ function serve(dir: string): Promise<Server> {
   });
   return new Promise((r) => server.listen(0, "127.0.0.1", () => r(server)));
 }
+
+/** The Show account's discriminator, base58 as RPC memcmp filters carry it. */
+const SHOW_DISC = (() => {
+  const idl = JSON.parse(readFileSync(join(ROOT, "packages/web/src/idl/greenroom.json"), "utf8")) as { accounts: { name: string; discriminator: number[] }[] };
+  const bytes = idl.accounts.find((a) => a.name === "Show")!.discriminator;
+  const A = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  let n = 0n;
+  for (const b of bytes) n = n * 256n + BigInt(b);
+  let out = "";
+  while (n > 0n) {
+    out = A[Number(n % 58n)] + out;
+    n /= 58n;
+  }
+  for (const b of bytes) if (b === 0) out = "1" + out; else break;
+  return out;
+})();
 
 function b58(s: string): Uint8Array {
   const A = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -195,6 +211,8 @@ export async function newPage(browser: Browser, fake: Fake, width = 1280, root =
   await page.addInitScript({ content: `${WALLET_SCRIPT}(${JSON.stringify(ADDRESS)});` });
   const profile = fake.band ? bandProfile("The Running Pigeons", "indie", fake.tour ? 1 : 0) : null;
   const shows = fake.tour ? await bookedShows(root) : new Map<string, string>();
+  const { PublicKey } = await import("@solana/web3.js");
+  const bandKey = PublicKey.findProgramAddressSync([Buffer.from("band"), new PublicKey(ADDRESS).toBuffer()], new PublicKey("4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8"))[0].toBase58();
   await page.route(/api\.devnet\.solana\.com/, async (route) => {
     const req = JSON.parse(route.request().postData() || "{}") as { id: number; method: string; params: unknown[] } | { id: number; method: string; params: unknown[] }[];
     const answer = (r: { method: string; params: unknown[] }) => {
@@ -202,16 +220,22 @@ export async function newPage(browser: Browser, fake: Fake, width = 1280, root =
       const owner = "4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8";
       switch (r.method) {
         case "getAccountInfo": {
-          const data = shows.get(r.params[0] as string) ?? profile;
+          // the band's profile, its shows; any other account (a fan's ticket) does not exist
+          const key = r.params[0] as string;
+          const data = shows.get(key) ?? (key === bandKey ? profile : null);
           return { ...ctx, value: data ? { data: [data, "base64"], executable: false, lamports: 2_000_000, owner, rentEpoch: 0, space: 100 } : null };
         }
         case "getMultipleAccounts":
           return { ...ctx, value: (r.params[0] as string[]).map((k) => ({ data: [shows.get(k) ?? "", "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 })) };
         case "getBalance":
           return { ...ctx, value: 1_500_000_000 };
-        case "getProgramAccounts":
-          // the band's tour (memcmp on the show's tour field): the booked shows
+        case "getProgramAccounts": {
+          // only Show queries (discriminator filter at offset 0) get the booked shows; tickets: none
+          const filters = ((r.params[1] as { filters?: { memcmp?: { offset: number; bytes: string } }[] } | undefined)?.filters ?? []).map((f) => f.memcmp).filter(Boolean);
+          const disc = filters.find((f) => f!.offset === 0)?.bytes;
+          if (disc && disc !== SHOW_DISC) return [];
           return [...shows].map(([pubkey, data]) => ({ pubkey, account: { data: [data, "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 } }));
+        }
         case "getSignaturesForAddress":
           return [];
         case "getSlot":
@@ -352,6 +376,13 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.waitForTimeout(1500);
       const main = (await page.locator("main").textContent()) ?? "";
       await shot(page, "7-booked-dashboard");
+      // the band's own show page: its city, and what it means for the band (not a fan's buy box)
+      await page.locator(".card", { hasText: "Berlin" }).filter({ has: page.locator("h3") }).first().click();
+      await page.locator("h1").first().waitFor({ timeout: 8000 });
+      await page.waitForTimeout(2000);
+      const showH1 = (await page.locator("h1").first().textContent()) ?? "";
+      const showText = (await page.locator("main").textContent()) ?? "";
+      await shot(page, "8-own-show");
       await page.goto(url("/feed/"), { waitUntil: "domcontentloaded" });
       await connect(page);
       await page.waitForTimeout(1500);
@@ -364,6 +395,18 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (/auto-pilot|Recorded run/i.test(main)) return "the band's own tour is labelled as auto-pilot or a recording";
       if (!/wait for their venue/.test(main)) return "nothing says the Leipzig show is waiting for its venue";
       if (/demo band/i.test(feed)) return "Activity shows the demo band to a connected band";
+      if (!/Fans so far/.test(main) || !/€\d/.test(main)) return "the band's own tour is not shown in fans and euros";
+      if (!/Berlin/.test(showH1)) return `the band's own show page does not name its city (h1: ${showH1})`;
+      if (!/Your show/.test(showText) || /Buy \d/.test(showText)) return "the band's own show page shows a fan's buy box instead of what the show means for the band";
+      // the same dashboard at phone width
+      const phone = await newPage(browser, { band: true, tour: true, delay: 0 }, 390);
+      await phone.goto(url("/"), { waitUntil: "domcontentloaded" });
+      await connect(phone);
+      await phone.locator(".itinerary .stop").first().waitFor({ timeout: 10_000 });
+      const over = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      await shot(phone, "phone-booked-dashboard");
+      await phone.close();
+      if (over > 1) return `the booked dashboard scrolls sideways on a phone (+${over}px)`;
       return null;
     });
 

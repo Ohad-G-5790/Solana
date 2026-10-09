@@ -39,6 +39,16 @@ export default function VenuesPage() {
   const [from, setFrom] = useState("");
   const [maxDrive, setMaxDrive] = useState("any");
   const [sort, setSort] = useState<Sort>("distance");
+  // on a phone each city starts with its two biggest rooms; the rest open on demand
+  const [narrow, setNarrow] = useState(false);
+  const [openCities, setOpenCities] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
   useEffect(() => {
     void getWorld().then(setWorld);
@@ -183,6 +193,7 @@ export default function VenuesPage() {
             </div>
             {[...list]
               .sort((a, b) => b.capacity - a.capacity)
+              .slice(0, narrow && !openCities.has(city) ? 2 : undefined)
               .map((v) => {
                 const o = offers.get(v.id);
                 const added = plan.includes(v.id);
@@ -207,6 +218,11 @@ export default function VenuesPage() {
                   </div>
                 );
               })}
+            {narrow && !openCities.has(city) && list.length > 2 ? (
+              <button className="link-btn small" style={{ marginTop: 6 }} onClick={() => setOpenCities((s) => new Set(s).add(city))}>
+                Show {list.length - 2} more in {city}
+              </button>
+            ) : null}
           </div>
         );
       })}

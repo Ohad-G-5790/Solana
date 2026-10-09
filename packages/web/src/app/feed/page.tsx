@@ -15,7 +15,8 @@ import { getRun } from "@/lib/run";
 export default function FeedPage() {
   const session = useBandSession();
   const own = !!session.wallet && session.authority === session.wallet;
-  const [shows, setShows] = useState<string[] | null | undefined>(undefined);
+  const [shows, setShows] = useState<{ show: string; city: string }[] | null | undefined>(undefined);
+  const [failed, setFailed] = useState(false);
   const [demoName, setDemoName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,8 +24,12 @@ export default function FeedPage() {
     if (own && session.wallet) {
       const load = () =>
         fetchLiveTour(session.wallet!)
-          .then((t) => alive && setShows(t?.shows.map((s) => s.show) ?? null))
-          .catch(() => alive && setShows((cur) => cur ?? undefined));
+          .then((t) => {
+            if (!alive) return;
+            setShows(t?.shows.map((s) => ({ show: s.show, city: s.city })) ?? null);
+            setFailed(false);
+          })
+          .catch(() => alive && setFailed(true));
       void load();
       const t = setInterval(load, 30_000);
       return () => {
@@ -56,7 +61,7 @@ export default function FeedPage() {
         Everything that happened to your shows, grouped by what it is about. Open a group to read it; pick a chip to see one kind only.
       </p>
       {shows === undefined ? (
-        <p className="muted small">Reading your tour…</p>
+        <p className="muted small">{failed ? "Devnet is busy; trying again in a moment…" : "Reading your tour…"}</p>
       ) : shows === null || shows.length === 0 ? (
         <div className="cta">
           <div>
@@ -68,7 +73,7 @@ export default function FeedPage() {
           </Link>
         </div>
       ) : (
-        <Feed source="chain" shows={shows} empty="Your shows are booked; nothing else has happened yet. Venues sign within about 10 minutes." />
+        <Feed source="chain" shows={shows.map((s) => s.show)} cityOf={Object.fromEntries(shows.map((s) => [s.show, s.city]))} empty="Your shows are booked; nothing else has happened yet. Venues sign within about 10 minutes." />
       )}
     </div>
   );

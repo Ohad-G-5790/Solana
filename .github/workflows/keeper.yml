@@ -41,7 +41,8 @@ jobs:
       - name: Keep the booked tours moving
         env:
           GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
-          MINUTES: ${{ inputs.minutes || '7' }}
+          # the job has 12 minutes: keep a manual run inside them
+          MINUTES: ${{ inputs.minutes && (inputs.minutes > 10 && '10' || inputs.minutes) || '7' }}
         # bash runs with pipefail, so a crashed keeper fails the step; 429 retries are counted, not printed
         shell: bash
         run: |

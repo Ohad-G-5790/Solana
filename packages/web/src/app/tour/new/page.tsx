@@ -5,6 +5,7 @@ import { routeTotals, legs, formatMinutes } from "@greenroom/world/geo";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useBandSession } from "@/components/BandSession";
+import { useBandTour } from "@/components/useBandTour";
 import { RegisterBand } from "@/components/Connect";
 import { DriveNote, Itinerary } from "@/components/Itinerary";
 import { RouteMap } from "@/components/RouteMap";
@@ -21,12 +22,38 @@ export default function NewTourPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<BookedTour | null>(null);
+  const { tour: current } = useBandTour();
+  const running = !!current?.shows.some((s) => s.state === "proposed" || s.state === "onSale" || s.state === "confirmed");
   /** A booking that stopped part-way: the tour exists, some shows are missing. */
   const [partial, setPartial] = useState<{ tourId: number; message: string } | null>(null);
 
   useEffect(() => {
     void getWorld().then(setWorld);
   }, []);
+
+  // an unfinished booking survives a reload: same answers, Finish booking adds the missing shows
+  const key = wallet ? `greenroom.partial.${wallet.publicKey.toBase58()}` : null;
+  useEffect(() => {
+    if (!key) return;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(key) ?? "null") as { tourId: number; message: string; answers: TourAnswers } | null;
+      if (saved) {
+        setPartial({ tourId: saved.tourId, message: saved.message });
+        setA(saved.answers);
+      }
+    } catch {
+      /* storage blocked: the banner lasts for this page view */
+    }
+  }, [key]);
+  const remember = (p: { tourId: number; message: string } | null) => {
+    setPartial(p);
+    try {
+      if (key && p) window.localStorage.setItem(key, JSON.stringify({ ...p, answers: a }));
+      else if (key) window.localStorage.removeItem(key);
+    } catch {
+      /* in-memory only */
+    }
+  };
 
   const cities = useMemo(() => [...world.cities].sort((x, y) => x.country.localeCompare(y.country) || x.name.localeCompare(y.name)), [world.cities]);
   const set = (patch: Partial<TourAnswers>) => {
@@ -61,9 +88,9 @@ export default function NewTourPage() {
     const { bookTour, bookingErrorText, PartialBooking } = await import("@/lib/book");
     try {
       setBooked(await bookTour(wallet, profile, plan, setBusy, partial ? { tourId: partial.tourId } : undefined));
-      setPartial(null);
+      remember(null);
     } catch (e) {
-      if (e instanceof PartialBooking) setPartial({ tourId: e.tourId, message: e.message });
+      if (e instanceof PartialBooking) remember({ tourId: e.tourId, message: e.message });
       else setError(bookingErrorText(e));
     } finally {
       setBusy(null);
@@ -82,8 +109,8 @@ export default function NewTourPage() {
           <Link className="btn primary" href="/">
             Watch it on the dashboard
           </Link>
-          <a className="small muted" href={explorerUrl("address", booked.tour)} target="_blank" rel="noreferrer">
-            receipt on Solana ↗
+          <a className="small muted" href={booked.signatures[0] ? explorerUrl("tx", booked.signatures[0]) : explorerUrl("address", booked.tour)} target="_blank" rel="noreferrer">
+            booking receipt on Solana ↗
           </a>
         </div>
       </div>
@@ -99,6 +126,17 @@ export default function NewTourPage() {
       <p className="muted" style={{ marginTop: 6 }}>
         Four answers. Your agent asks the venues, plans the route and shows it to you before anything is booked.
       </p>
+      {running ? (
+        <p className="small muted" style={{ marginTop: 10 }}>
+          Your current tour still has shows selling. You can book another one; the dashboard then follows the new tour, and the current shows carry on by
+          themselves.
+        </p>
+      ) : null}
+      {partial && !plan ? (
+        <p className="small warn" style={{ marginTop: 10 }}>
+          Your last booking stopped part-way. Your answers are back: press Plan my tour, then Finish booking to add the missing shows to the same tour.
+        </p>
+      ) : null}
 
       <section className="question">
         <h2>How many people can you bring?</h2>
@@ -122,7 +160,7 @@ export default function NewTourPage() {
           ))}
           <label className="small muted row" style={{ gap: 6 }}>
             or
-            <input className="input" type="number" min={1} max={500} value={a.priceEuro} onChange={(e) => set({ priceEuro: Math.max(1, Math.min(500, Number(e.target.value) || 1)) })} aria-label="Ticket price in euros" />
+            <input className="input" type="number" min={1} max={200} value={a.priceEuro} onChange={(e) => set({ priceEuro: Math.max(1, Math.min(200, Number(e.target.value) || 1)) })} aria-label="Ticket price in euros" />
           </label>
         </div>
       </section>

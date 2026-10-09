@@ -11,9 +11,9 @@ import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary
 import { RouteMap, type MapStop } from "@/components/RouteMap";
 import { HealthBadge, ShowCard } from "@/components/ShowCard";
 import { pendingItems, type ApprovalsView, type ApprovalView } from "@/lib/approvals";
-import { CLUSTER, explorerUrl, POLL_MS } from "@/lib/config";
+import { CLUSTER, explorerUrl, POLL_MS, DEMO_DAY_SEC, FANS_PER_TICKET } from "@/lib/config";
 import { isRateLimit } from "@/lib/rpc";
-import { sol } from "@/lib/format";
+import { euros, fans, sol } from "@/lib/format";
 import { chainTime, fetchShows, type ShowAccount } from "@/lib/greenroom";
 import { bandTake, showView } from "@/lib/health";
 import { getApprovals, getRun, getWorld, isStaticMode, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
@@ -48,7 +48,9 @@ export default function DashboardPage() {
       if (!ownRun || isStaticMode() || paramBand) {
         try {
           const live = await fetchLiveTour(authority);
-          if (live && live.shows.length) r = ownRun ? { ...bundled, ...live, band: { ...bundled?.band, ...live.band } } : live;
+          // the recorded run's own tour keeps its story (cluster, shows, replacements, feed);
+          // a newer tour of the same band (booked after the recording) is shown as live
+          if (live && live.shows.length) r = ownRun && bundled && live.tour === bundled.tour ? bundled : live;
         } catch (e) {
           // chain unreachable or busy: keep what we have and say so
           if (alive) setRpcError(describeRpcError(e));
@@ -168,7 +170,7 @@ export default function DashboardPage() {
   if (count.proposed)
     attention.push({
       key: "proposed",
-      tone: "wait",
+      tone: "info", // nothing for the band to do: not the "waiting for you" green
       text: (
         <>
           {count.proposed} of {views.length} shows wait for their venue to sign. Venues answer within about 10 minutes; nothing for you to do.
@@ -200,11 +202,11 @@ export default function DashboardPage() {
   // ---------- stepper ----------
   const steps = live
     ? [
-        { label: "Route OK", n: views.length, done: true },
+        { label: "Route approved", n: views.length, done: true },
         { label: "Venues signed", n: views.length - count.proposed - views.filter((v) => v.state === "rejected").length, done: count.proposed === 0, now: count.proposed > 0 },
         { label: "On sale", n: count.onSale, done: count.onSale + count.confirmed + count.cancelled > 0 },
         { label: "Confirmed", n: count.confirmed, done: count.confirmed > 0 },
-        { label: "Settled", n: count.settled, done: count.settled > 0 },
+        { label: "Paid out", n: count.settled, done: count.settled > 0 },
       ]
     : [
     { label: "Offers", n: venuesItem?.request.payload.step === "venues" ? venuesItem.request.payload.offers.length : "–", done: !!venuesItem },
@@ -245,14 +247,13 @@ export default function DashboardPage() {
   const cities = new Set(run.shows.map((s) => s.city));
   return (
     <div>
-      {panel}
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <h1>{run.band.name}</h1>
           <p className="muted">
             {run.brief ? `${run.brief.wantedShows}-show tour · ${run.brief.countries.join("/")} · ${run.brief.windowDays}-day window` : `Central Europe tour · ${cities.size} cities`}
             {" · "}
-            {live ? "booked by you" : run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
+            {live ? (isWalletBand ? "booked by you" : "live on devnet") : run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
             {run.tour ? (
               <>
                 {" · "}
@@ -266,7 +267,8 @@ export default function DashboardPage() {
         </div>
         <div className="row">
           {isWalletBand ? (
-            <Link href="/tour/new" className="btn primary">
+            // while this tour still sells, a new one is not the next step
+            <Link href="/tour/new" className={`btn ${count.proposed + count.onSale + count.confirmed - count.settled > 0 ? "outline" : "primary"}`}>
               New tour
             </Link>
           ) : null}
@@ -282,6 +284,12 @@ export default function DashboardPage() {
       {rpcError ? (
         <p className="small warn" style={{ marginTop: 8 }}>
           {rpcError} Showing the last known state; the page retries by itself.
+        </p>
+      ) : null}
+      {live ? (
+        <p className="small muted" style={{ marginTop: 8 }}>
+          A devnet demo at small scale: each ticket on chain stands for {FANS_PER_TICKET} fans, money is play money shown in euros, and a tour runs in about an
+          hour instead of months (one tour day is {DEMO_DAY_SEC} seconds).
         </p>
       ) : null}
       {isStaticMode() && !live ? (
@@ -310,7 +318,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="stepper" aria-label="Tour progress">
+      <div className="stepper" aria-label="Tour progress" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
         {steps.map((s) => (
           <div key={s.label} className={`step ${s.done ? "done" : ""} ${(s as { now?: boolean }).now ? "now" : ""}`}>
             {s.label}
@@ -321,10 +329,19 @@ export default function DashboardPage() {
 
       {views.length > 0 ? (
         <div className="stats">
-          <Stat label="Tickets sold" value={sold} />
-          <Stat label="Ticket money held" value={sol(escrow, 2)} hint="refunded if a show is cancelled" />
-          <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
-          <Stat label="Confirmed" value={count.confirmed} />
+          {live ? (
+            <>
+              <Stat label="Fans so far" value={fans(sold)} />
+              <Stat label="Ticket money held" value={euros(escrow)} hint="back to fans if a show is cancelled" />
+              <Stat label="Your share" value={euros(take)} hint="from shows that go ahead" />
+            </>
+          ) : (
+            <>
+              <Stat label="Tickets sold" value={sold} />
+              <Stat label="Ticket money held" value={sol(escrow, 2)} hint="refunded if a show is cancelled" />
+              <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
+            </>
+          )}
           <Stat label="At risk" value={count.atRisk} tone={count.atRisk ? "warn" : undefined} />
           <Stat label="Cancelled" value={count.cancelled} tone={count.cancelled ? "bad" : undefined} />
         </div>
@@ -355,6 +372,7 @@ export default function DashboardPage() {
                 now={now}
                 venueName={nameOf(v.run.venue, v.run.venueName)}
                 replacedByCity={v.run.replacedBy ? byShow.get(v.run.replacedBy)?.run.city : undefined}
+                bandUnits={live}
               />
             ))}
           </div>
@@ -378,13 +396,27 @@ export default function DashboardPage() {
 
       <h2 style={{ margin: "24px 0 10px" }}>{live ? "What happened" : "What happened on this recorded tour"}</h2>
       {live ? (
-        <Feed limit={500} compact source="chain" shows={run.shows.map((s) => s.show)} empty="Your shows are booked; nothing else has happened yet." />
+        <Feed
+          limit={500}
+          compact
+          source="chain"
+          shows={run.shows.map((s) => s.show)}
+          cityOf={Object.fromEntries(run.shows.map((s) => [s.show, s.city]))}
+          empty="Your shows are booked; nothing else has happened yet."
+        />
       ) : (
         <Feed limit={2000} compact source="transcript" />
       )}
       <p className="small" style={{ marginTop: 8 }}>
         <Link href="/feed">All activity →</Link>
       </p>
+      {/* wallet details matter less than the tour: they sit below it */}
+      {panel ? (
+        <>
+          <h2 style={{ margin: "24px 0 10px" }}>Your wallet</h2>
+          {panel}
+        </>
+      ) : null}
     </div>
   );
 }
