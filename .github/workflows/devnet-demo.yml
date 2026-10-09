@@ -1,0 +1,80 @@
+name: devnet-demo
+
+# Runs the agents against the deployed devnet program with a dedicated demo
+# wallet held as an encrypted repository secret (GREENROOM_DEVNET_WALLET).
+# Nobody needs the key: anyone with write access can start this from the
+# Actions tab. The run's summary and transcript are uploaded as an artifact
+# and, when "publish" is true, committed to packages/web/public/demo so the
+# Pages dashboard shows it.
+on:
+  workflow_dispatch:
+    inputs:
+      shows:
+        description: "Shows to book"
+        default: "8"
+      max_venues:
+        description: "Venues to register (all = 136; each costs ~0.003 SOL once)"
+        default: "60"
+      fans:
+        description: "Base fans per city (scaled by population)"
+        default: "10"
+      history:
+        description: "Replay a short previous tour first (true/false)"
+        default: "false"
+      publish:
+        description: "Commit the run to the dashboard bundle (true/false)"
+        default: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: devnet-demo
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Demo wallet from the repository secret
+        run: |
+          test -n "${{ secrets.GREENROOM_DEVNET_WALLET }}" || { echo "secret GREENROOM_DEVNET_WALLET is not set"; exit 1; }
+          mkdir -p ~/.config/solana
+          umask 077
+          printf '%s' '${{ secrets.GREENROOM_DEVNET_WALLET }}' > ~/.config/solana/demo.json
+      - name: Run the agents on devnet
+        env:
+          GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline 75 --show 150"
+          if [ "${{ inputs.history }}" = "true" ]; then ARGS="$ARGS --history"; fi
+          npm run demo -w @greenroom/agents -- $ARGS 2>&1 | tee demo.log | grep -v "^\[fan.bought\]\|^\[venue\.\|429 Too Many"
+      - name: Upload the run
+        uses: actions/upload-artifact@v4
+        with:
+          name: devnet-run
+          path: |
+            data/runs/
+            demo.log
+      - name: Publish to the dashboard bundle
+        if: ${{ inputs.publish == 'true' }}
+        run: |
+          dir=$(node -e "console.log(require('./data/runs/latest.json').dir)")
+          cp "$dir/summary.json" packages/web/public/demo/summary.json
+          cp "$dir/transcript.jsonl" packages/web/public/demo/transcript.jsonl
+          git config user.name "greenroom-devnet-demo[bot]"
+          git config user.email "noreply@github.com"
+          git add packages/web/public/demo
+          git commit -m "Dashboard bundle: devnet run $(basename "$dir")" || echo "nothing to publish"
+          git push
+      - name: Remove the wallet file
+        if: always()
+        run: rm -f ~/.config/solana/demo.json

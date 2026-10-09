@@ -92,6 +92,10 @@ Honest note on the bundled run: as of 2026-10-08 it is a three-show devnet tour 
 
 The same app also runs as a Node server (`npm run dev` / `next build`) with API routes that read `data/runs`; on Vercel set the root directory to `packages/web` and the `NEXT_PUBLIC_*` variables from `.env.example`.
 
+## Running the devnet demo from GitHub (no key needed)
+
+The repository holds a dedicated devnet demo wallet as an encrypted Actions secret (`GREENROOM_DEVNET_WALLET`, address `4wEy82SyTb65gK2G7pjbxFg7NqiXvAFr8Qjzz34pVBqp`). Anyone with write access can start the **devnet-demo** workflow from the Actions tab (choose shows, venues, fans, history, publish); it runs the agents against the deployed program with that wallet, uploads the run as an artifact and, with publish on, commits the run to `packages/web/public/demo` so the live dashboard shows it. The key never leaves GitHub's secret store and is not the program's upgrade authority. Optional secrets: `GREENROOM_RPC_URL` (a faster devnet RPC) and `ANTHROPIC_API_KEY` (Claude brain). Refill the demo wallet from any faucet when it runs low.
+
 ## Continuous integration
 
 Three workflows run on every push to `main`: `ci` (type checks, unit tests, dashboard lint and build on Node), `program` (builds the Anchor program, runs the 13 integration tests and a full agents run on a Linux validator inside the official Anchor 1.2.1 image; the container needs `--security-opt seccomp=unconfined` because the Agave 4.x validator requires io_uring), and `pages` (publishes the static dashboard).
