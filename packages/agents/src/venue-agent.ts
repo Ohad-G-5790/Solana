@@ -97,7 +97,9 @@ export class VenueAgent {
               ? "capacity above venue"
               : x.offer && (x.offeredCapacity < 1 || x.minPriceLamports < 1)
                 ? "an offer needs tickets and a price"
-                : null,
+                : x.minPriceLamports > req.targetPriceLamports * 1.5
+                  ? "minimum price far above the band's target"
+                  : null,
     });
 
     if (!decision.value.offer) {

@@ -52,9 +52,12 @@ function ShowView() {
     try {
       const a = await fetchShow(address);
       setAcct(a);
-      setTickets(await fetchTicketsForShow(address));
-      if (publicKey) setMine(await fetchTicket(address, publicKey));
-      setNow(await chainTime());
+      // each part on its own: a refused ticket list must not stop the clock or the fan's own ticket
+      await Promise.all([
+        fetchTicketsForShow(address).then(setTickets, () => undefined),
+        publicKey ? fetchTicket(address, publicKey).then(setMine, () => undefined) : Promise.resolve(),
+        chainTime().then(setNow, () => setNow((n) => n || Math.floor(Date.now() / 1000))),
+      ]);
       // a good poll clears an earlier network error
       setMsg((m) => (m && !m.ok && m.network ? null : m));
     } catch (e) {
@@ -237,7 +240,7 @@ function ShowView() {
         ) : mine ? (
           <div style={{ marginTop: 8 }}>
             <p className="small">
-              You hold <b>{mine.quantity}</b> ticket{mine.quantity > 1 ? "s" : ""} ({live ? euros(mine.amountLamports) : sol(mine.amountLamports)}){mine.refunded ? " · refunded" : ""}. One wallet holds one
+              You hold <b>{mine.quantity}</b> ticket{mine.quantity > 1 ? "s" : ""}{live ? ` for ${fans(mine.quantity)} fans` : ""} ({live ? euros(mine.amountLamports) : sol(mine.amountLamports)}){mine.refunded ? " · refunded" : ""}. One wallet holds one
               ticket purchase per show.
             </p>
             {state === "cancelled" && !mine.refunded ? (
@@ -281,7 +284,13 @@ function ShowView() {
 
       {tickets.length === 0 ? (
         <p className="small muted" style={{ marginTop: 20 }}>
-          {state === "proposed" ? "Ticket sales open once the venue signs." : state === "onSale" || state === "confirmed" ? "No purchases read yet. They appear here as fans buy." : "No ticket purchases."}
+          {acct.ticketsSold > 0
+            ? "The list of purchases has not loaded from devnet yet; the totals above are current."
+            : state === "proposed"
+              ? "Ticket sales open once the venue signs."
+              : state === "onSale" || state === "confirmed"
+                ? "No purchases yet. They appear here as fans buy."
+                : "No ticket purchases."}
         </p>
       ) : (
         <>

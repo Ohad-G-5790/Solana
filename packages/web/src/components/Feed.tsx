@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchChainEvents, fetchShowEvents } from "@/lib/chain-live";
 import { explorerUrl, POLL_MS } from "@/lib/config";
 import { fans } from "@/lib/format";
@@ -26,10 +26,9 @@ export function showsFeed(shows: { show: string; state: string; ticketsSold: num
     cancelled: ["crank.cancelled", () => "Cancelled; every fan is refunded automatically."],
     settled: ["crank.settled", () => "Played and paid out."],
   };
-  const now = Date.now();
   return shows
     .filter((s) => line[s.state])
-    .map((s, i) => ({ id: -1 - i, at: now, kind: line[s.state][0], from: "chain", text: line[s.state][1](s), data: { show: s.show } }) as FeedMessage);
+    .map((s, i) => ({ id: -1 - i, at: 0, kind: line[s.state][0], from: "chain", text: line[s.state][1](s), data: { show: s.show } }) as FeedMessage);
 }
 
 /** What happened, in the band's words. Every message kind belongs to one group. */
@@ -54,7 +53,8 @@ function who(from: string): { role: string; name: string } {
   return { role: role || from, name };
 }
 
-const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// at 0: a "where it stands" line, not an event with a time
+const time = (ms: number) => (ms ? new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "now");
 
 /**
  * Activity grouped by what it is about. source "chain": the program's own
@@ -131,16 +131,17 @@ export function Feed({
   }, [limit, source, shows?.join(",")]);
 
   // no events read yet but the tour has news: start from the shows' current state
-  const usingFallback = items.length === 0 && (loaded || !!error) && !!fallback?.length;
-  const list = usingFallback ? fallback! : items;
-  const groups = useMemo(() => {
-    const by = new Map<string, FeedMessage[]>();
-    for (const m of list) {
-      const c = categoryOf(m.kind);
-      by.set(c, [...(by.get(c) ?? []), m]);
-    }
-    return CATEGORIES.filter((c) => by.has(c.id)).map((c) => ({ ...c, items: by.get(c.id)!.slice().reverse() }));
-  }, [list]);
+  // shows without any event read yet keep a "where it stands" line (the history loads a few at a time)
+  const withEvents = new Set(items.map((m) => String((m.data as { show?: string } | undefined)?.show ?? "")));
+  const missing = (loaded || !!error) && fallback ? fallback.filter((m) => !withEvents.has(String((m.data as { show?: string }).show))) : [];
+  const usingFallback = missing.length > 0;
+  const list = usingFallback ? [...missing, ...items] : items;
+  const by = new Map<string, FeedMessage[]>();
+  for (const m of list) {
+    const c = categoryOf(m.kind);
+    by.set(c, [...(by.get(c) ?? []), m]);
+  }
+  const groups = CATEGORIES.filter((c) => by.has(c.id)).map((c) => ({ ...c, items: by.get(c.id)!.slice().reverse() }));
 
   if (list.length === 0)
     return (

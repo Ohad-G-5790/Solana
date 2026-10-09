@@ -73,7 +73,7 @@ function BandView() {
       </p>
       <div className="stats">
         <div className="stat">
-          <div className="label">Settled shows</div>
+          <div className="label">Shows played</div>
           <div className="value">{band.showsCompleted}</div>
         </div>
         <div className="stat">
@@ -85,7 +85,7 @@ function BandView() {
           <div className="value">{avg}</div>
         </div>
         <div className="stat">
-          <div className="label">Gross settled</div>
+          <div className="label">Paid out in all</div>
           <div className="value">{sol(band.grossSettledLamports, 2)}</div>
         </div>
         <div className="stat">

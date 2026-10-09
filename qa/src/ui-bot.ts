@@ -386,7 +386,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       const main = (await page.locator("main").textContent()) ?? "";
       await shot(page, "7-booked-dashboard");
       // the band's own show page: its city, and what it means for the band (not a fan's buy box)
-      await page.locator(".card", { hasText: "Berlin" }).filter({ has: page.locator("h3") }).first().click();
+      await page.locator(".itinerary a", { hasText: "Berlin" }).first().click();
       await page.locator("h1").first().waitFor({ timeout: 8000 });
       await page.waitForTimeout(2000);
       const showH1 = (await page.locator("h1").first().textContent()) ?? "";

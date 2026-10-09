@@ -69,7 +69,20 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
   if (!band || band.toursCreated === 0) return null;
   const tourId = band.toursCreated - 1;
   const tour = PublicKey.findProgramAddressSync([enc("tour"), profile.toBuffer(), u32le(tourId)], programId)[0];
-  const [shows, tourAcct] = await Promise.all([program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]), program.account.tour.fetchNullable(tour)]);
+  const [latest, tourAcct] = await Promise.all([program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]), program.account.tour.fetchNullable(tour)]);
+  // shows of the band's previous tour that still run (e.g. an unfinished booking that was
+  // re-booked as a new tour) stay in view until they are decided
+  let earlier: typeof latest = [];
+  if (tourId > 0) {
+    const prev = PublicKey.findProgramAddressSync([enc("tour"), profile.toBuffer(), u32le(tourId - 1)], programId)[0];
+    try {
+      const all = await program.account.show.all([{ memcmp: { offset: 8, bytes: prev.toBase58() } }]);
+      earlier = all.filter((s) => ["proposed", "onSale", "confirmed"].includes(stateName(s.account.state)));
+    } catch {
+      /* the latest tour is enough */
+    }
+  }
+  const shows = [...earlier, ...latest];
   const venues = await venuesByProfile();
   const sorted = [...shows].sort((a, b) => Number(a.account.date) - Number(b.account.date));
   const firstDate = sorted.length ? Number(sorted[0].account.date) : 0;
@@ -115,10 +128,15 @@ let nextId = 1_000_000;
 // tickets and SOL for tours the agents booked at real devnet prices. Both texts are decoded once.
 interface Units {
   count: (tickets: number) => string;
+  bought: (tickets: number) => string;
   money: (lamports: number) => string;
 }
-const FANS: Units = { count: (t) => `${fans(t)} fans`, money: (l) => euros(l) };
-const TICKETS: Units = { count: (t) => `${t} ticket${t === 1 ? "" : "s"}`, money: (l) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 5 })} SOL` };
+const FANS: Units = { count: (t) => `${fans(t)} fans`, bought: (t) => `${fans(t)} more fans bought tickets`, money: (l) => euros(l) };
+const TICKETS: Units = {
+  count: (t) => `${t} ticket${t === 1 ? "" : "s"}`,
+  bought: (t) => `${t} more ticket${t === 1 ? "" : "s"} sold`,
+  money: (l) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 5 })} SOL`,
+};
 const n = (x: unknown) => Number(x);
 const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, VenueInfo>, u: Units) => string> = {
   BandRegistered: (d) => `${d.name} registered its band profile.`,
@@ -127,7 +145,7 @@ const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, 
   ShowProposed: (d, v, u) => `${v.get(String(d.venueProfile))?.city ?? "A show"} booked: up to ${u.count(n(d.capacity))}, goes ahead at ${n(d.thresholdBps) / 100}%.`,
   ShowAccepted: (d, v) => `${v.get(String(d.venueAuthority))?.name ?? "The venue"} signed: ${v.get(String(d.venueAuthority))?.city ?? "the show"} is on sale.`,
   ShowRejected: () => `The venue said no; the show is off.`,
-  TicketBought: (d, _v, u) => `${u.count(n(d.quantity))} more sold (${u.count(n(d.ticketsSold))} so far).`,
+  TicketBought: (d, _v, u) => `${u.bought(n(d.quantity))} (${u.count(n(d.ticketsSold))} so far).`,
   ShowConfirmed: (d, _v, u) => `Target reached with ${u.count(n(d.ticketsSold))} of ${u.count(n(d.capacity))}: the show goes ahead.`,
   ShowCancelled: (d, _v, u) => `Sales closed at ${u.count(n(d.ticketsSold))}, ${u.count(n(d.ticketsRequired))} were needed: the show is cancelled and fans are refunded.`,
   TicketRefunded: (d, _v, u) => `${u.money(n(d.amountLamports))} went back to fans.`,

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useBandSession } from "@/components/BandSession";
 import { RegisterBand } from "@/components/Connect";
 import { WalletPanel } from "@/components/WalletPanel";
-import { Feed, showsFeed } from "@/components/Feed";
+import { Feed } from "@/components/Feed";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary";
 import { RouteMap, type MapStop } from "@/components/RouteMap";
@@ -245,7 +245,8 @@ export default function DashboardPage() {
     off: v.state === "cancelled",
     href: `/show?address=${v.run.show}`,
     right: <HealthBadge health={v.health} />,
-    detail: v.run.replaces ? "replacement show" : undefined,
+    // a band's own tour: each stop carries its progress, so the page needs no second list of shows
+    detail: inFans ? `${fans(v.sold)} of ${fans(v.capacity)} fans · ${v.status}` : v.run.replaces ? "replacement show" : undefined,
   }));
   const waitingRoute = views.length === 0 && routeItem && !routeItem.decision && routeItem.request.payload.step === "route" ? routeItem.request.payload : null;
 
@@ -368,6 +369,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {inFans ? null : (
+            <>
           <h2 style={{ margin: "24px 0 10px" }}>Shows</h2>
           <div className="grid">
             {views.map((v) => (
@@ -381,6 +384,8 @@ export default function DashboardPage() {
               />
             ))}
           </div>
+            </>
+          )}
         </>
       ) : (
         <div className="card" style={{ marginTop: 12 }}>
@@ -408,11 +413,7 @@ export default function DashboardPage() {
           shows={run.shows.map((s) => s.show)}
           cityOf={Object.fromEntries(run.shows.map((s) => [s.show, s.city]))}
           inFans={inFans}
-          fallback={showsFeed(
-            views.map((v) => ({ show: v.run.show, state: v.state, ticketsSold: v.sold })),
-            inFans
-          )}
-          empty={sold > 0 ? "Reading the story so far from devnet; it can take a minute when devnet is busy." : "Your shows are booked; nothing else has happened yet."}
+          empty={sold > 0 ? "The step-by-step story is still loading from devnet; each stop above shows where it stands." : "Your shows are booked; nothing else has happened yet."}
         />
       ) : (
         <Feed limit={2000} compact source="transcript" />
@@ -466,7 +467,7 @@ function NoTourYet({ name, authority }: { name: string; authority: string }) {
   return (
     <div>
       <h1>{name}</h1>
-      <p className="muted">Your band is on-chain. Time for the first tour.</p>
+      <p className="muted">Your band is set up. Time for the first tour.</p>
       <div className="cta">
         <div>
           <h2>Create your first tour</h2>

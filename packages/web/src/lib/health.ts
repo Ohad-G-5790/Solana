@@ -32,6 +32,7 @@ export interface ShowView {
 export function showView(run: RunShow, acct: ShowAccount | null | undefined, now: number, inFans = false): ShowView {
   // a band's own devnet tour speaks in fans (1 ticket = FANS_PER_TICKET); recordings in tickets
   const u = (n: number) => (inFans ? `${fans(n)} fans` : String(n));
+  const more = (n: number) => (inFans ? `${fans(n)} more fans` : `${n} more`);
   const state = acct ? stateName(acct.state) : run.state;
   const sold = acct ? acct.ticketsSold : run.ticketsSold;
   const capacity = acct ? acct.capacity : run.capacity;
@@ -72,8 +73,8 @@ export function showView(run: RunShow, acct: ShowAccount | null | undefined, now
       need === 0
         ? "Target reached; it goes ahead at the next check"
         : behind
-          ? `Behind pace: ${u(need)} more needed, ${Math.round((1 - elapsed) * 100)}% of the selling time left`
-          : `${u(need)} more and it goes ahead`;
+          ? `Behind pace: ${more(need)} needed, ${Math.round((1 - elapsed) * 100)}% of the selling time left`
+          : `${more(need)} and it goes ahead`;
   }
   return { run, acct, state, sold, capacity, thresholdBps, required, deadline, date, priceLamports, bandBps, escrowLamports, health, status };
 }

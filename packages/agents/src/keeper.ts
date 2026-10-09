@@ -257,7 +257,8 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
         const share = perRun / Math.max(1, order.length);
         for (let i = 0; i < order.length; i++) {
           const bandProfile = order[(i + stats.okTicks) % order.length];
-          const views = selling.get(bandProfile)!;
+          // earliest deadline first: with a tight share, the show closest to its decision gets the fans
+          const views = [...selling.get(bandProfile)!].sort((a, b) => b.progress - a.progress);
           const left = Math.min(perRun - spentTotal, share - (spentByBand.get(bandProfile) ?? 0));
           // the dearest ticket on sale for this band bounds how many buys still fit (quantity up to 2)
           const dearest = Math.max(...views.map((v) => (v.booked as unknown as { ticketPriceLamports: number }).ticketPriceLamports)) * 2 + TICKET_RENT_LAMPORTS;

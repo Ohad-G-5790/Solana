@@ -111,7 +111,7 @@ export function RegisterBand() {
       <h2>Set up your band</h2>
       <p className="small muted" style={{ marginTop: 6 }}>
         This wallet has no band profile yet. Registering creates it on Solana {CLUSTER}: the profile is where your settled shows add up into a track record venues
-        can check. It costs a little rent (about 0.002 SOL) and the transaction fee.
+        can check. It costs a small deposit (about 0.002 SOL of devnet money).
       </p>
       {profileError ? <p className="small warn" style={{ marginTop: 8 }}>Could not read the chain: {profileError}</p> : null}
       <div className="form">
@@ -135,7 +135,7 @@ export function RegisterBand() {
         {broke ? (
           <span className="warn">
             {" "}
-            · not enough for the rent. Send some {CLUSTER} SOL to this wallet first
+            · not enough for the deposit. Send some {CLUSTER} SOL to this wallet first
             {CLUSTER === "devnet" ? (
               <>
                 {" "}

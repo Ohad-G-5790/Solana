@@ -266,9 +266,13 @@ export default function NewTourPage() {
             )}
           </div>
           <p className="micro muted" style={{ marginTop: 10, maxWidth: 720 }}>
-            Your wallet asks you once and pays a small deposit to store the tour on Solana (about 0.005 SOL per show). On devnet each show sells a sample of the room, one ticket per 20 people,
-            at €{a.priceEuro} (that is {(a.priceEuro * LAMPORTS_PER_EURO) / 1e9} SOL of devnet play money), and sales run {SALES_MINUTES} minutes instead of months.
+            Your wallet asks you once and keeps a small deposit with each show. Nothing else is charged.
           </p>
+          <details className="micro muted" style={{ marginTop: 4, maxWidth: 720 }}>
+            <summary>How the devnet demo works</summary>
+            The deposit is about 0.005 SOL of devnet money per show. Each show sells a sample of the room: one ticket on chain stands for {FANS_PER_TICKET} fans.
+            Prices are play money (€1 is {LAMPORTS_PER_EURO / 1e9} SOL), and sales run {SALES_MINUTES} minutes instead of months.
+          </details>
         </section>
       ) : null}
     </div>
