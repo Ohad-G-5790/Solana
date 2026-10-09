@@ -63,6 +63,50 @@ export class KeypairWallet implements Wallet {
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * AnchorProvider that confirms transactions by polling signature statuses
+ * instead of websocket subscriptions. Public RPCs rate-limit websocket
+ * connections hard (HTTP 429 on the upgrade), which web3.js's
+ * confirmTransaction cannot recover from; polling every 1.5 s is gentle and
+ * works everywhere.
+ */
+export class PollingProvider extends AnchorProvider {
+  async sendAndConfirm(
+    tx: anchor.web3.Transaction | anchor.web3.VersionedTransaction,
+    signers?: anchor.web3.Signer[],
+    opts?: ConfirmOptions
+  ): Promise<string> {
+    const commitment = opts?.commitment ?? this.opts.commitment ?? "confirmed";
+    if (tx instanceof anchor.web3.VersionedTransaction) {
+      if (signers?.length) tx.sign(signers);
+      tx = await this.wallet.signTransaction(tx);
+    } else {
+      tx.feePayer = tx.feePayer ?? this.wallet.publicKey;
+      const { blockhash } = await this.connection.getLatestBlockhash(commitment);
+      tx.recentBlockhash = blockhash;
+      tx = await this.wallet.signTransaction(tx);
+      for (const s of signers ?? []) tx.partialSign(s);
+    }
+    const signature = await this.connection.sendRawTransaction(tx.serialize(), {
+      skipPreflight: opts?.skipPreflight ?? false,
+      preflightCommitment: opts?.preflightCommitment ?? commitment,
+      maxRetries: 3,
+    });
+    const deadline = Date.now() + 90_000;
+    while (Date.now() < deadline) {
+      await sleep(1500);
+      const { value } = await this.connection.getSignatureStatuses([signature]);
+      const status = value[0];
+      if (status?.err) throw new Error(`Transaction ${signature} failed: ${JSON.stringify(status.err)}`);
+      if (status && (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized")) return signature;
+      if (status && commitment === "processed") return signature;
+    }
+    throw new Error(`Transaction ${signature} was not confirmed within 90s`);
+  }
+}
+
 /**
  * Thin client over the Anchor program. One client = one fee payer (the
  * provider wallet). Authorities sign as extra signers, so a hub wallet can pay
@@ -78,7 +122,7 @@ export class GreenroomClient {
   }
 
   static fromKeypair(connection: Connection, payer: Keypair, opts?: ConfirmOptions): GreenroomClient {
-    const provider = new AnchorProvider(connection, new KeypairWallet(payer), {
+    const provider = new PollingProvider(connection, new KeypairWallet(payer), {
       commitment: "confirmed",
       preflightCommitment: "confirmed",
       ...opts,
