@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Progress, StateBadge } from "@/components/ShowCard";
-import { explorerUrl, POLL_MS } from "@/lib/config";
-import { demoDate, short, sol, timeLeft } from "@/lib/format";
-import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, vaultPda, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
+import { explorerUrl, POLL_MS, FANS_PER_TICKET } from "@/lib/config";
+import { dayLabel, short, sol, timeLeft, euros, fans } from "@/lib/format";
+import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { getRun, getWorld, type RunShow } from "@/lib/run";
 
@@ -28,51 +28,49 @@ function ShowView() {
   const [run, setRun] = useState<RunShow | null>(null);
   const [others, setOthers] = useState<RunShow[]>([]);
   const [venueName, setVenueName] = useState<string | null>(null);
+  /** found in a band's live tour (not the recording): shown in fans and euros */
+  const [live, setLive] = useState(false);
   const [tickets, setTickets] = useState<{ publicKey: PublicKey; account: TicketAccount }[]>([]);
   const [mine, setMine] = useState<TicketAccount | null>(null);
   const [now, setNow] = useState(0); // set from the chain clock on first poll
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string; network?: boolean } | null>(null);
 
   const reload = async () => {
-    if (!address) {
+    let valid = !!address;
+    try {
+      if (address) new PublicKey(address);
+    } catch {
+      valid = false;
+    }
+    if (!valid) {
+      setMsg({ ok: false, text: "This link does not point to a show" });
       setAcct(null);
       return;
     }
     try {
       const a = await fetchShow(address);
       setAcct(a);
-      setTickets(await fetchTicketsForShow(address));
-      if (publicKey) setMine(await fetchTicket(address, publicKey));
-      setNow(await chainTime());
+      // each part on its own: a refused ticket list must not stop the clock or the fan's own ticket
+      await Promise.all([
+        fetchTicketsForShow(address).then(setTickets, () => undefined),
+        publicKey ? fetchTicket(address, publicKey).then(setMine, () => undefined) : Promise.resolve(),
+        chainTime().then(setNow, () => setNow((n) => n || Math.floor(Date.now() / 1000))),
+      ]);
+      // a good poll clears an earlier network error
+      setMsg((m) => (m && !m.ok && m.network ? null : m));
     } catch (e) {
-      setMsg({ ok: false, text: `RPC unreachable: ${(e as Error).message.slice(0, 120)}` });
+      setMsg({ ok: false, network: true, text: `Could not reach the network (${(e as Error).message.slice(0, 100)}); retrying` });
       setAcct((a) => (a === undefined ? null : a));
     }
   };
 
   useEffect(() => {
     void reload();
-    void getRun().then(async (r) => {
-      let me = r?.shows.find((s) => s.show === address) ?? null;
-      let all = r?.shows ?? [];
-      if (!me && r) {
-        // not in the bundle: look the show up in the band's live tour on chain
-        try {
-          const live = await fetchLiveTour(r.band.authority);
-          me = live?.shows.find((s) => s.show === address) ?? null;
-          if (live) all = live.shows;
-        } catch {
-          /* chain unreachable */
-        }
-      }
-      setRun(me);
-      setOthers(all);
-      if (me) void getWorld().then((w) => setVenueName(w.venues.find((v) => v.id === me.venue)?.name ?? me.venueName ?? null));
-    });
     const t = setInterval(reload, POLL_MS);
-    const tick = setInterval(() => setNow((n) => n + 1), 1000);
+    // count seconds only once the chain clock is known (0 means "not yet")
+    const tick = setInterval(() => setNow((n) => (n ? n + 1 : 0)), 1000);
     return () => {
       clearInterval(t);
       clearInterval(tick);
@@ -80,16 +78,46 @@ function ShowView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, publicKey?.toBase58()]);
 
+  // City, venue and day: from the recorded run, else from the tour of the show's own band on chain.
+  const bandAuthority = acct?.bandAuthority.toBase58();
+  useEffect(() => {
+    if (!bandAuthority) return;
+    let alive = true;
+    void getRun().then(async (r) => {
+      let me = r?.shows.find((s) => s.show === address) ?? null;
+      let all = r?.shows ?? [];
+      if (!me) {
+        try {
+          const live = await fetchLiveTour(bandAuthority);
+          me = live?.shows.find((s) => s.show === address) ?? null;
+          if (live) all = live.shows;
+          // fans and euros only for tours priced on the dashboard's scale
+          if (me && alive && live?.inApp) setLive(true);
+        } catch {
+          /* chain unreachable: the page still shows the account */
+        }
+      }
+      if (!alive) return;
+      setRun(me);
+      setOthers(all);
+      if (me) void getWorld().then((w) => alive && setVenueName(w.venues.find((v) => v.id === me.venue)?.name ?? me.venueName ?? null));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [address, bandAuthority]);
+
   if (acct === undefined) return <p className="muted">Loading…</p>;
   if (acct === null)
     return (
       <div className="card">
         <h2>Show not found</h2>
-        <p className="muted">{msg && !msg.ok ? `${msg.text}. Is the validator running?` : "It may have been rejected by the venue (the account is closed) or belong to another cluster."}</p>
+        <p className="muted">{msg && !msg.ok ? `${msg.text}.` : "It may have been rejected by the venue (the account is closed) or belong to another cluster."}</p>
       </div>
     );
 
   const state = stateName(acct.state);
+  const isBand = !!publicKey && publicKey.equals(acct.bandAuthority);
   const required = Math.ceil((acct.capacity * acct.thresholdBps) / 10_000);
   const act = async (label: string, fn: () => Promise<string>) => {
     if (!wallet) return;
@@ -113,15 +141,11 @@ function ShowView() {
       </p>
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end", marginTop: 8 }}>
         <div>
-          <h1>{run?.city ?? short(address)}</h1>
+          <h1>{run?.city ?? "Show"}</h1>
           <p className="muted">
-            {run ? `${venueName ?? run.venueName ?? run.venue.replace(/-/g, " ")} · day ${run.day} · ${demoDate(run.day)}` : ""}{" "}
+            {run ? `${venueName ?? run.venueName ?? run.venue.replace(/-/g, " ")} · ${dayLabel(run.day)} · ` : ""}
             <a href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
-              show account ↗
-            </a>{" "}
-            ·{" "}
-            <a href={explorerUrl("address", vaultPda(new PublicKey(address)).toBase58())} target="_blank" rel="noreferrer">
-              vault ↗
+              on Solana ↗
             </a>
           </p>
         </div>
@@ -147,32 +171,32 @@ function ShowView() {
         <Progress sold={acct.ticketsSold} capacity={acct.capacity} thresholdBps={acct.thresholdBps} state={state} />
         <div className="stats" style={{ margin: "12px 0 0" }}>
           <div className="stat">
-            <div className="label">Sold</div>
+            <div className="label">{live ? "Fans" : "Sold"}</div>
             <div className="value">
-              {acct.ticketsSold} <span className="muted small">/ {acct.capacity}</span>
+              {live ? fans(acct.ticketsSold) : acct.ticketsSold} <span className="muted small">/ {live ? fans(acct.capacity) : acct.capacity}</span>
             </div>
           </div>
           <div className="stat">
             <div className="label">Threshold</div>
             <div className="value">
-              {acct.thresholdBps / 100}% <span className="muted small">= {required}</span>
+              {acct.thresholdBps / 100}% <span className="muted small">= {live ? `${fans(required)} fans` : required}</span>
             </div>
           </div>
           <div className="stat">
-            <div className="label">Deadline</div>
+            <div className="label">Sales close in</div>
             <div className="value">{timeLeft(Number(acct.thresholdDeadline), now)}</div>
           </div>
           <div className="stat">
-            <div className="label">Show date</div>
+            <div className="label">Show in</div>
             <div className="value">{timeLeft(Number(acct.date), now)}</div>
           </div>
           <div className="stat">
             <div className="label">Ticket</div>
-            <div className="value">{sol(acct.ticketPriceLamports)}</div>
+            <div className="value">{live ? euros(Number(acct.ticketPriceLamports) / FANS_PER_TICKET) : sol(acct.ticketPriceLamports)}</div>
           </div>
           <div className="stat">
-            <div className="label">In escrow</div>
-            <div className="value">{sol(acct.escrowLamports)}</div>
+            <div className="label">Ticket money held</div>
+            <div className="value">{live ? euros(acct.escrowLamports) : sol(acct.escrowLamports)}</div>
           </div>
         </div>
         <p className="small muted" style={{ marginTop: 12 }}>
@@ -181,16 +205,43 @@ function ShowView() {
         </p>
       </div>
 
+      {isBand ? (
+        <div className="card" style={{ marginTop: 12 }}>
+          <h3>Your show</h3>
+          <p className="small muted" style={{ marginTop: 6 }}>
+            {state === "proposed"
+              ? "Waiting for the venue to sign; it answers within about 10 minutes."
+              : state === "onSale"
+                ? `Fans are buying. ${live ? `${fans(Math.max(0, required - acct.ticketsSold))} more fans` : `${Math.max(0, required - acct.ticketsSold)} more tickets`} and the show goes ahead. Share this page: fans buy their tickets here.`
+                : state === "confirmed"
+                  ? "It goes ahead. Ticket money is paid out to you, the venue and your crew after the show."
+                  : state === "cancelled"
+                    ? "It missed its target, so it is cancelled and every fan gets their money back automatically."
+                    : "Played and paid out."}
+          </p>
+          {state === "onSale" || state === "confirmed" ? (
+            <button
+              className="btn outline small"
+              style={{ marginTop: 10 }}
+              onClick={() => void navigator.clipboard?.writeText(window.location.href).then(() => setMsg({ ok: true, text: "Link copied: send it to your fans" }))}
+            >
+              Copy link for fans
+            </button>
+          ) : null}
+          {msg ? <p className="small" style={{ marginTop: 8, color: msg.ok ? "var(--accent)" : "var(--negative)" }}>{msg.text}</p> : null}
+        </div>
+      ) : (
       <div className="card" style={{ marginTop: 12 }}>
         <h3>Your ticket</h3>
         {!wallet ? (
           <p className="muted small" style={{ marginTop: 6 }}>
-            Connect a wallet (devnet) to buy a ticket into this show&apos;s escrow. If the show is cancelled you get it back automatically, or you can claim it here.
+            Connect a wallet (devnet) to buy a ticket. The money is held until the show; if it is cancelled you get it back automatically.
           </p>
         ) : mine ? (
           <div style={{ marginTop: 8 }}>
             <p className="small">
-              You hold <b>{mine.quantity}</b> ticket{mine.quantity > 1 ? "s" : ""} ({sol(mine.amountLamports)}){mine.refunded ? " · refunded" : ""}.
+              You hold <b>{mine.quantity}</b> ticket{mine.quantity > 1 ? "s" : ""}{live ? ` for ${fans(mine.quantity)} fans` : ""} ({live ? euros(mine.amountLamports) : sol(mine.amountLamports)}){mine.refunded ? " · refunded" : ""}. One wallet holds one
+              ticket purchase per show.
             </p>
             {state === "cancelled" && !mine.refunded ? (
               <button className="btn primary" style={{ marginTop: 10 }} disabled={busy} onClick={() => act("Refund", () => refundTicket(wallet, address, publicKey!))}>
@@ -202,7 +253,7 @@ function ShowView() {
           <div className="row" style={{ marginTop: 10 }}>
             <input className="input" type="number" min={1} max={10} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(10, Number(e.target.value))))} />
             <button className="btn primary" disabled={busy} onClick={() => act("Purchase", () => buyTicket(wallet, address, qty))}>
-              Buy {qty} for {sol(Number(acct.ticketPriceLamports) * qty)}
+              Buy {qty} for {live ? `${euros(Number(acct.ticketPriceLamports) * qty)} (${fans(qty)} fans in this demo)` : sol(Number(acct.ticketPriceLamports) * qty)}
             </button>
           </div>
         ) : (
@@ -210,11 +261,11 @@ function ShowView() {
             Sales are closed for this show.
           </p>
         )}
-        {wallet && state === "onSale" ? (
+        {wallet && state === "onSale" && now >= Number(acct.thresholdDeadline) ? (
           <p className="small muted" style={{ marginTop: 10 }}>
-            Anyone can run the crank:{" "}
+            Sales have closed and nobody has settled it yet:{" "}
             <button className="btn outline" disabled={busy} onClick={() => act("Threshold check", () => checkThreshold(wallet, address))}>
-              check threshold
+              check the result now
             </button>
           </p>
         ) : null}
@@ -229,13 +280,27 @@ function ShowView() {
           </p>
         ) : null}
       </div>
+      )}
 
-      <h2 style={{ margin: "20px 0 10px" }}>Tickets ({tickets.length})</h2>
+      {tickets.length === 0 ? (
+        <p className="small muted" style={{ marginTop: 20 }}>
+          {acct.ticketsSold > 0
+            ? "The list of purchases has not loaded from devnet yet; the totals above are current."
+            : state === "proposed"
+              ? "Ticket sales open once the venue signs."
+              : state === "onSale" || state === "confirmed"
+                ? "No purchases yet. They appear here as fans buy."
+                : "No ticket purchases."}
+        </p>
+      ) : (
+        <>
+      <h2 style={{ margin: "20px 0 10px" }}>{live ? `Ticket purchases (${tickets.length})` : `Tickets (${tickets.length})`}</h2>
+      <div className="table-wrap">
       <table className="table">
         <thead>
           <tr>
             <th>Fan</th>
-            <th>Qty</th>
+            <th>{live ? "Fans" : "Qty"}</th>
             <th>Paid</th>
             <th>Status</th>
           </tr>
@@ -248,13 +313,16 @@ function ShowView() {
                   {short(t.account.buyer.toBase58(), 6)}
                 </a>
               </td>
-              <td>{t.account.quantity}</td>
-              <td>{sol(t.account.amountLamports)}</td>
-              <td className="muted small">{t.account.refunded ? "refunded" : state === "settled" ? "attended" : "held in escrow"}</td>
+              <td>{live ? fans(t.account.quantity) : t.account.quantity}</td>
+              <td>{live ? euros(t.account.amountLamports) : sol(t.account.amountLamports)}</td>
+              <td className="muted small">{t.account.refunded ? "refunded" : state === "settled" ? "attended" : state === "cancelled" ? "being refunded" : "held until the show"}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      </div>
+        </>
+      )}
     </div>
   );
 }

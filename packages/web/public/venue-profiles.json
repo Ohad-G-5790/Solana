@@ -1,0 +1,550 @@
+{
+ "programId": "4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8",
+ "seed": "greenroom-2026",
+ "venues": {
+  "so36-berlin": {
+   "authority": "3EksbMo3Cc8kB7dskaejG1WAks4sHZygQwUPDApJJvug",
+   "profile": "45dPDKQ7hB7cEwTJeHBNaC7qrXkLgWErhvQ6uGnbz3Aa"
+  },
+  "huxleys-neue-welt-berlin": {
+   "authority": "mp9usc2xt3tEfoWqCPFrQSQmm5kLGeRVFaZEYA3iwE6",
+   "profile": "BY5j7BwP2MxWZh2et53psQZjHGvAQKzzmXhivppHdXKM"
+  },
+  "columbiahalle-berlin": {
+   "authority": "HPPaq9QyEUPy7Ud6w4U7m2RQRyGixFGzXB4rZLvurWCc",
+   "profile": "FzvYg5PhLLEdjYoVxGhEsYrDs13SVpN6zgxguvU5unYW"
+  },
+  "lido-berlin": {
+   "authority": "DhJJp17oVhJ4M1E7H8VNQjrmSaXgD89iiCqmwA191JVN",
+   "profile": "9GeNWJEy33WtJumktx1EeU2oxKHNF8GTanUjp3hZLkTe"
+  },
+  "astra-kulturhaus-berlin": {
+   "authority": "C4t6ZDWdTvPUdkQm7CcrphMhitGf58oEvFC69fpNMFmN",
+   "profile": "EM4DoDyXT6QLaEW91iTLbms6ggZx3E29zda8pQyBXQBm"
+  },
+  "grosse-freiheit-36-hamburg": {
+   "authority": "471MyZUt7tdH9Wz6JYEnaoDH9baNP427jjrVGuPjSi1X",
+   "profile": "DMqXt4CF6NQaDsYTN5YKr4aCVHFm8KqfMPf1w5Hqk3gY"
+  },
+  "docks-hamburg": {
+   "authority": "9TABYwsrzWGkv7qJ3JPvyQnmfBKAVCLfMve3i12yxTCu",
+   "profile": "D9ZF3ELw8qf4G1dwE5sjGNpWKrNAzVQs6SKDdPeUVEJG"
+  },
+  "molotow-hamburg": {
+   "authority": "ZkSvud9X1cMXpose5N5CQ1XutrKM9zb5QoKaRznAuog",
+   "profile": "HojieZTqNti4EiP15AAYcTACNQgVBuzGSwsgtyKnWkYV"
+  },
+  "uebel-und-gefaehrlich-hamburg": {
+   "authority": "55SyUqKVtdQN5xTeZZpXeG5SmqQpbEx1pgFz8oj2Y6Fx",
+   "profile": "8SywTV2W1k47Dj3TefCSD2rmzPrND2KQKJjEF1L2EEog"
+  },
+  "backstage-werk-munich": {
+   "authority": "BP1t9eR5kvfUg81jNrD97VamiStNtsDW2J4y9JUpXqCb",
+   "profile": "9qbks8jnBG92hMSfyC6qBa99Q1Tteb1oxj4pvUim6Pr1"
+  },
+  "muffathalle-munich": {
+   "authority": "3HXYUC1fRGhzNCiQxpdvDfmn9i1yrPJRYMJSMcP1X29T",
+   "profile": "25yt49qBVga7xmnJvdhpCdDBr8GUEWdtgJXyHPVv1Y7x"
+  },
+  "tonhalle-munich": {
+   "authority": "21kDTMDLvhNLHpKhpiBfwUiEqABDooyBrrWjVtu5AtUJ",
+   "profile": "6XakGV9LqnCrDQKuGX6cAP2SNm8DeyP5zmxaRqHEogZV"
+  },
+  "strom-munich": {
+   "authority": "AnKGKEycguNyU87zAd1t72bJptPfrfoXGeZ6fz7NjxNG",
+   "profile": "BsHsQAMQ2kvot2VBnbAP8hfs7FHBXr4Hnpi7QdyP9rEi"
+  },
+  "live-music-hall-cologne": {
+   "authority": "EtrSM4r66xmYsjuz8SDJB6Zu6yLevhUGzrBcAtoxLLAr",
+   "profile": "3pa6UAwFJoTKLsSnBv8pXxKy5MFHKV33mdizxLCo29A9"
+  },
+  "carlswerk-victoria-cologne": {
+   "authority": "ABu7YUYnzG4NjLFcLLmvbQDuPm18VuyyDfxYgHhc3coW",
+   "profile": "DMVFJh3zm3DSMRYCFAkKwfSuEFhNu2sG7SBRwp1XeFjm"
+  },
+  "gebaeude-9-cologne": {
+   "authority": "FLQVwx5Uew6duAjQDCLpqHpTGVBdDj6cYq5yrAj5Fvou",
+   "profile": "GdoieiJATTVxo3tJBmsP7zobxTrjw3nnr8u1jEauFZUp"
+  },
+  "e-werk-cologne": {
+   "authority": "JBmsyiQtzmds23zWe18Bk89s6r1WfZzeEAYdxAypKkLb",
+   "profile": "Cus3yGYk5Cwfrp1GcnF3jgDceLRPfJkaPP5WR2YViDZD"
+  },
+  "batschkapp-frankfurt": {
+   "authority": "J87LobxAHNTJeKZM5nFkzMTwhxPqkppvapsjjaQiBds1",
+   "profile": "GAEfHDjAoJBhmsNZ7zvwSAC1JS9suQ5cBA7av2hEtoJ7"
+  },
+  "zoom-frankfurt": {
+   "authority": "HLvcRgZnAHBzG5SRD41RGQnbZxUyHB3kTm7vBZq3qEvi",
+   "profile": "5HzoCfwPkNbeNhFecSkRBTsT3TbGWPMV777JqJJqJw5y"
+  },
+  "das-bett-frankfurt": {
+   "authority": "FsCMjSBWf1r6cBysJeQZddAzuW5eBZLfFNtb6y3yvaUf",
+   "profile": "AtMnurRf3MEDVd12xpidU16oYzYbbbdv62ApBfd68oxL"
+  },
+  "nachtleben-frankfurt": {
+   "authority": "ChjDCDg53Rtsygt3bR8u1maBDmz3xagnxqsiQ2TZSV3G",
+   "profile": "6To6D2XXTERZWmNGs35W193y3LAtBx51m4bXSqoDodp7"
+  },
+  "taeubchenthal-leipzig": {
+   "authority": "4hhPabEEVWHRQj574hVUbLuttMezrJgCZBGYB9iFszbY",
+   "profile": "6N5kbDg5aBuZEbtMbmiYcRcbsfrCM842RdSbnAKFn9hn"
+  },
+  "haus-auensee-leipzig": {
+   "authority": "GgNh471SBNbt42TTSSCNxXoh7yNPcgkcqiotJWUiCP5s",
+   "profile": "ExgyvVfLQV1ZhZFiEXtCkCoi3oHQWqipsuBHEva38HQs"
+  },
+  "werk-2-leipzig": {
+   "authority": "3i2PEHod6muHGykJiy4TkAuWGEUgKpnhg6nX4z78a6vo",
+   "profile": "6N4qLjhAqGXT8L8FCcWafPvdfNCmifz42ZwVtNuS8j5u"
+  },
+  "conne-island-leipzig": {
+   "authority": "BAbYDQVWf5hWUo8cCYFfWUuCqZuf4M8bgqd2Q23vb8qM",
+   "profile": "7uTjUHYrhQ88dBnd5kxHY5hJmb72kb2m46LDoCHqV6Qk"
+  },
+  "lka-longhorn-stuttgart": {
+   "authority": "4HfDGPM6BdD2XvYF1ojScx7yr28BZUuYvAsadR77NXnZ",
+   "profile": "4FTjkyaPVBkifeVED5wHgBqRiYhgn5USyC72wFxaEZd9"
+  },
+  "im-wizemann-stuttgart": {
+   "authority": "2hQQf7n7UJimesrZoFCJJFUHmRXAWhEWEiunnz63vmt1",
+   "profile": "CvHkb8r4g6SubGTzx1VPhgmuNqoAduKhdcNuDb8uRvhb"
+  },
+  "wagenhallen-stuttgart": {
+   "authority": "7ZPJQaocYjoNDHn9BbujnPzB95zr8YqYtSC9gjL4m3NK",
+   "profile": "9DWNgxyoRpmoAzXp3AapzF28xuxKjkLNQyNNV5bzaWk1"
+  },
+  "goldmarks-stuttgart": {
+   "authority": "Gyu27uVqVAcLxbeo4QXYik71EqcVqWUZ5B2C8h3VbuxD",
+   "profile": "ACkeXpyoanuJpCQQSoTcos6afUZh8UkaV5fokP1jJi5F"
+  },
+  "zakk-duesseldorf": {
+   "authority": "7DTbNJAxBN4mYex8SDwMP1Z2cUaujUrJ4mVzxnhxp5vK",
+   "profile": "CwwWPJAB1g6ytXVTqh1WSPDRW6ESVoFbj2RRwUQxwq5Y"
+  },
+  "stahlwerk-duesseldorf": {
+   "authority": "jfkCXBBNKmiwGuFBBvVabfyUDQvWC4H9pKhELPX9KPh",
+   "profile": "BG4LYox1ZSNA5MfTSrLx6iD2rqRdQ6awxiwVLeeNn9Ui"
+  },
+  "capitol-theater-duesseldorf": {
+   "authority": "FGkxmPU7fFdG8BqptAeuB3z26M9ukSbuoXDqisynEExg",
+   "profile": "5dMwJTsHwQyaX7k4XjcQep544gEj9PH2iDTQzJzxLkw8"
+  },
+  "pitcher-duesseldorf": {
+   "authority": "GqkbRuxUqBJCKeSWiLZHXnbxjN2oUpoNcMB4fUCkpeMC",
+   "profile": "AjQe6okdS3nJxEJUGecsdZ2moL7WzCVdRAzEu7AY3hma"
+  },
+  "alter-schlachthof-dresden": {
+   "authority": "2QVvyGvR3G81mZkAYEc5SpXxmW1yySpM7gqCYWN9ppX7",
+   "profile": "3e4QPEx8U69K9gRN3VFJadbfPocv5mtHoz7rbWVvaFC7"
+  },
+  "beatpol-dresden": {
+   "authority": "G4TQbNymMY4WBpsq87EqmgapDW4yvGZibRATRenxBNxV",
+   "profile": "5tLX78qwyYawd1KVGkV9es84JXAQ4ZJJaPz5TAeSAu4Y"
+  },
+  "tante-ju-dresden": {
+   "authority": "7RRdBmWfdrRLUUgsqKbk1U9p6kfrGoUtaUkPW2xLEgtq",
+   "profile": "DcB4ZQ4CTB9CbNMF5JktHNRQSaNeFvuZNeiTpzuTyD2N"
+  },
+  "reithalle-strasse-e-dresden": {
+   "authority": "6Nx2Dmd8NpcDJPSkY5wrJJ1KwRiVjeNGgr7QMPgh3RTH",
+   "profile": "uxhB1WPmvVHsu7RhjC7eoxdf52NSuqpAusuKmTeAqcp"
+  },
+  "capitol-hannover": {
+   "authority": "GyzuyvBxZE56NruFkTBQbhBDHRj1mTwvdstCWzW86L3g",
+   "profile": "4Kgr5t35T7aDtGVxPekWafxNAsaMWu5mwSfyR5vNCBh9"
+  },
+  "pavillon-hannover": {
+   "authority": "mue9ydfkZK4ehv4rUYbtwnUj5pM4q43FLqymxYLPcSt",
+   "profile": "G7GsXdqoVqzhqh6QtfkAzisqbgg1NpUq9nfGp8j8Eicv"
+  },
+  "musikzentrum-hannover": {
+   "authority": "3CNDGEnQQaJQfhiA1sGkA1cXhEbWounZLKY5qDXaQC1H",
+   "profile": "CgRTCR1eRwPvp32Yb1n2LRBwcLAwD68uhu8GEzLwK5dP"
+  },
+  "faust-hannover": {
+   "authority": "KsCPPA6jiWzCZJVdP821C6BG8BFCJtUVFpCX6bnwPVK",
+   "profile": "HigGABPRxZsef9oMk9Xre4E5KGgHFusjf6iygk7UtVgp"
+  },
+  "hirsch-nuremberg": {
+   "authority": "H85TTfAQCtUPSHyLxcxuCMMUyZxJM4Z161itQyU85vMN",
+   "profile": "Ddj4nbZJBcMtBhxdVBEPSzs3MjBKkYu1ywYbLJ4dhDc8"
+  },
+  "loewensaal-nuremberg": {
+   "authority": "6DCaUqqdpMh1AWaJ6TPWPjmD7tmZiS2eLpBbZoMGCwDy",
+   "profile": "EQupmXze4YAcSdbK4rgWhGypVLFFLJoepG6GKQ4THQuz"
+  },
+  "z-bau-nuremberg": {
+   "authority": "8o22KMqLTDJTfJG9Ci3hgTYeibm3risctMKqUb4mPPmm",
+   "profile": "FuTZhVbwEvtkz9vfgZNqqMyhveLnaRPxsm1oEanmJrJr"
+  },
+  "club-stereo-nuremberg": {
+   "authority": "Fs3xjh9vWbdNzcnhMzupkjzeaqbViCULZYdgdTxfTe3J",
+   "profile": "HKXJyzhLGsgKkmGXqcyFEy1i3p9NUjauMJeJhysTg86A"
+  },
+  "arena-wien-vienna": {
+   "authority": "CiCqHFbChT3XmKGCXHPbnHbsh1BLqfAYmtMPu37sygAH",
+   "profile": "Gzm15e6sDbf2mdmKcW6LhwuxomizUDMdijEDxTNepUxR"
+  },
+  "flex-vienna": {
+   "authority": "sG6HsVfhYNk9WBfdVoou87HDp7rL3FResAd2KeYGNks",
+   "profile": "FrHEcwTS2u3Xjh5xNAeL8vD1rMCTm7pnMwPC64MTuvdU"
+  },
+  "wuk-vienna": {
+   "authority": "BgabZSC3v4CnEiLZSpTg2CPYy9tk9fbTrqt2A15vWT1N",
+   "profile": "ANYRxNEC4GftvbyWMqaenQpdNf1sniaHA2izXYj7LwBH"
+  },
+  "simm-city-vienna": {
+   "authority": "GCgMvDCTcrS4f3SEu7vpQi4jk8fwR2uupS5oprA3VUXn",
+   "profile": "DaJgyX76K1ukUXSSoxTTAB9KT5DKcgsjsLABfz75Mxab"
+  },
+  "orpheum-graz": {
+   "authority": "FPxgMEJvjQG15DniLxGtmDxuyyDTMtpooZdMBJD6aMP9",
+   "profile": "CpAWeRvs9A3yjF9WbUgZXEKhZ6MTa4S3mkH71FTu7oZR"
+  },
+  "ppc-graz": {
+   "authority": "BdbXx71WWm5bXM6yKfUHwteGr8NBdYr4Doep3hsEBe3K",
+   "profile": "BHCJbETQrUvs3NRwb84gymXUu3TKCigoLiD4Y38urBN9"
+  },
+  "explosiv-graz": {
+   "authority": "6Vv1vxhLjaeroZPR76HQzQZaQrkc8hW1f8YMsELCrdwZ",
+   "profile": "12RfsJJoT5pWwm6fnNHRkfswBpoCrCCyykWfP8ynim3L"
+  },
+  "dom-im-berg-graz": {
+   "authority": "6KhXkmeEmQLaHc2b5ivZEWPbJkT5i7GRxCXjZDKX1AA5",
+   "profile": "CHvV4ycmDWKVpmMWwhSFL5dhjGqYfojYVkvDtj1UEznM"
+  },
+  "posthof-linz": {
+   "authority": "6hgP9g6xG4HsWhQxcfyScxRDoLAgjHEkasga8G8WW5ro",
+   "profile": "AUTVZWpuejdzHybNyEPRhM6JsrR3DNrLVC59FFnKJ8yd"
+  },
+  "stadtwerkstatt-linz": {
+   "authority": "8MHQLwjtMhVrJGQjPCCuhVer2doGNgysSugiy8xbXdKk",
+   "profile": "8B7SiC5hyBSWwr6ouSZs2TMR9Yee4H4c2meapZpFqYXJ"
+  },
+  "kapu-linz": {
+   "authority": "EmcJckjFDYJh3XjSvMxzCMAx5db52pBm5dCqUPTZkBLF",
+   "profile": "7EFpVinQJKtK3ae8qp4WCSJMFe5TbHiDid6DNnU9Ug9A"
+  },
+  "rockhouse-salzburg": {
+   "authority": "DLjVcpBvt9JB2xT7zeQbSf4U4wbjYmYbrxkbsRkVPinr",
+   "profile": "FUaASppxfQWtGyWEhGaBrjgQQ2GiPbzHQJy5yyUqsXMB"
+  },
+  "republic-salzburg": {
+   "authority": "Dt7SUdK9RQFBQv1Cjb23ounh9FHNxtYhfSN1pSnP2W58",
+   "profile": "4kG9thYmmuSpi27UzwBPEWstRAaCKksRa4BrUXpFokJc"
+  },
+  "argekultur-salzburg": {
+   "authority": "4TkYgNk35dxbyxwg37c14vpEtuaGvxgBddioH3oqc5Y6",
+   "profile": "5yjneauQYC84JweFL7QVphHiYq4yPMpC5jgKQ48mVmPn"
+  },
+  "jazzit-salzburg": {
+   "authority": "B3KP3RHqLtBZBpbJ8eWfg9zoDKJfcgCusbEqopP8rV1e",
+   "profile": "8jTkeAwXCBgmGvdMhZ2E4TMRbT58C4sdbk1rAdqvWB5f"
+  },
+  "treibhaus-innsbruck": {
+   "authority": "3qxkVdzP8AWgtdGfqR2hMkyQKaQHYGcAiCxcsyGj6WTN",
+   "profile": "DqGwzjgAz4doMsLxa4j9xvF7ST4fQENeeHfBNg9uLQ6w"
+  },
+  "music-hall-innsbruck": {
+   "authority": "4pV2PpnCWX9R5b1WigGAwMSV1bKqKdqA5JXwWesDQ4Sn",
+   "profile": "6wR4UyEh9S8wqXtHJU8V8bVq3He7SZoFwa8LFah1wbdU"
+  },
+  "pmk-innsbruck": {
+   "authority": "2RhUMmdsGEoamu7FBTSKnUGuddGEkxmPV8JB3mg3HKjt",
+   "profile": "F3W66DHRBjPfSv9VRDQGBwPDjGththNBcRBzeY5BEoEu"
+  },
+  "bataclan-paris": {
+   "authority": "JAxckoVvY5sS7SLmGz5nv14tG93D1vMvuJz5CurJ6prD",
+   "profile": "6Hdci9W32735v5HtG7oNZo5qS4kS146ghowhBjvEsPxd"
+  },
+  "la-cigale-paris": {
+   "authority": "HsdFrQwHXrifckCKKRmvYviQSByX1CoYj3Dq39GtGVbX",
+   "profile": "4vn6v7G5nyFPFij17kpuT6gR7RjJFfyQV6FyxwpVB7rd"
+  },
+  "elysee-montmartre-paris": {
+   "authority": "G3kqZ2ytAzAzPa3WjdNetYKUdb9KCejrMo4UoStmLKTu",
+   "profile": "FS99kYy3dFGvPLQuj1tw7WWz8pGXaaeZ7fhWC2GeZRMy"
+  },
+  "la-maroquinerie-paris": {
+   "authority": "BhpvZaJRtbacdd62gvmt6ZvHd9C8J4P6m15fFuHm9ubq",
+   "profile": "59cTUucnJbeXtV8FZhDtN9NazbDfS8HksZxqduyM2qYS"
+  },
+  "le-trabendo-paris": {
+   "authority": "9257NZi4h5p66DaDeMDLKwaG6ps2SqRCKrGaocNrQyjP",
+   "profile": "2Ro59nLjucVVW9XufgxJpzVJsVpwpZzVj5hRgQgwEH6t"
+  },
+  "transbordeur-lyon": {
+   "authority": "GhKpB2V5nqeXfAjzVPFWyyUE22eyp58arqwbP8ZRwTgD",
+   "profile": "B6TbF948nDAS9La3JS6wTF9PnLyxLiGRfAPqfo8KFnML"
+  },
+  "ninkasi-kao-lyon": {
+   "authority": "AE7MBDzJRHTmjDEJvE2Tf9DVM49371URcdVHC6rbww77",
+   "profile": "Bcsr1gCVE9LK4j282iAtTzJ64F1fd7vAwEaQmzF8uTwr"
+  },
+  "le-sucre-lyon": {
+   "authority": "54Xt23PsrQzdwMcv9k3SZRw2TU1LVZQPWGzaG6Z2zfu7",
+   "profile": "nG4vAt411hR3ESPLs4qpzwQyzRncjGVqRcs7Y9uhGiZ"
+  },
+  "marche-gare-lyon": {
+   "authority": "EPs99zGVRrK2JG5NgNjLeFP8PbEHmR4eZdcVyvYFS3yf",
+   "profile": "GjFnZCLZBiVWMbxAt397yq5bmqBDMsyVaPFjmtZjkXCZ"
+  },
+  "le-moulin-marseille": {
+   "authority": "7F7qsYE7sZNzDMhfJMiBztC8jsj1H2sNuRt8TyfoZPmH",
+   "profile": "BK7ub8qabQz8oYMyUCBPKMYr1uTCgXjEyqeF8fbaYarv"
+  },
+  "espace-julien-marseille": {
+   "authority": "HvDR2ji23sfwM7gtNezu91DLoUTMqa9PEqHqzw3x1a4X",
+   "profile": "9Xg61YhKxLpVb5yxHV53eBzWjhwG6MQ8YHvxChiqy3tQ"
+  },
+  "cabaret-aleatoire-marseille": {
+   "authority": "4ifpQmFcJsbhyy3bHquhZFHmUYS4mcqveZKtrjATMv9F",
+   "profile": "3cLJhWHa9W8GdeQVGv1xG1HrVstMMqTSZSbeYJEUEdaR"
+  },
+  "le-makeda-marseille": {
+   "authority": "6yaVXfuX8tau5VMrmBUH2iYxFeSitYSC325W6Tp8SrFS",
+   "profile": "DQTckUL5BZ99rtZxEp7597o7fajvvw9SMofpEk81RtSg"
+  },
+  "le-bikini-toulouse": {
+   "authority": "9XgjBUjSSjkjYH4CTKh8VykutFj9tdTkLWxXX9JcoAGm",
+   "profile": "95j51mg7oiq6ohqnG5vAZs5C8MyNkUigmsU2cfsJ6mCP"
+  },
+  "le-metronum-toulouse": {
+   "authority": "7219MsRLaKc9Pc44DwYmnghy9WAvLhaqqAcezGALXeK1",
+   "profile": "EUfUvJtcobrv6ZrVxh7Wn2SkZkC62Ax8AcnennLrQV4z"
+  },
+  "le-rex-toulouse": {
+   "authority": "68Qaa5xxGCAL7mrkP28TcX2LYPcwf1PQ5DiLhPeidg94",
+   "profile": "6MnyQAnVz6nYJvsxFS4n5FdpWa9eCYZ9scKsnsXjUtiY"
+  },
+  "connexion-live-toulouse": {
+   "authority": "FFamc4iZk6QAH4NqunJWdcKmeBuzDQqT4KSyJEPVoQtf",
+   "profile": "2xiaZ7w2BwpmKyqxPmp6oaeoVJo4QGSewD5QGizLSsja"
+  },
+  "rock-school-barbey-bordeaux": {
+   "authority": "5YFpsRiDcxH57uT5eS4M93EvTZSsj51oVXAPxP2bCVP7",
+   "profile": "532rTmoRBWBagty4bgoT8Aj3xuSeeNA86Cd9LD6amRtC"
+  },
+  "krakatoa-bordeaux": {
+   "authority": "5B18Bc6z7ykEn6kD1aBYh722GsvSduFnzKeCdxZ2YSp8",
+   "profile": "6MLaFRsdMHTHz9F1RENwDWVgWJH3EdE7YAB7rSe2LkuC"
+  },
+  "rocher-de-palmer-bordeaux": {
+   "authority": "Hpksjms8XNYTZfy3bKbKy8qKhPZxHumrsFEph23Na47e",
+   "profile": "9EpRxKzyi8KmCeQB1cntD6jo4nLQB6UZQWtbnD6HAGY3"
+  },
+  "iboat-bordeaux": {
+   "authority": "48UZZU16JYgptm1kWr5xXy8py7kFghqQKFUpm75qmkti",
+   "profile": "mzXCvkEjZVtgjaEsFvn2UY4LutfKwc9dRBDBV4XxVj7"
+  },
+  "aeronef-lille": {
+   "authority": "3mfzEA93ZZz3hU9W8SUqnheAEDqX81fPRz1PRPFoWpxD",
+   "profile": "5fKScfZ38mBEsfLcUhcNXk7giQmG4P1WwvE68uiNzxPA"
+  },
+  "le-splendid-lille": {
+   "authority": "99AKhjQMdBTi8nWUMNfD2ZvBfqGM8e2CENsjAqvvMxtE",
+   "profile": "9xG2dBnxPiUNPqB9BwbBJNFK4VmPZbS4of7qc964njkN"
+  },
+  "le-grand-mix-lille": {
+   "authority": "9VAukznSRoa7F6Ski8xDkuQQJnfhFRvhnJMsXRpS9Uga",
+   "profile": "DqthdEpHu5dufyd6qs3urBvmCCa6Z2fkhBW2spyABuWr"
+  },
+  "stereolux-nantes": {
+   "authority": "79kSdKNzmXaP2F9eFnqz3rG7oFGJaAwgcj55exBJXbxk",
+   "profile": "2nN2Rf2pngAYpQcnVPDufH967LLXL5Sk9Cfr4JsurZTi"
+  },
+  "le-ferrailleur-nantes": {
+   "authority": "7u6XkQQyEYJKNCrjF4GDVMexgmJXRXA99Fca3Te1ugkB",
+   "profile": "BnpEK1tTcm7ZxSxzkWjDcWHkwkcfKL5FxZFrtp3VaqdM"
+  },
+  "warehouse-nantes": {
+   "authority": "DmNXLN44AfA2BrB7rzAiSXcBxWKoHGa8r7WsTpzDcusF",
+   "profile": "ENmELnFbnt3nHzHC9st9sTQ32tjYpQ5Z7zUQik6NavUk"
+  },
+  "lieu-unique-nantes": {
+   "authority": "CFkFkUVavCLpNb45Cbns7HE5TPLch5s7AAhjLA2vtPfb",
+   "profile": "4sBNfoDzVjX4asUUwqVM6V3Wj7fGmGj1xQaHavYMo6dw"
+  },
+  "la-laiterie-strasbourg": {
+   "authority": "DNbyNUYs2SFV8iLXzEZkR581FZqx4EemnShQLo5XJ4B2",
+   "profile": "Dw9fUcUEGYL53hh8zKzhHk4kLfD1WsriYdF7z6zBGqmA"
+  },
+  "molodoi-strasbourg": {
+   "authority": "BMT5ue1guL3ziQtQcewWsZDeni2DyvbhQwxNbQYjzMi8",
+   "profile": "Asb8Ui2YyxNZCotXJ4f1x6oLNWrB6b4TM233JCyo66cz"
+  },
+  "espace-django-strasbourg": {
+   "authority": "8mbZftLcWiqgNDonBz9bANFToSk74J7kxF7kP18JA6Ne",
+   "profile": "3hdh5PUguv97WRbYV9ZvhD2kkqFqwkQZHuoMY7kF6rDF"
+  },
+  "stodola-warsaw": {
+   "authority": "EwhoaWW9TY2qDHHbdBJo9ujq8fCpVW7SwhM241b7EQy2",
+   "profile": "PVVcboK4d7p7X2RCSMkyLXqZqJ3BR4BYV5zpKK2exrW"
+  },
+  "progresja-warsaw": {
+   "authority": "Ap5PmrEqGfAcGwNE8TNrehriU49yyiqrmzLCgpWnYyHC",
+   "profile": "5Jxeh5gK4Juchk3qhaPfZ56NMLw8FgzqUyosGvUF4JQx"
+  },
+  "proxima-warsaw": {
+   "authority": "EpxQDLSF8aU89WPvaPZSMyiPsDpk4MeVDXNuWfqhXqU3",
+   "profile": "AHjZ3RzJDocqd5ejpuRJdgjPZPwPgZtxUHis9eoH3icG"
+  },
+  "palladium-warsaw": {
+   "authority": "3489g1HRdWyDAK6EHBgJSwdKuoVr1bTX8CgUFP9puF6B",
+   "profile": "HE5bWdvfnERaMDT5KcotjXvg4XLzfmu9cbXRRAW7vp74"
+  },
+  "klub-studio-krakow": {
+   "authority": "sY2iHCkVsaS51PFdJ95mYt55FTDQ4rboqkQHxjgrX4c",
+   "profile": "BvpXQMgnFWGR4V6qubxbAyn6KtxzBS15sQqRw65nPAwK"
+  },
+  "kwadrat-krakow": {
+   "authority": "6H3TnL8D1woUoFM8BuFyqg9t5orzhwcb54VV848n7cmn",
+   "profile": "BTe99vBsFg69ZHt4AkvTvTD3c1LBs2mdVgeAz4x2tsx4"
+  },
+  "hype-park-krakow": {
+   "authority": "GUtgjHeYVwitfz2Cdnkfsg2dQgthPnqoa7gYmeb2HMHd",
+   "profile": "AR1wLuCHBV7RH9X5Ajv4SYvVPYTQwDYEfN9BP58abVYq"
+  },
+  "forty-kleparz-krakow": {
+   "authority": "5r7qfXyokpxd4KGMhZphmfAkPdSAXogQfm5p2VVXo9G8",
+   "profile": "3ffZZAwSC4mBRuCcXtb8cYWRny3fz3h5a2FRoKs4JW7K"
+  },
+  "a2-wroclaw": {
+   "authority": "2vTfLhCvXmCDJWycVwiWxAd5FZyyYVwgnmc51vStesgp",
+   "profile": "3uKL84SNQsbvzw1fuLMAHx9HRtuEH8pWCuMeXoi6WGE5"
+  },
+  "stary-klasztor-wroclaw": {
+   "authority": "94Aka2bitdhfN4oxpSxZcwVYPFf7mANeGLmZKtNcYrmf",
+   "profile": "HQU3zoEi6NprkJm5DhUF6WpqB2eEHrPZL6ar7Wpc8g3M"
+  },
+  "firlej-wroclaw": {
+   "authority": "HgDFR6SnJnUjCQrDjrLwvdWSrDiwZzrrUVpRMA1RTcuj",
+   "profile": "8i5u4B3PdJRmm9wiyqdToVA149QYjE9c5SyWeZ47nH7B"
+  },
+  "lykend-wroclaw": {
+   "authority": "FNFqd8JukDniiQZ7GkNqGZzq67ock3qRBwRiShwFKz9G",
+   "profile": "HQ9pkijSDzuiRnHscd8T67wkbXDWW2ZVCmuiVdssw5Lh"
+  },
+  "tama-poznan": {
+   "authority": "Dj98xkQJXTo5nWJK7zD2wCHCnNqQxnGU7P6ABA3fG4Yy",
+   "profile": "ASG19Gm9kxPQJcNWuTujZ3m3ef96DX3MopuTsGei6Djj"
+  },
+  "2progi-poznan": {
+   "authority": "5ecVMAZqwxuyYBwg6XCJMiweBLmJm3RbmU9WBs1D1g19",
+   "profile": "AN4ek128SbCPT3aQY6HByqVarTrtgTNdqtyE4zc5FNsi"
+  },
+  "blue-note-poznan": {
+   "authority": "HsaxLzAowQibWyRfnKmmj1XxqqyyrjnJqnTPKvEv9TEf",
+   "profile": "73uojbJ1Qwxtf7voc1QdeVUzDX4D2BCxjXgy2YiSdfw8"
+  },
+  "u-bazyla-poznan": {
+   "authority": "6WxDjwn3JcQo5iZcQmevxENj8yaowqNvLAdZyJv3YZ9u",
+   "profile": "HZhxpoyyDE8BwURaYYS9PqHdmN452Y95Qsc1gisMu8C2"
+  },
+  "b90-gdansk": {
+   "authority": "3EarWkA2HC3QVzj6oTQCnaP6MLYGeuVYympRMHijmMj3",
+   "profile": "8JdeJxcTZeYERtrqKfVUa67s3UcqBBefS9h67nX6xfB7"
+  },
+  "stary-manez-gdansk": {
+   "authority": "6McXbUFgRdWgXaL7oxiswTaruFepBqXvfTUVaphMvAnk",
+   "profile": "CD9tFQzzYRSH63npzSZ78MnUZaafUNuaTsBSUfkgVuVh"
+  },
+  "klub-zak-gdansk": {
+   "authority": "EdGHnJj1TyVbtRuUasqkwjEZCEx96qHT4vGomDAHsCLt",
+   "profile": "9mMWTX3tDtZ4NBML9Y2dXXqhaLiVn3fBbubKeZm7CG3e"
+  },
+  "wytwornia-lodz": {
+   "authority": "4yVcAyLidtC5ti8juyMeBB5VHnsmfHuLpgFye35PKD39",
+   "profile": "8UeRLdxjP7LMJqunF6ELf8hmM7D7LzaFPpQ41k5dR9q3"
+  },
+  "magnetofon-lodz": {
+   "authority": "4sq8TfKKpct88nogG9iaGnN6MCUVcvDqbF6ZMpfDEnZJ",
+   "profile": "2jN9NWeY6ciB8apMPsCnYN9KAAD7yZudWT9R5xkKM1yW"
+  },
+  "scenografia-lodz": {
+   "authority": "7dVaGLnPT2DMB1tZ3CVYbSPquVwTt6R6vWSsieCWFjfg",
+   "profile": "FxbYw7S3LszhwD5rrAzbkNzgE5kbMJ3z11xS4923mQSK"
+  },
+  "mega-club-katowice": {
+   "authority": "7DxQGtfowHbzAbd2EvzVamnhxWA7pHaczgwR7iVHrk54",
+   "profile": "2TEL9XFLNdxAFwbJ1EytQzTCiatiMteExXvSREvM9x6x"
+  },
+  "p23-katowice": {
+   "authority": "3iKUbURZzmVshFoMNaskTdim3K6oYb6ckrJW9PWWGY2w",
+   "profile": "5KP6JjFgeSLEdhUJqcjGKLeG4o3PGu5B2HnjC7WGUjuA"
+  },
+  "krolestwo-katowice": {
+   "authority": "5zZcCg4DRc1TxonYVNoZrXBPKKyyuM77mua53uu3UF7y",
+   "profile": "7rGjGQGeHGkoAyh6z8J4vopDNbSxxnW8sJQmn93mJjic"
+  },
+  "nospr-katowice": {
+   "authority": "5V86YVGWb8HcyrMcMHiC7nivQGvYS9ccBSXJuLV4rwi1",
+   "profile": "55wJNfstBkT44EarEthQvBmAWRG96kNvHTmo76pgj7sj"
+  },
+  "lucerna-music-bar-prague": {
+   "authority": "NvBqHZeoZRAShT6hTopdGDe4SxgsM14ZA8x6qFBq2AW",
+   "profile": "9V3BLDYKPahnUVM9HRFGH716ERFNARUUpaZ1yCxhnomU"
+  },
+  "palac-akropolis-prague": {
+   "authority": "E8Yztm3oTmh46kxcAwqm2uxQVyhMSoCwjNor81zr3Nfr",
+   "profile": "pyv5RSsts4kMbFNMAWRMMooLdHF8R9Xn9MuGNtHJeZC"
+  },
+  "roxy-prague": {
+   "authority": "Aero2qip5cZTAZWnag72GsniXKjYQLgAWuXCrreT5AUw",
+   "profile": "4T7wfnb8YVbEf3yKhcr2ZSjaEf5KJfurDxyqzmo3NspQ"
+  },
+  "meetfactory-prague": {
+   "authority": "5Vh9QnmikS7vNGcrTVbKDMsfn6FUsB36YPAbpbuWLEy9",
+   "profile": "4bqEJv1WxzjKqEezauf96meLsMCX5fmXb5ALHnvEGf76"
+  },
+  "forum-karlin-prague": {
+   "authority": "3vECxW2QUCZB1LbWbSzUaJpKv2VE8Dmmk5reQ4PxCT1h",
+   "profile": "CZ9aBRwbsKtUzh2griohS4aGx2duzsVLQ2xwBheYKTSf"
+  },
+  "fleda-brno": {
+   "authority": "D9xY8WV3JVJoj7fjfoexQybDXVYmZynUnqWp3VcXBnb8",
+   "profile": "EE91NdCX8UHThvHskCYsD52a8yPT2TDbhKh2pCEW3fa2"
+  },
+  "sono-centrum-brno": {
+   "authority": "d4pw976FUr6DkVopEyQZikLHZNcC49iNhvXb8NLfF5n",
+   "profile": "2d1oswKH7NSbMYMNqqv4XkDw6JSF2E9FR4dX3HtTbKJL"
+  },
+  "kabinet-muz-brno": {
+   "authority": "9621SDZSgJ83GsBs26LYK68Wkee7zxhbXt4kmYidRoFG",
+   "profile": "3jjZAR38EbUr1DxY3YZ6J11uxcGgRdEfYdW3Htkthwai"
+  },
+  "metro-music-bar-brno": {
+   "authority": "BNHgmuQyKsaAMD9D85VX3fzMfDYojpyg2f6PHGXjapT1",
+   "profile": "47ANXce6kkJjqTuMGBbBFakakG9rAmMUAfMfRs8pdAGQ"
+  },
+  "gong-ostrava": {
+   "authority": "96cxXdw9MxpFkodZJ7Z3EAwEpYHMBCd93Esu2PcAkShX",
+   "profile": "B5GiKQTLXXsvyQorP4JuFfRH3SFDrRH9hA8WNntHv2kj"
+  },
+  "barrak-ostrava": {
+   "authority": "5kCQt65A7Wg3yS7iMooSMtDgqfKt8BnB6HmHdnrMDVgM",
+   "profile": "AKjbUf1dahHqyU85R82ZzuCFJ1LSmpedd4Wh77AS3bSG"
+  },
+  "rock-and-roll-garage-ostrava": {
+   "authority": "GQDir8zaipWo489j3sat8sRtGSSDy56svidCFHGFD89m",
+   "profile": "Bi7PvhpkivPY89vaQbi9DRwMhjJqtWj7kddCH3D9i1k"
+  },
+  "papirna-plzen": {
+   "authority": "HPUptqgveuVzoVAVMkBCM1hwEatqF818ezxMF6wcftdL",
+   "profile": "BfD1NQ5XNg5VM4WTaG7BLuhmPxhcT6i85AWQfAiNSCuH"
+  },
+  "andel-music-bar-plzen": {
+   "authority": "3BZWnDR4eC3Aq3cPpY25aFY8PKFFv51APo6YZJkFzvGm",
+   "profile": "6dwhz9oxSbSLQMHE7kmFLRaKsPi9Bpyz9u2GkY85Jjw2"
+  },
+  "buena-vista-club-plzen": {
+   "authority": "CnPsMWVSndr9UpxZ358Kk1tWRaDRdFjEeokK18dx7oEf",
+   "profile": "EmMoUCZBLh4GZjsSyr9u2VR54ArE5EsdMuCd2rRR3vBV"
+  },
+  "arena-pilsen-plzen": {
+   "authority": "EEQmLN1qtoiwM5PiEKtCRWtFWEwxVHJDP2r6YUo2w79J",
+   "profile": "6n8x9qWoZf4GtqWyEpftxxwxWYzpembNdUrmBFTQ6zjd"
+  }
+ }
+}

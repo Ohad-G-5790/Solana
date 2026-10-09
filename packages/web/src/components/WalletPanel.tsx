@@ -16,7 +16,7 @@ export function WalletPanel() {
   const { wallet, profile, profileError } = useBandSession();
   const [balance, setBalance] = useState<number | null>(null);
   const [tickets, setTickets] = useState<{ publicKey: PublicKey; account: TicketAccount }[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (!wallet) return;
@@ -71,16 +71,13 @@ export function WalletPanel() {
         )}
       </div>
       <div>
-        <div className="label">Settled shows</div>
+        <div className="label">Shows played</div>
         <b>{profile ? profile.showsCompleted : "–"}</b>
       </div>
-      <div>
-        <div className="label">Tickets you hold</div>
-        {tickets === null ? (
-          <span className="muted">{err ? "waiting for devnet…" : "…"}</span>
-        ) : live.length === 0 ? (
-          <span className="muted">none</span>
-        ) : (
+      {/* only when this wallet also bought tickets as a fan: otherwise it is noise for a band */}
+      {live.length ? (
+        <div>
+          <div className="label">Tickets you bought</div>
           <span>
             <b>{live.reduce((n, t) => n + t.account.quantity, 0)}</b>{" "}
             {live.slice(0, 3).map((t) => (
@@ -89,8 +86,8 @@ export function WalletPanel() {
               </Link>
             ))}
           </span>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

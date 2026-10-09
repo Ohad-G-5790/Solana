@@ -7,8 +7,11 @@ import type { Brain } from "./brain.ts";
 import type { MessageBus } from "./bus.ts";
 import { describePlan, planTour, type PlannedShow, type VenueOffer } from "./planner.ts";
 import type { ShowProposedData, TourRequest } from "./venue-agent.ts";
+import { formatSol } from "./sol.ts";
 
-const lamportsToSol = (l: number) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 3 })} SOL`;
+const lamportsToSol = formatSol;
+/** One tour day on the demo clock, in seconds between show dates (the dashboard's DEMO_DAY_SEC). */
+const DEMO_DAY_SEC = 2;
 
 export interface TourBrief {
   countries: string[];
@@ -160,7 +163,7 @@ export class BandAgent {
       // demo clock: every show's deadline/date are offsets from sales opening,
       // spread by the planned day so the dashboard shows a sequence
       const thresholdDeadline = salesOpenAt + brief.deadlineAfterSec + p.day;
-      const date = salesOpenAt + brief.showAfterSec + p.day * 2;
+      const date = salesOpenAt + brief.showAfterSec + p.day * DEMO_DAY_SEC;
       try {
         const { show, sig: psig } = await this.client.proposeShow(this.keypair, tour, new PublicKey(p.venuePubkey), {
           date,
@@ -173,7 +176,7 @@ export class BandAgent {
         });
         const booked: BookedShow = { ...p, show, date, thresholdDeadline, salesOpenAt };
         this.booked.push(booked);
-        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${p.ticketPriceLamports} lamports, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`);
+        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${lamportsToSol(p.ticketPriceLamports)}, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`);
       } catch (e) {
         this.bus.publish({ kind: "note", from: this.id, text: `could not propose ${p.city}: ${(e as Error).message.slice(0, 160)}` });
       }

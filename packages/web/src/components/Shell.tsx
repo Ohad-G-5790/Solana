@@ -1,6 +1,6 @@
 "use client";
 
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletButton } from "./WalletButton";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -12,7 +12,7 @@ import { useBandSession } from "./BandSession";
 import { ConnectScreen } from "./Connect";
 
 /** Pages that are about one band; they need a connected wallet (or demo mode). */
-const BAND_PAGES = ["/", "/approvals", "/band"];
+const BAND_PAGES = ["/", "/approvals", "/band", "/feed"];
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -20,7 +20,7 @@ const NAV = [
   { href: "/venues", label: "Venues" },
   { href: "/planner", label: "Route planner" },
   { href: "/band", label: "Band record" },
-  { href: "/feed", label: "Agent feed" },
+  { href: "/feed", label: "Activity" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -43,7 +43,7 @@ export function Shell({ children }: { children: ReactNode }) {
       clearInterval(t);
     };
   }, [ownRun]);
-  const gated = BAND_PAGES.includes(path) && !session.authority;
+  const gated = (BAND_PAGES.includes(path) || path.startsWith("/tour")) && !session.wallet && !(session.guest && !path.startsWith("/tour"));
   const who = session.wallet ? (session.profile ? session.profile.name : short(session.wallet)) : session.guest ? "demo band" : null;
   return (
     <div className="shell">
@@ -82,9 +82,10 @@ export function Shell({ children }: { children: ReactNode }) {
               <span className="muted small">AI agents negotiate the tour; you approve; the deal lives on Solana.</span>
             )}
           </div>
-          <WalletMultiButton />
+          {/* the connect screen has its own button; one call to action at a time */}
+          {gated ? null : <WalletButton>{session.wallet ? undefined : "Connect wallet"}</WalletButton>}
         </div>
-        {gated ? <ConnectScreen /> : children}
+        {gated ? session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <ConnectScreen /> : children}
       </main>
     </div>
   );

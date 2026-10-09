@@ -6,7 +6,7 @@
  * for tests/greenroom.ts, which runs the real program.
  */
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { bandPda, PROGRAM_ID, showPda, ticketPda, tourPda, type GreenroomClient, type ProposeShowParams, type ShowAccount, type TicketAccount } from "@greenroom/sdk";
+import { bandPda, PROGRAM_ID, showPda, ticketPda, tourPda, venuePda, type GreenroomClient, type ProposeShowParams, type ShowAccount, type TicketAccount } from "@greenroom/sdk";
 
 type State = "proposed" | "onSale" | "confirmed" | "cancelled" | "settled";
 
@@ -55,6 +55,44 @@ export class FakeChain {
 
   constructor(readonly speed = 10) {}
 
+  /** The slice of Anchor's program the keeper reads: every show account. */
+  get program() {
+    // honours the keeper's state filter (memcmp on the state byte, base58 "1".."5" = Proposed..Settled)
+    const order: State[] = ["proposed", "onSale", "confirmed", "cancelled", "settled"];
+    return {
+      account: {
+        show: {
+          all: async (filters: { memcmp: { offset: number; bytes: string } }[] = []) =>
+            [...this.shows.values()]
+              .filter((s) => filters.every((f) => f.memcmp.offset !== 218 || order[Number(f.memcmp.bytes) - 1] === s.state))
+              .map((s) => ({ publicKey: s.key, account: this.view(s) })),
+        },
+      },
+    };
+  }
+
+  /** The slice of a Connection the keeper uses. */
+  get connection() {
+    return {
+      getBalance: async () => 100e9,
+      getMultipleAccountsInfo: async (keys: PublicKey[]) => keys.map((k) => (this.venues.has(k.toBase58()) ? ({} as never) : null)),
+    };
+  }
+
+  async transferSolMany() {
+    return [this.sig("transferSolMany")];
+  }
+
+  async registerVenue(authority: Keypair, _name: string, _city: string, _lat: number, _lng: number, capacity: number) {
+    const profile = venuePda(authority.publicKey, this.programId);
+    this.registerVenue_(authority.publicKey, profile, capacity);
+    return { sig: this.sig("registerVenue"), venueProfile: profile };
+  }
+
+  private view(s: Show): ShowAccount {
+    return { ...s, state: { [s.state]: {} }, payees: [...s.payees] } as unknown as ShowAccount;
+  }
+
   /** The fake typed as the client the agents expect. */
   get client(): GreenroomClient {
     return this as unknown as GreenroomClient;
@@ -75,7 +113,8 @@ export class FakeChain {
     return s;
   }
 
-  registerVenue(authority: PublicKey, profile: PublicKey, capacity: number): void {
+  /** Put a venue on the fake chain directly (test setup). */
+  registerVenue_(authority: PublicKey, profile: PublicKey, capacity: number): void {
     this.venues.set(profile.toBase58(), { authority, capacity });
   }
 
@@ -86,7 +125,7 @@ export class FakeChain {
   }
 
   async fetchBand(_profile: PublicKey) {
-    return { showsCompleted: 0, ticketsSoldTotal: 0, grossSettledLamports: 0, toursCreated: this.toursCreated };
+    return { name: "Fake Band", genre: "rock", showsCompleted: 0, ticketsSoldTotal: 0, grossSettledLamports: 0, toursCreated: this.toursCreated };
   }
 
   async createTour(band: Keypair, tourId: number, _name: string, _region: string, startsAt: number, endsAt: number) {
@@ -208,8 +247,7 @@ export class FakeChain {
   }
 
   async fetchShow(key: PublicKey): Promise<ShowAccount> {
-    const s = this.show(key);
-    return { ...s, state: { [s.state]: {} }, payees: [...s.payees] } as unknown as ShowAccount;
+    return this.view(this.show(key));
   }
 
   async listTicketsByShow(key: PublicKey): Promise<{ publicKey: PublicKey; account: TicketAccount }[]> {

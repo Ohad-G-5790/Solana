@@ -6,7 +6,7 @@ import { planTour } from "@greenroom/agents/planner";
 import { drive, formatMinutes, routeTotals, legs } from "@greenroom/world/geo";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ApprovalView } from "@/lib/approvals";
-import { demoDate, sol } from "@/lib/format";
+import { dayLabel, sol } from "@/lib/format";
 import { sendDecision, type WorldCity, type WorldVenue } from "@/lib/run";
 import { DriveNote, Itinerary } from "./Itinerary";
 import { RouteMap } from "./RouteMap";
@@ -37,7 +37,7 @@ function Actions({ item, ctx, busy, error, children }: { item: ApprovalView; ctx
   if (item.decision) return null;
   const sent = ctx.sent.includes(item.request.id);
   let why: string | null = null;
-  if (!ctx.writable) why = "This is a recorded run, so decisions are off. Run npm run demo:approve to decide live.";
+  if (!ctx.writable) why = "This is a recorded tour, so its decisions are already made.";
   else if (item.request.mode !== "dashboard") why = "This run is on auto-pilot.";
   return (
     <div className="actions">
@@ -385,7 +385,7 @@ function AlternativeDecision({ item, p, ctx }: { item: ApprovalView; p: Payload<
         <b>
           {p.city}, {names.get(p.venueId) ?? p.venueName}
         </b>{" "}
-        (day {p.day} · {demoDate(p.day)}) sold {p.ticketsSold} of the {p.required} tickets it needed, so the show is cancelled
+        ({dayLabel(p.day)}) sold {p.ticketsSold} of the {p.required} tickets it needed, so the show is cancelled
         {p.ticketsSold > 0 ? " and every fan gets their money back automatically" : ""}. Pick a way to keep the date, or let it go.
         {expires !== null ? <span className="warn"> The offer lapses in about {expires}s.</span> : null}
       </p>
@@ -401,7 +401,7 @@ function AlternativeDecision({ item, p, ctx }: { item: ApprovalView; p: Payload<
                 {names.get(o.venueId) ?? o.venueName}, {o.city}
               </b>
               <span className="small">
-                Day {o.day} · {demoDate(o.day)} · {o.capacity} tickets · confirms at <b>{o.required}</b>
+                {dayLabel(o.day)} · {o.capacity} tickets · confirms at <b>{o.required}</b>
               </span>
               <span className="small muted">
                 Venue {o.venueBps / 100}% · {o.detourKm > 0 ? `+${o.detourKm} km to the tour` : "no extra driving"}

@@ -1,3 +1,4 @@
+import { fans } from "./format";
 import type { ShowAccount } from "./greenroom";
 import { stateName } from "./greenroom";
 import type { RunShow } from "./run";
@@ -28,7 +29,10 @@ export interface ShowView {
  * "At risk" means on sale and behind the pace needed to reach the threshold by
  * the deadline (only for runs that record when sales opened).
  */
-export function showView(run: RunShow, acct: ShowAccount | null | undefined, now: number): ShowView {
+export function showView(run: RunShow, acct: ShowAccount | null | undefined, now: number, inFans = false): ShowView {
+  // a band's own devnet tour speaks in fans (1 ticket = FANS_PER_TICKET); recordings in tickets
+  const u = (n: number) => (inFans ? `${fans(n)} fans` : String(n));
+  const more = (n: number) => (inFans ? `${fans(n)} more fans` : `${n} more`);
   const state = acct ? stateName(acct.state) : run.state;
   const sold = acct ? acct.ticketsSold : run.ticketsSold;
   const capacity = acct ? acct.capacity : run.capacity;
@@ -51,13 +55,13 @@ export function showView(run: RunShow, acct: ShowAccount | null | undefined, now
     status = "The venue declined";
   } else if (state === "cancelled") {
     health = "cancelled";
-    status = run.replacedBy ? `Missed ${required} by the deadline; replaced, fans refunded` : `Missed ${required} by the deadline; fans refunded`;
+    status = `Missed its target of ${u(required)}; ${run.replacedBy ? "replaced, " : ""}fans refunded`;
   } else if (state === "settled") {
     health = "settled";
     status = "Played and paid out";
   } else if (state === "confirmed") {
     health = "confirmed";
-    status = sold >= capacity ? "Sold out" : `Confirmed with ${sold} sold; still selling`;
+    status = sold >= capacity ? "Sold out" : `Goes ahead with ${u(sold)}; still selling`;
   } else {
     const opened = run.salesOpenAt;
     const window = opened ? deadline - opened : 0;
@@ -65,7 +69,12 @@ export function showView(run: RunShow, acct: ShowAccount | null | undefined, now
     const behind = opened !== undefined && elapsed >= 0.3 && sold < required * elapsed * 0.8;
     health = behind ? "at-risk" : "on-track";
     const need = Math.max(0, required - sold);
-    status = need === 0 ? "Threshold reached; confirms at the next check" : behind ? `Behind pace: ${need} more needed, ${Math.round((1 - elapsed) * 100)}% of the selling window left` : `${need} more to confirm`;
+    status =
+      need === 0
+        ? "Target reached; it goes ahead at the next check"
+        : behind
+          ? `Behind pace: ${more(need)} needed, ${Math.round((1 - elapsed) * 100)}% of the selling time left`
+          : `${more(need)} and it goes ahead`;
   }
   return { run, acct, state, sold, capacity, thresholdBps, required, deadline, date, priceLamports, bandBps, escrowLamports, health, status };
 }
@@ -77,7 +86,7 @@ export function bandTake(v: ShowView): number {
 }
 
 export const HEALTH_LABEL: Record<Health, string> = {
-  proposed: "proposed",
+  proposed: "waiting for venue",
   "on-track": "on sale",
   "at-risk": "at risk",
   confirmed: "confirmed",

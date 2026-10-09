@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PublicKey } from "@solana/web3.js";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -56,7 +57,7 @@ function BandView() {
     return (
       <div className="card">
         <h2>No band profile</h2>
-        <p className="muted">{error ? `RPC unreachable (${error.slice(0, 80)}). Is the validator running?` : "Run the demo first; the band registers itself on-chain."}</p>
+        <p className="muted">{error ? `Could not reach the network (${error.slice(0, 80)}); retrying.` : "This wallet has no band yet. Connect it on the Dashboard to set one up."}</p>
       </div>
     );
 
@@ -72,7 +73,7 @@ function BandView() {
       </p>
       <div className="stats">
         <div className="stat">
-          <div className="label">Settled shows</div>
+          <div className="label">Shows played</div>
           <div className="value">{band.showsCompleted}</div>
         </div>
         <div className="stat">
@@ -84,7 +85,7 @@ function BandView() {
           <div className="value">{avg}</div>
         </div>
         <div className="stat">
-          <div className="label">Gross settled</div>
+          <div className="label">Paid out in all</div>
           <div className="value">{sol(band.grossSettledLamports, 2)}</div>
         </div>
         <div className="stat">
@@ -92,10 +93,27 @@ function BandView() {
           <div className="value">{band.toursCreated}</div>
         </div>
       </div>
+      {band.showsCompleted === 0 ? (
+        <div className="cta">
+          <div>
+            <h3>No played shows yet</h3>
+            <p className="small muted">Every show that is played and paid out adds to this record, and venues read it before making an offer.</p>
+          </div>
+          {band.toursCreated === 0 ? (
+            <Link href="/tour/new" className="btn primary big">
+              Create your first tour
+            </Link>
+          ) : (
+            <Link href="/" className="btn outline">
+              Follow your tour
+            </Link>
+          )}
+        </div>
+      ) : null}
       <div className="card">
         <h3>Why this matters</h3>
         <p className="small muted" style={{ marginTop: 6 }}>
-          These counters can only grow through <span className="mono">settle_show</span>, after a show reached its threshold and its date passed. Venue agents read
+          These numbers only grow when a show is paid out, after it sold enough tickets and its date passed. Venue agents read
           them as proof of past concerts before making an offer; no screenshots, no promoter&apos;s word.
         </p>
         {run && run.band.authority === (authority ?? run.band.authority) ? (

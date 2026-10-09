@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { demoDate, pct, sol, timeLeft } from "@/lib/format";
+import { dayLabel, euros, fans, pct, sol, timeLeft } from "@/lib/format";
 import { HEALTH_LABEL, type Health, type ShowView } from "@/lib/health";
+
+/** "sales close in 29m", or "sales closed" once the time has passed. */
+function until(what: string, unix: number, now: number): string {
+  const t = timeLeft(unix, now);
+  return t === "passed" ? (what === "show" ? "show time passed" : "sales closed") : `${what} in ${t}`;
+}
 
 export function StateBadge({ state }: { state: string }) {
   const label = state === "onSale" ? "on sale" : state;
@@ -23,7 +29,8 @@ export function Progress({ sold, capacity, thresholdBps, state }: { sold: number
   );
 }
 
-export function ShowCard({ v, now, venueName, replacedByCity }: { v: ShowView; now: number; venueName: string; replacedByCity?: string }) {
+/** bandUnits: a band's own devnet tour, shown in fans and euros instead of sample tickets and SOL. */
+export function ShowCard({ v, now, venueName, replacedByCity, bandUnits }: { v: ShowView; now: number; venueName: string; replacedByCity?: string; bandUnits?: boolean }) {
   const { run } = v;
   return (
     <Link href={`/show?address=${run.show}`} className="card" style={{ display: "block" }}>
@@ -32,22 +39,28 @@ export function ShowCard({ v, now, venueName, replacedByCity }: { v: ShowView; n
         <HealthBadge health={v.health} />
       </div>
       <p className="muted small">
-        {venueName} · day {run.day} · {demoDate(run.day)}
+        {venueName} · {dayLabel(run.day)}
       </p>
       {run.replaces ? <p className="micro good" style={{ marginTop: 4 }}>Replacement show</p> : null}
       <Progress sold={v.sold} capacity={v.capacity} thresholdBps={v.thresholdBps} state={v.state} />
       <div className="row small" style={{ justifyContent: "space-between" }}>
-        <span>
-          <b>{v.sold}</b> / {v.capacity} sold · need {v.required}
-        </span>
-        <span className="muted">{v.acct ? sol(v.escrowLamports) : ""}</span>
+        {bandUnits ? (
+          <span>
+            <b>{fans(v.sold)}</b> of {fans(v.capacity)} fans · goes ahead at {fans(v.required)}
+          </span>
+        ) : (
+          <span>
+            <b>{v.sold}</b> / {v.capacity} sold · need {v.required}
+          </span>
+        )}
+        <span className="muted">{v.acct ? (bandUnits ? euros(v.escrowLamports) : sol(v.escrowLamports)) : ""}</span>
       </div>
       <p className={`micro ${v.health === "at-risk" ? "warn" : "muted"}`} style={{ marginTop: 6 }}>
         {v.status}
         {replacedByCity ? ` → ${replacedByCity}` : ""}
       </p>
       <div className="row micro muted" style={{ justifyContent: "space-between", marginTop: 4 }}>
-        <span>{v.state === "onSale" ? `deadline ${timeLeft(v.deadline, now)}` : v.state === "confirmed" ? `show ${timeLeft(v.date, now)}` : ""}</span>
+        <span>{v.state === "onSale" ? until("sales close", v.deadline, now) : v.state === "confirmed" ? until("show", v.date, now) : ""}</span>
         <span>{run.payees.length > 0 || (v.acct && v.acct.payees.length > 0) ? `crew: ${(v.acct ? v.acct.payees.map((p) => p.label) : run.payees.map((p) => p.label)).join(", ")}` : ""}</span>
       </div>
     </Link>

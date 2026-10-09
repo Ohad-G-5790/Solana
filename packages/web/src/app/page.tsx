@@ -11,9 +11,9 @@ import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary
 import { RouteMap, type MapStop } from "@/components/RouteMap";
 import { HealthBadge, ShowCard } from "@/components/ShowCard";
 import { pendingItems, type ApprovalsView, type ApprovalView } from "@/lib/approvals";
-import { CLUSTER, explorerUrl, POLL_MS } from "@/lib/config";
+import { CLUSTER, explorerUrl, POLL_MS, DEMO_DAY_SEC, FANS_PER_TICKET } from "@/lib/config";
 import { isRateLimit } from "@/lib/rpc";
-import { sol } from "@/lib/format";
+import { euros, fans, sol } from "@/lib/format";
 import { chainTime, fetchShows, type ShowAccount } from "@/lib/greenroom";
 import { bandTake, showView } from "@/lib/health";
 import { getApprovals, getRun, getWorld, isStaticMode, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
@@ -48,7 +48,9 @@ export default function DashboardPage() {
       if (!ownRun || isStaticMode() || paramBand) {
         try {
           const live = await fetchLiveTour(authority);
-          if (live && live.shows.length) r = ownRun ? { ...bundled, ...live, band: { ...bundled?.band, ...live.band } } : live;
+          // the recorded run's own tour keeps its story (cluster, shows, replacements, feed);
+          // a newer tour of the same band (booked after the recording) is shown as live
+          if (live && live.shows.length) r = ownRun && bundled && live.tour === bundled.tour ? bundled : live;
         } catch (e) {
           // chain unreachable or busy: keep what we have and say so
           if (alive) setRpcError(describeRpcError(e));
@@ -82,7 +84,8 @@ export default function DashboardPage() {
     void load();
     void getWorld().then((w) => alive && setWorld(w));
     const t = setInterval(load, POLL_MS);
-    const tick = setInterval(() => setNow((n) => n + 1), 1000);
+    // count seconds only once the chain clock is known (0 means "not yet")
+    const tick = setInterval(() => setNow((n) => (n ? n + 1 : 0)), 1000);
     return () => {
       alive = false;
       clearInterval(t);
@@ -90,7 +93,7 @@ export default function DashboardPage() {
     };
   }, [authority, paramBand]);
 
-  const views = useMemo(() => (run ? [...run.shows].sort((a, b) => a.day - b.day || (a.replaces ? 1 : -1)).map((s) => showView(s, accounts.get(s.show), now)) : []), [run, accounts, now]);
+  const views = useMemo(() => (run ? [...run.shows].sort((a, b) => a.day - b.day || (a.replaces ? 1 : -1)).map((s) => showView(s, accounts.get(s.show), now, run.cluster === "live" && !!run.inApp)) : []), [run, accounts, now]);
   const venueById = useMemo(() => new Map(world.venues.map((v) => [v.id, v])), [world.venues]);
 
   const isWalletBand = !!session.wallet && authority === session.wallet;
@@ -113,9 +116,11 @@ export default function DashboardPage() {
   if (!run && isWalletBand && session.profile)
     return (
       <>
-        {panel}
         {rpcError ? <p className="small warn" style={{ marginBottom: 10 }}>{rpcError}</p> : null}
         <NoTourYet name={session.profile.name} authority={authority!} />
+        {/* the next step first; wallet details below it */}
+        <h2 style={{ margin: "28px 0 10px" }}>Your wallet</h2>
+        {panel}
       </>
     );
   if (!run) {
@@ -123,8 +128,7 @@ export default function DashboardPage() {
       <div className="card">
         <h2>No tour yet</h2>
         <p className="muted" style={{ marginTop: 8 }}>
-          Start the agents: <span className="mono">npm run demo:approve</span> to approve venues and the route yourself, or <span className="mono">npm run demo:fast</span> on
-          auto-pilot. The negotiation, your decisions and every transaction show up here.
+          Nothing has been booked for this band yet. <Link href="/tour/new">Create a tour</Link> to get started.
         </p>
       </div>
     );
@@ -147,12 +151,17 @@ export default function DashboardPage() {
   let sold = 0;
   let escrow = 0;
   let take = 0;
-  const count = { onSale: 0, atRisk: 0, confirmed: 0, settled: 0, cancelled: 0 };
+  // a tour read from chain state was booked by the band itself (wizard or its own agents), not a recording
+  const live = run.cluster === "live";
+  // fans and euros only for tours priced on the dashboard's scale (agent-booked tours use real SOL prices)
+  const inFans = live && !!run.inApp;
+  const count = { proposed: 0, onSale: 0, atRisk: 0, confirmed: 0, settled: 0, cancelled: 0 };
   for (const v of views) {
     if (v.state === "rejected") continue;
     sold += v.sold;
     escrow += v.escrowLamports;
     take += bandTake(v);
+    if (v.state === "proposed") count.proposed++;
     if (v.state === "onSale") count.onSale++;
     if (v.health === "at-risk") count.atRisk++;
     if (v.state === "confirmed" || v.state === "settled") count.confirmed++;
@@ -163,8 +172,18 @@ export default function DashboardPage() {
   // ---------- what needs the band ----------
   const attention: { key: string; tone: "wait" | "risk" | "bad" | "info"; text: ReactNode; cta?: ReactNode }[] = [];
   for (const i of pending) attention.push({ key: i.request.id, tone: "wait", text: <PendingLine item={i} />, cta: <Link className="btn primary small" href={`/approvals#${i.request.id}`}>Review</Link> });
+  if (count.proposed)
+    attention.push({
+      key: "proposed",
+      tone: "info", // nothing for the band to do: not the "waiting for you" green
+      text: (
+        <>
+          {count.proposed} of {views.length} shows wait for their venue to sign. Venues answer within about 10 minutes; nothing for you to do.
+        </>
+      ),
+    });
   for (const v of views) {
-    if (v.health === "at-risk") attention.push({ key: v.run.show, tone: "risk", text: <><b>{v.run.city}</b> is at risk: {v.status.toLowerCase()}. If it misses, fans are refunded and you get replacement options.</>, cta: <Link className="btn outline small" href={`/show?address=${v.run.show}`}>Open</Link> });
+    if (v.health === "at-risk") attention.push({ key: v.run.show, tone: "risk", text: <><b>{v.run.city}</b> is at risk: {v.status.toLowerCase()}. If it misses, every fan is refunded automatically{live ? "" : " and you get replacement options"}.</>, cta: <Link className="btn outline small" href={`/show?address=${v.run.show}`}>Open</Link> });
     if (v.state === "cancelled") {
       const rep = v.run.replacedBy ? byShow.get(v.run.replacedBy) : undefined;
       attention.push({
@@ -172,11 +191,11 @@ export default function DashboardPage() {
         tone: rep ? "info" : "bad",
         text: rep ? (
           <>
-            <b>{v.run.city}</b> was cancelled ({v.sold}/{v.required}); replaced by {nameOf(rep.run.venue, rep.run.venueName)}, {rep.run.city}: <HealthBadge health={rep.health} />
+            <b>{v.run.city}</b> was cancelled ({inFans ? `${fans(v.sold)} of ${fans(v.required)} fans` : `${v.sold}/${v.required}`}); replaced by {nameOf(rep.run.venue, rep.run.venueName)}, {rep.run.city}: <HealthBadge health={rep.health} />
           </>
         ) : (
           <>
-            <b>{v.run.city}</b> was cancelled ({v.sold}/{v.required} sold); {v.sold > 0 ? "every fan was refunded" : "nobody had bought yet"}.
+            <b>{v.run.city}</b> was cancelled ({inFans ? `${fans(v.sold)} of the ${fans(v.required)} fans it needed` : `${v.sold}/${v.required} sold`}); {v.sold > 0 ? "every fan was refunded" : "nobody had bought yet"}.
           </>
         ),
       });
@@ -186,7 +205,15 @@ export default function DashboardPage() {
   }
 
   // ---------- stepper ----------
-  const steps = [
+  const steps = live
+    ? [
+        { label: "Route approved", n: views.length, done: true },
+        { label: "Venues signed", n: views.length - count.proposed - views.filter((v) => v.state === "rejected").length, done: count.proposed === 0, now: count.proposed > 0 },
+        { label: "On sale", n: count.onSale, done: count.onSale + count.confirmed + count.cancelled > 0 },
+        { label: "Confirmed", n: count.confirmed, done: count.confirmed > 0 },
+        { label: "Paid out", n: count.settled, done: count.settled > 0 },
+      ]
+    : [
     { label: "Offers", n: venuesItem?.request.payload.step === "venues" ? venuesItem.request.payload.offers.length : "–", done: !!venuesItem },
     { label: "Venues OK", n: venuesItem?.decision?.answer.step === "venues" ? venuesItem.decision.answer.venueIds.length : "–", done: !!venuesItem?.decision, now: !!venuesItem && !venuesItem.decision },
     { label: "Route OK", n: routeItem?.decision?.answer.approve && routeItem.request.payload.step === "route" ? routeItem.request.payload.stops.length : "–", done: !!routeItem?.decision?.answer.approve, now: !!routeItem && !routeItem.decision },
@@ -194,8 +221,9 @@ export default function DashboardPage() {
     { label: "Confirmed", n: count.confirmed, done: count.confirmed > 0 },
     { label: "Settled", n: count.settled, done: count.settled > 0 },
   ];
-  if (!steps.some((s) => s.now)) {
-    const idx = count.onSale > 0 ? 3 : views.length && count.confirmed > count.settled ? 4 : count.settled > 0 ? 5 : -1;
+  if (!steps.some((s) => (s as { now?: boolean }).now)) {
+    const shift = live ? 1 : 0; // the live stepper has no "Offers" step
+    const idx = count.onSale > 0 ? 3 - shift : views.length && count.confirmed > count.settled ? 4 - shift : count.settled > 0 ? 5 - shift : -1;
     if (idx >= 0) (steps[idx] as { now?: boolean }).now = true;
   }
 
@@ -217,26 +245,26 @@ export default function DashboardPage() {
     off: v.state === "cancelled",
     href: `/show?address=${v.run.show}`,
     right: <HealthBadge health={v.health} />,
-    detail: v.run.replaces ? "replacement show" : undefined,
+    // a band's own tour: each stop carries its progress, so the page needs no second list of shows
+    detail: inFans ? `${fans(v.sold)} of ${fans(v.capacity)} fans · ${v.status}` : v.run.replaces ? "replacement show" : undefined,
   }));
   const waitingRoute = views.length === 0 && routeItem && !routeItem.decision && routeItem.request.payload.step === "route" ? routeItem.request.payload : null;
 
   const cities = new Set(run.shows.map((s) => s.city));
   return (
     <div>
-      {panel}
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <h1>{run.band.name}</h1>
           <p className="muted">
             {run.brief ? `${run.brief.wantedShows}-show tour · ${run.brief.countries.join("/")} · ${run.brief.windowDays}-day window` : `Central Europe tour · ${cities.size} cities`}
             {" · "}
-            {run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
+            {live ? (isWalletBand ? "booked by you" : "live on devnet") : run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
             {run.tour ? (
               <>
                 {" · "}
                 <a href={explorerUrl("address", run.tour)} target="_blank" rel="noreferrer">
-                  tour on explorer ↗
+                  tour on Solana ↗
                 </a>
               </>
             ) : null}
@@ -244,6 +272,12 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="row">
+          {isWalletBand ? (
+            // while this tour still sells, a new one is not the next step
+            <Link href="/tour/new" className={`btn ${count.proposed + count.onSale + count.confirmed - count.settled > 0 ? "outline" : "primary"}`}>
+              New tour
+            </Link>
+          ) : null}
           <Link href="/planner" className="btn outline">
             Plan a route
           </Link>
@@ -258,7 +292,13 @@ export default function DashboardPage() {
           {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
-      {isStaticMode() ? (
+      {inFans ? (
+        <p className="small muted" style={{ marginTop: 8 }}>
+          A devnet demo at small scale: each ticket on chain stands for {FANS_PER_TICKET} fans, money is play money shown in euros, and a tour runs in about an
+          hour instead of months (one tour day is {DEMO_DAY_SEC} seconds).
+        </p>
+      ) : null}
+      {isStaticMode() && !live ? (
         <p className="small muted" style={{ marginTop: 8 }}>
           Recorded run. Show states are read live from {run.cluster.includes("devnet") ? "devnet" : "the chain"}; decisions are off here.
         </p>
@@ -284,7 +324,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="stepper" aria-label="Tour progress">
+      <div className="stepper" aria-label="Tour progress" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
         {steps.map((s) => (
           <div key={s.label} className={`step ${s.done ? "done" : ""} ${(s as { now?: boolean }).now ? "now" : ""}`}>
             {s.label}
@@ -295,12 +335,22 @@ export default function DashboardPage() {
 
       {views.length > 0 ? (
         <div className="stats">
-          <Stat label="Tickets sold" value={sold} />
-          <Stat label="In escrow" value={sol(escrow, 2)} />
-          <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
-          <Stat label="Confirmed" value={count.confirmed} />
-          <Stat label="At risk" value={count.atRisk} tone={count.atRisk ? "warn" : undefined} />
-          <Stat label="Cancelled" value={count.cancelled} tone={count.cancelled ? "bad" : undefined} />
+          {inFans ? (
+            <>
+              <Stat label="Fans so far" value={fans(sold)} />
+              <Stat label="Ticket money held" value={euros(escrow)} hint="back to fans if a show is cancelled" />
+              <Stat label="Your share" value={euros(take)} hint="from shows that go ahead" />
+            </>
+          ) : (
+            <>
+              <Stat label="Tickets sold" value={sold} />
+              <Stat label="Ticket money held" value={sol(escrow, 2)} hint="refunded if a show is cancelled" />
+              <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
+            </>
+          )}
+          {/* only news: a zero here is noise */}
+          {count.atRisk ? <Stat label="At risk" value={count.atRisk} tone="warn" /> : null}
+          {count.cancelled ? <Stat label="Cancelled" value={count.cancelled} tone="bad" /> : null}
         </div>
       ) : null}
 
@@ -320,6 +370,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {inFans ? null : (
+            <>
           <h2 style={{ margin: "24px 0 10px" }}>Shows</h2>
           <div className="grid">
             {views.map((v) => (
@@ -329,9 +381,12 @@ export default function DashboardPage() {
                 now={now}
                 venueName={nameOf(v.run.venue, v.run.venueName)}
                 replacedByCity={v.run.replacedBy ? byShow.get(v.run.replacedBy)?.run.city : undefined}
+                bandUnits={inFans}
               />
             ))}
           </div>
+            </>
+          )}
         </>
       ) : (
         <div className="card" style={{ marginTop: 12 }}>
@@ -350,11 +405,32 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h2 style={{ margin: "24px 0 10px" }}>On-chain, live</h2>
-      <Feed limit={12} compact source="chain" />
+      {live ? null : <h2 style={{ margin: "24px 0 10px" }}>What happened on this recorded tour</h2>}
+      {live ? (
+        <Feed
+          title={<h2 style={{ margin: "24px 0 10px" }}>What happened</h2>}
+          hideWhenEmpty
+          limit={500}
+          compact
+          source="chain"
+          shows={run.shows.map((s) => s.show)}
+          cityOf={Object.fromEntries(run.shows.map((s) => [s.show, s.city]))}
+          inFans={inFans}
+          empty={sold > 0 ? "The step-by-step story is still loading from devnet; each stop above shows where it stands." : "Your shows are booked; nothing else has happened yet."}
+        />
+      ) : (
+        <Feed limit={2000} compact source="transcript" />
+      )}
       <p className="small" style={{ marginTop: 8 }}>
-        <Link href="/feed">Full feed →</Link>
+        <Link href="/feed">All activity →</Link>
       </p>
+      {/* wallet details matter less than the tour: they sit below it */}
+      {panel ? (
+        <>
+          <h2 style={{ margin: "24px 0 10px" }}>Your wallet</h2>
+          {panel}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -394,22 +470,23 @@ function NoTourYet({ name, authority }: { name: string; authority: string }) {
   return (
     <div>
       <h1>{name}</h1>
-      <p className="muted">Your band is registered on-chain. No tour yet.</p>
-      <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
-        <h3>Book your first tour</h3>
-        <p className="small muted" style={{ marginTop: 6 }}>
-          Your band agent books tours with your wallet&apos;s key, so it runs on your machine, not in the browser. Export the wallet&apos;s private key into a file on your
-          machine (keep it out of the repository) and start the agents as your band; this page then shows the tour as it is booked, and the Approvals page asks you about
-          venues and the route.
-        </p>
-        <pre className="mono" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>
-          {`npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "${name}" --approve`}
-        </pre>
-        <p className="small muted" style={{ marginTop: 10 }}>
-          Meanwhile: find rooms on the <Link href="/venues">Venues</Link> page and sketch a run in the <Link href="/planner">Route planner</Link>. Your record lives at{" "}
-          <Link href={`/band?authority=${authority}`}>Band record</Link>.
-        </p>
+      <p className="muted">Your band is set up. Time for the first tour.</p>
+      <div className="cta">
+        <div>
+          <h2>Create your first tour</h2>
+          <p className="small muted" style={{ marginTop: 6, maxWidth: 520 }}>
+            Tell your agent how many people you bring, the ticket price, where to start and how long to go. It asks the venues, plans the route, and books it
+            when you say yes.
+          </p>
+        </div>
+        <Link className="btn primary big" href="/tour/new">
+          Create your first tour
+        </Link>
       </div>
+      <p className="small muted" style={{ marginTop: 14 }}>
+        Want to look around first? Find rooms on the <Link href="/venues">Venues</Link> page, sketch a run in the <Link href="/planner">Route planner</Link>, or open
+        your <Link href={`/band?authority=${authority}`}>band record</Link>.
+      </p>
     </div>
   );
 }

@@ -49,7 +49,7 @@ function setup(approver: Approver) {
     .map((v) => {
       const kp = keypairFromSeedHex(v.seed);
       const profile = venuePda(kp.publicKey, chain.programId);
-      chain.registerVenue(kp.publicKey, profile, v.capacity);
+      chain.registerVenue_(kp.publicKey, profile, v.capacity);
       const a = new VenueAgent(v, kp, profile, chain.client, bus, brain);
       a.start();
       return a;

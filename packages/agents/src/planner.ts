@@ -160,7 +160,7 @@ export function describePlan(plan: PlannedShow[]): string {
 }
 
 /** Which of a venue's days are free: deterministic pseudo-calendar from the venue id. */
-export function venueAvailability(venue: Venue, windowDays: number, busyRatio = 0.35): number[] {
+export function venueAvailability(venue: Pick<Venue, "id">, windowDays: number, busyRatio = 0.35): number[] {
   let h = 2166136261;
   for (const ch of venue.id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
   const days: number[] = [];

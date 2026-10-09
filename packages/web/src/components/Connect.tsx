@@ -1,7 +1,8 @@
 "use client";
 
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { WalletButton } from "./WalletButton";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CLUSTER, explorerUrl } from "@/lib/config";
 import { sol } from "@/lib/format";
@@ -12,6 +13,13 @@ const GENRES = ["rock", "metal", "punk", "indie", "electronic", "hiphop", "jazz"
 /** First screen of the band pages when no wallet is connected. */
 export function ConnectScreen() {
   const { setGuest, runAuthority } = useBandSession();
+  const path = usePathname();
+  const router = useRouter();
+  // creating a tour needs your own wallet; the demo band lives on the dashboard
+  const explore = () => {
+    setGuest(true);
+    if (path.startsWith("/tour")) router.push("/");
+  };
   return (
     <div className="welcome">
       <div className="brand big">
@@ -23,9 +31,9 @@ export function ConnectScreen() {
         anything is booked.
       </p>
       <div className="row" style={{ marginTop: 20 }}>
-        <WalletMultiButton>Connect wallet</WalletMultiButton>
+        <WalletButton>Connect wallet</WalletButton>
         {runAuthority ? (
-          <button className="btn outline" onClick={() => setGuest(true)}>
+          <button className="btn outline" onClick={explore}>
             Explore the demo band
           </button>
         ) : null}
@@ -35,20 +43,20 @@ export function ConnectScreen() {
       </p>
       <div className="steps">
         <div>
-          <b>1. Approve venues</b>
-          <span className="small muted">Venue agents send offers; you tick the rooms you want to play.</span>
+          <b>1. Answer four questions</b>
+          <span className="small muted">How many people you bring, the ticket price, where to start, how long to go.</span>
         </div>
         <div>
           <b>2. Approve the route</b>
-          <span className="small muted">Dates, drive per leg and money. Nothing is booked before you say yes.</span>
+          <span className="small muted">Venue agents make offers; you see the map, dates and drives. Nothing is booked before you say yes.</span>
         </div>
         <div>
           <b>3. Sell or save the date</b>
-          <span className="small muted">Fans pay into escrow. Miss the threshold and you pick a replacement.</span>
+          <span className="small muted">Fans pay into a safe on Solana. A show that misses its target is cancelled and every fan is refunded automatically.</span>
         </div>
         <div>
           <b>4. Get paid</b>
-          <span className="small muted">After the show the escrow splits between band, venue and crew on-chain.</span>
+          <span className="small muted">After the show the ticket money is split between band, venue and crew, automatically.</span>
         </div>
       </div>
     </div>
@@ -59,7 +67,7 @@ export function ConnectScreen() {
 export function RegisterBand() {
   const wallet = useAnchorWallet();
   const { refreshProfile, profileError } = useBandSession();
-  const [name, setName] = useState("The Running Pigeons");
+  const [name, setName] = useState("");
   const [genre, setGenre] = useState("indie");
   const [balance, setBalance] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -103,13 +111,13 @@ export function RegisterBand() {
       <h2>Set up your band</h2>
       <p className="small muted" style={{ marginTop: 6 }}>
         This wallet has no band profile yet. Registering creates it on Solana {CLUSTER}: the profile is where your settled shows add up into a track record venues
-        can check. It costs a little rent (about 0.002 SOL) and the transaction fee.
+        can check. It costs a small deposit (about 0.002 SOL of devnet money).
       </p>
       {profileError ? <p className="small warn" style={{ marginTop: 8 }}>Could not read the chain: {profileError}</p> : null}
       <div className="form">
         <label>
           <span className="small muted">Band name</span>
-          <input className="input wide" value={name} maxLength={32} onChange={(e) => setName(e.target.value)} />
+          <input className="input wide" value={name} maxLength={32} placeholder="Your band's name" onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
           <span className="small muted">Genre</span>
@@ -127,7 +135,7 @@ export function RegisterBand() {
         {broke ? (
           <span className="warn">
             {" "}
-            · not enough for the rent. Send some {CLUSTER} SOL to this wallet first
+            · not enough for the deposit. Send some {CLUSTER} SOL to this wallet first
             {CLUSTER === "devnet" ? (
               <>
                 {" "}

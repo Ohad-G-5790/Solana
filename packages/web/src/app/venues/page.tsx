@@ -6,7 +6,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DriveNote } from "@/components/Itinerary";
 import { addToPlan, loadPlan, removeFromPlan } from "@/lib/planner-store";
-import { getApprovals, getRun, getWorld, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
+import { getApprovals, getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
+import { useBandSession } from "@/components/BandSession";
+import { useBandTour } from "@/components/useBandTour";
 
 const SIZES = [
   { id: "any", label: "Any size", min: 0, max: Infinity },
@@ -26,7 +28,8 @@ type Sort = "distance" | "capacity" | "name";
 
 export default function VenuesPage() {
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
-  const [run, setRun] = useState<RunSummary | null>(null);
+  const { tour: run, mine } = useBandTour();
+  const { guest } = useBandSession();
   const [offers, setOffers] = useState<Map<string, VenueChoice>>(new Map());
   const [plan, setPlan] = useState<string[]>([]);
   const [q, setQ] = useState("");
@@ -36,16 +39,29 @@ export default function VenuesPage() {
   const [from, setFrom] = useState("");
   const [maxDrive, setMaxDrive] = useState("any");
   const [sort, setSort] = useState<Sort>("distance");
+  // on a phone each city starts with its two biggest rooms; the rest open on demand
+  const [narrow, setNarrow] = useState(false);
+  const [openCities, setOpenCities] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
   useEffect(() => {
     void getWorld().then(setWorld);
-    void getRun().then(setRun);
+    setPlan(loadPlan());
+  }, []);
+  // the recorded run's offers belong to the demo band: show them only while exploring it
+  useEffect(() => {
+    if (!guest || mine) return setOffers(new Map());
     void getApprovals().then((a) => {
       const venues = [...a.items].reverse().find((i) => i.request.payload.step === "venues");
       if (venues?.request.payload.step === "venues") setOffers(new Map(venues.request.payload.offers.map((o) => [o.venueId, o])));
     });
-    setPlan(loadPlan());
-  }, []);
+  }, [guest, mine]);
 
   const onTour = useMemo(() => new Set((run?.shows ?? []).filter((s) => s.state !== "rejected" && s.state !== "cancelled").map((s) => s.venue)), [run]);
   const defaultFrom = run?.band.homeCity ?? run?.shows[0]?.city ?? "Berlin";
@@ -177,6 +193,7 @@ export default function VenuesPage() {
             </div>
             {[...list]
               .sort((a, b) => b.capacity - a.capacity)
+              .slice(0, narrow && !openCities.has(city) ? 2 : undefined)
               .map((v) => {
                 const o = offers.get(v.id);
                 const added = plan.includes(v.id);
@@ -189,7 +206,7 @@ export default function VenuesPage() {
                           website ↗
                         </a>
                       ) : null}{" "}
-                      {onTour.has(v.id) ? <span className="badge confirmed">on your tour</span> : null}{" "}
+                      {onTour.has(v.id) ? <span className="badge confirmed">{mine ? "on your tour" : "on the demo tour"}</span> : null}{" "}
                       {o ? <span className="badge rec">offered {o.offeredCapacity} tickets · {o.askBps / 100}%</span> : null}
                       {v.notes ? <div className="micro muted" style={{ marginTop: 2 }}>{v.notes}</div> : null}
                     </div>
@@ -201,6 +218,11 @@ export default function VenuesPage() {
                   </div>
                 );
               })}
+            {narrow && !openCities.has(city) && list.length > 2 ? (
+              <button className="link-btn small" style={{ marginTop: 6 }} onClick={() => setOpenCities((s) => new Set(s).add(city))}>
+                Show {list.length - 2} more in {city}
+              </button>
+            ) : null}
           </div>
         );
       })}

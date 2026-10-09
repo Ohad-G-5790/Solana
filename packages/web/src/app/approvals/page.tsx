@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DecisionCard } from "@/components/Approvals";
 import { useBandSession } from "@/components/BandSession";
+import { useBandTour } from "@/components/useBandTour";
 import { pendingItems, type ApprovalsView } from "@/lib/approvals";
 import { getApprovals, getRun, getWorld, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
 
 export default function ApprovalsPage() {
   const session = useBandSession();
+  const { tour: own } = useBandTour();
   const [view, setView] = useState<ApprovalsView | null>(null);
   const [run, setRun] = useState<RunSummary | null>(null);
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
@@ -36,13 +38,20 @@ export default function ApprovalsPage() {
         <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
           <h3>No questions for {name} yet</h3>
           <p className="small muted" style={{ marginTop: 6 }}>
-            Your band agent asks here once it runs a tour for {name}: which venues you want to play, whether the route works, and what to do if a show does not
-            sell. Start it on your machine with your band&apos;s keypair and <span className="mono">--approve</span>, and keep this page open (locally:{" "}
-            <span className="mono">npm run dev -w @greenroom/web</span>).
+            When you create a tour, the route on the map is your decision: nothing is booked until you press Book. After that the tour runs by itself; a show
+            that misses its target is cancelled and every fan is refunded automatically, so there is nothing to approve here.
           </p>
-          <pre className="mono" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>
-            {`npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "${session.profile?.name ?? "The Running Pigeons"}" --approve`}
-          </pre>
+          <div className="row" style={{ marginTop: 14 }}>
+            {own?.shows.length ? (
+              <Link className="btn primary" href="/">
+                Follow your tour
+              </Link>
+            ) : (
+              <Link className="btn primary" href="/tour/new">
+                Create a tour
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -64,16 +73,15 @@ export default function ApprovalsPage() {
       {mode === "auto" && view.writable ? (
         <div className="card" style={{ marginBottom: 12 }}>
           <p className="small">
-            <b>Auto-pilot is on for this run:</b> the agent approves its own recommendations. To decide yourself, start the agents with{" "}
-            <span className="mono">npm run demo:approve</span> and keep this page open.
+            <b>Auto-pilot is on for this tour:</b> the agent approved its own recommendations. Tours you create yourself start with your yes on the
+            route.
           </p>
         </div>
       ) : null}
       {!view.writable && view.items.length ? (
         <div className="card" style={{ marginBottom: 12 }}>
           <p className="small muted">
-            This is a recorded run, so you are looking at the decisions as they were made. Run <span className="mono">npm run demo:approve</span> locally to make them
-            yourself.
+            This is a recorded tour, so you are looking at the decisions as they were made. On your own tours you make them.
           </p>
         </div>
       ) : null}

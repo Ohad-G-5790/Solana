@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { UI_CHECKS, type UiCheck } from "./ui-bot.ts";
 
 export interface CheckResult {
   id: string;
@@ -47,6 +48,13 @@ function walk(dir: string, out: string[] = []): string[] {
     else out.push(p);
   }
   return out;
+}
+
+/** The UI bot drives the dashboard once; each of its checks reads that run. */
+let uiRun: Promise<UiCheck[]> | null = null;
+function uiBot(root: string): Promise<UiCheck[]> {
+  uiRun ??= import("./ui-bot.ts").then((m) => m.runUiBot(root));
+  return uiRun;
 }
 
 export const CHECKS: CheckDef[] = [
@@ -210,6 +218,20 @@ export const CHECKS: CheckDef[] = [
       return { ok, detail: ok ? "buyTicket, refundTicket and explorer links present" : "flows missing" };
     },
   },
+
+  // ---------- user experience (qa/src/ui-bot.ts) ----------
+  ...UI_CHECKS.map(
+    (c): CheckDef => ({
+      id: c.id,
+      component: "ux",
+      title: c.title,
+      command: "npx tsx qa/src/ui-bot.ts",
+      run: async (root) => {
+        const r = (await uiBot(root)).find((x) => x.id === c.id);
+        return r ? { ok: r.ok, detail: r.detail } : { ok: false, detail: "did not run" };
+      },
+    })
+  ),
 
   // ---------- world ----------
   {

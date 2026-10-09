@@ -17,8 +17,9 @@ Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 20
 | Anchor program: profiles, tours, shows with escrow vaults, tickets, threshold/refund/settlement cranks, crew payees | `programs/greenroom` | 11 instructions, 13 integration tests on a local validator; deployed on devnet |
 | Agents: band, venues, fans, crew, crank, message bus, pluggable brain (heuristic or Claude) | `packages/agents` | end-to-end demo on localnet and devnet |
 | Seed world: 136 real venues in 35 cities across DE/AT/FR/PL/CZ, 100 generated bands, 100 crew and 60 fans per city | `packages/world`, `data/venues.json` | deterministic |
-| Dashboard for the band: approvals (venues, route, replacement shows), what needs attention, route with drive times, show health, venue finder, route planner, live agent feed, wallet buy/refund, track record | `packages/web` | Next.js, design per `docs/DESIGN.md` |
-| QA bot: automated checks + rubric judge, weighted score, pass at 8.5, five-loop limit | `qa/` | `npm run qa` |
+| Dashboard for the band: connect a wallet, create a tour from four answers and book it with one approval, approvals (venues, route, replacement shows), route with drive times, show health, venue finder, route planner, grouped activity, wallet buy/refund, track record | `packages/web` | Next.js, design per `docs/DESIGN.md`; live on GitHub Pages |
+| Keeper: lets seed venues accept, fans buy, and the crank confirm, refund and settle the shows bands book from the browser | `packages/agents/src/keeper.ts` | GitHub Actions, every 10 minutes |
+| QA bot: automated checks + rubric judge, weighted score, pass at 8.5, five-loop limit; UI bot that walks the dashboard in Chromium as a band would | `qa/` | `npm run qa`, `npm run ui-bot` |
 
 ## Quick start
 
@@ -34,19 +35,19 @@ npm run dev -w @greenroom/web         # dashboard (reads devnet by default; see 
 
 `npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. To watch a local run in the dashboard, copy `packages/web/.env.local.example` to `packages/web/.env.local` so it reads the local validator; without that file it reads devnet, where the program is deployed, and shows the recorded run from `packages/web/public/demo`.
 
-### Your band, your wallet
+### Your band, your wallet: create a tour with one click
 
-The dashboard's band pages (Dashboard, Approvals, Band record) start with a **Connect wallet** screen: the connected wallet is the band. Venues and the Route planner stay open to everyone, and "Explore the demo band" shows the recorded demo without a wallet.
+No command line needed. On the [live dashboard](https://ohad-g-5790.github.io/Solana/):
 
-1. In Phantom (or Solflare), create a new account for the band and switch the wallet to Solana devnet (Phantom: Settings → Developer settings → Testnet mode). Send it a little devnet SOL.
-2. Connect it on the dashboard. A wallet without a band profile gets a **Set up your band** form: name and genre, one transaction (about 0.002 SOL of rent) that creates the band's on-chain profile.
-3. To book a tour as that band, export the account's private key from the wallet into a file on your machine (base58 as exported, or the Solana CLI's JSON array) and start the agents with it; the band's wallet signs the band's transactions, `--wallet` still pays fees and the simulated fans:
+1. In Phantom (or Solflare), create an account for the band, switch it to Solana devnet (Phantom: Settings → Developer settings → Testnet mode) and give it a little devnet SOL.
+2. **Connect wallet.** Before that the site shows nothing personal; after it, the dashboard is that wallet's band. A wallet without a band profile gets a **Set up your band** form (name and genre, one approval of about 0.002 SOL).
+3. **Create your first tour.** Four answers: how many people you bring (100, 200, 500, 1,000, 2,500 or 5,000), the ticket price, the first city, and how long the tour is (7 to 30 days).
+4. **Plan my tour.** The venue agents' offers are computed in the browser and the route appears on the map with dates, drive per leg and days off. Nothing is booked yet; change any answer and plan again.
+5. **Book this tour.** Your wallet asks once and creates the tour and every show on devnet.
 
-```bash
-npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "The Running Pigeons" --genre indie --draw 400 --home-city Berlin --approve
-```
+From there it runs by itself: the **keeper** workflow (`.github/workflows/keeper.yml`, every 10 minutes on GitHub Actions, using the demo wallet secret) lets the seed venues sign the shows whose terms they would offer themselves (and decline the rest), simulates fans buying (each show sells at most 40 tickets of at most 200 €, and each run spends at most 0.3 SOL, ticket rent included), confirms or cancels each show at its deadline, refunds cancelled ones and settles the rest. Devnet clocks are compressed: sales run 40 minutes, each show sells a 5% sample of the room (12–40 tickets) at 1 € = 0.00001 SOL of play money. The seed venues' and simulated fans' keys derive from the public world seed, so they are demo keys for devnet only; the keeper refuses to run on mainnet and caps what the demo wallet spends on fans per run. Follow it on the Dashboard and on **Activity**, which groups everything that happened (your decisions, bookings, venue offers and declines, ticket sales, confirmed and cancelled shows, refunds, crew, payouts) into sections that open on demand.
 
-The connected dashboard then shows that band's latest tour straight from chain state, and with `--approve` and a local dashboard (`npm run dev -w @greenroom/web`, no `.env.local`, so it reads devnet) the Approvals page asks you about venues, the route and replacements. Keep the key file out of the repository.
+Developers can still run the agents as their own band from a terminal (`npm run demo:devnet -- --band-keypair <file> --band-name ... --genre ... --draw ... --home-city ... --approve`); keep key files out of the repository.
 
 ### Approving the tour yourself
 
@@ -109,7 +110,7 @@ packages/sdk            TypeScript client, PDAs, vendored IDL
 packages/world          real venues + generated bands, crew, fans
 packages/agents         agents, brain, planner, crank, orchestrator, CLI
 packages/web            Next.js dashboard
-qa/                     QA bot (checks, rubric, reports)
+qa/                     QA bot (checks, rubric, judge scores, reports) and the UI bot
 scripts/                setup, local validator, test and demo runners
 data/                   venues.json, generated runs
 docs/                   kickoff, spec, plan, QA rubric, design system, demo script, architecture
@@ -117,7 +118,25 @@ docs/                   kickoff, spec, plan, QA rubric, design system, demo scri
 
 ## QA gate
 
-`npm run qa` runs every automated check (build, clippy, program tests, agents unit + end-to-end, dashboard build/typecheck/lint/design tokens, world data, docs, developer experience), merges rubric judge scores from `qa/judge/*.json`, and writes `qa/reports/latest.md`. Each part is scored 1–10, the overall score is weighted, **8.5 passes**, and the bot stops after the fifth failed loop. `qa/reports/latest.md` and `qa/state.json` are kept in the repo so the loop history is visible.
+`npm run qa` runs every automated check (build, clippy, program tests, agents unit + end-to-end, dashboard build/typecheck/lint/design tokens, the UI bot, world data, docs, developer experience), merges rubric judge scores from `qa/judge/*.json`, and writes `qa/reports/latest.md`. Each part is scored 1–10, the overall score is weighted, **8.5 passes**, and the bot stops after the fifth failed loop. `qa/reports/latest.md` and `qa/state.json` are kept in the repo so the loop history is visible. `npm run qa:dry` (and `qa:quick`, which skips the validator checks) does not count as a loop and writes `qa/reports/dry-run.md` instead.
+
+The **UI bot** (`qa/src/ui-bot.ts`, `npm run ui-bot`) checks that the dashboard is intuitive, not how it looks. It builds the static site and drives it in Chromium with a test wallet that cannot sign and a faked devnet. Its checks:
+
+- the first screen is public, with a single connect button
+- connecting shows that wallet's band, with its address in the right case
+- a band without a tour sees one obvious next step
+- a tour takes four answers and shows the route, money and risk before anything is booked
+- after booking, the dashboard shows your own tour: the planned days, "booked by you", which shows wait on a venue, and only your activity
+- every page shows its heading within 1.5 s on a slow chain
+- nothing scrolls sideways at 390 px
+- every control has a name
+- each page has one heading and a marked nav item
+- no chain jargon on band pages
+- buttons come from one shared set
+- activity starts grouped and closed
+- visitors can explore without a wallet
+
+Each check is part of the **User experience** score, and `--shots <dir>` saves screenshots for a reviewer. On GitHub, the **qa** workflow (Actions → qa → Run workflow) runs the whole QA bot in the Anchor image, with the validator checks; tick *count* to record the loop.
 
 ## Hosting the dashboard
 
@@ -135,7 +154,7 @@ The repository holds a dedicated devnet demo wallet as an encrypted Actions secr
 
 ## Continuous integration
 
-Three workflows run on every push to `main`: `ci` (type checks, unit tests, dashboard lint and build on Node), `program` (builds the Anchor program, runs the 13 integration tests and a full agents run on a Linux validator inside the official Anchor 1.2.1 image; the container needs `--security-opt seccomp=unconfined` because the Agave 4.x validator requires io_uring), and `pages` (publishes the static dashboard).
+Three workflows run on every push to `main`: `ci` (type checks, unit tests, dashboard lint and build on Node, and the UI bot in Chromium with its screenshots as an artifact), `program` (builds the Anchor program, runs the 13 integration tests and a full agents run on a Linux validator inside the official Anchor 1.2.1 image; the container needs `--security-opt seccomp=unconfined` because the Agave 4.x validator requires io_uring), and `pages` (publishes the static dashboard). `keeper` runs every 10 minutes to move devnet shows along, and `qa` runs the QA bot on demand.
 
 ## Windows note
 

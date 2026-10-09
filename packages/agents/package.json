@@ -9,12 +9,14 @@
     ".": "./src/index.ts",
     "./planner": "./src/planner.ts",
     "./approvals": "./src/approvals.ts",
-    "./alternatives": "./src/alternatives.ts"
+    "./alternatives": "./src/alternatives.ts",
+    "./offers": "./src/offers.ts"
   },
   "scripts": {
     "demo": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "tsx --test src/*.test.ts"
+    "test": "tsx --test src/*.test.ts",
+    "keeper": "tsx src/keeper-cli.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.0",
