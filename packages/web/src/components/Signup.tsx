@@ -36,26 +36,31 @@ export function SignupForm({ big = false, source = "greenroom-demo" }: { big?: b
   if (!SIGNUP_URL) return null;
   if (state === "done")
     return (
-      <p className={`signup-done ${big ? "" : "small"}`} role="status">
+      <p className={`signup-done ${big ? "big" : "small"}`} role="status">
         <b>Thanks!</b> We will email you when the full version is out.
       </p>
     );
+  // the big form is one capsule: its error goes underneath
+  const failed = state === "error" ? <span className="micro bad">That did not go through; try again.</span> : null;
   return (
-    <form className={big ? "signup big" : "signup"} onSubmit={submit}>
-      <input
-        className="input"
-        type="email"
-        required
-        placeholder="you@yourband.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        aria-label="Your email"
-        autoComplete="email"
-      />
-      <button className={big ? "btn primary big" : "btn outline small"} disabled={state === "sending"}>
-        {state === "sending" ? "Sending…" : "Notify me"}
-      </button>
-      {state === "error" ? <span className="micro bad">That did not go through; try again.</span> : null}
-    </form>
+    <>
+      <form className={big ? "signup big" : "signup"} onSubmit={submit}>
+        <input
+          className="input"
+          type="email"
+          required
+          placeholder="you@yourband.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          aria-label="Your email"
+          autoComplete="email"
+        />
+        <button className={big ? "btn primary big" : "btn outline small"} disabled={state === "sending"}>
+          {state === "sending" ? "Sending…" : "Notify me"}
+        </button>
+        {big ? null : failed}
+      </form>
+      {big ? failed : null}
+    </>
   );
 }

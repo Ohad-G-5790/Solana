@@ -54,7 +54,15 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link href="/" className="brand">
             <span className="dot" /> Greenroom
           </Link>
-          {session.reconnecting ? null : <WalletButton>Connect wallet</WalletButton>}
+          <nav className="top-links" aria-label="On this page">
+            {bandPage ? (
+              <>
+                <Link href="/#why">Why Greenroom</Link>
+                <Link href="/#how">How it works</Link>
+              </>
+            ) : null}
+            {session.reconnecting ? null : <WalletButton>Connect wallet</WalletButton>}
+          </nav>
         </header>
         <main className="public-main">{!bandPage ? children : session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <Landing />}</main>
       </div>

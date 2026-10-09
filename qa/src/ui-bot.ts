@@ -334,9 +334,10 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
           posted = r.request().postData() ?? "";
           await r.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' });
         });
+        if (opts.shots) await page.waitForTimeout(3500); // the hero's chat plays in first
         await shot(page, "1-public");
-        await page.getByLabel("Your email").fill("fan@example.com");
-        await page.getByRole("button", { name: /notify me/i }).click();
+        await page.getByLabel("Your email").first().fill("fan@example.com");
+        await page.getByRole("button", { name: /notify me/i }).first().click();
         const thanked = await page.getByText(/thanks/i).waitFor({ timeout: 5000 }).then(() => true, () => false);
         signup = thanked && posted.includes("fan%40example.com") ? "ok" : `sent "${posted}", thanked: ${thanked}`;
       }
@@ -344,6 +345,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       const phone = await newPage(browser, { band: true, delay: 0 }, 390);
       await phone.goto(url("/"), { waitUntil: "domcontentloaded" });
       await phone.locator(".landing").waitFor({ timeout: 5000 });
+      if (opts.shots) await phone.waitForTimeout(3500);
       const over = await phone.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       await shot(phone, "phone-public");
       await phone.close();
