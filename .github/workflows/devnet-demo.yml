@@ -77,6 +77,8 @@ jobs:
           umask 077
           printf '%s' "$BAND_WALLET" > ~/.config/solana/band.key
       - name: Run the agents on devnet
+        # bash runs with pipefail: a failed run fails the step instead of hiding behind the log filter
+        shell: bash
         env:
           GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
