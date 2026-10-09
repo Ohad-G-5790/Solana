@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useBandSession } from "@/components/BandSession";
-import { Feed } from "@/components/Feed";
+import { Feed, showsFeed } from "@/components/Feed";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { getRun } from "@/lib/run";
 
@@ -15,7 +15,8 @@ import { getRun } from "@/lib/run";
 export default function FeedPage() {
   const session = useBandSession();
   const own = !!session.wallet && session.authority === session.wallet;
-  const [shows, setShows] = useState<{ show: string; city: string }[] | null | undefined>(undefined);
+  const [shows, setShows] = useState<{ show: string; city: string; state: string; ticketsSold: number }[] | null | undefined>(undefined);
+  const [inFans, setInFans] = useState(true);
   const [failed, setFailed] = useState(false);
   const [demoName, setDemoName] = useState<string | null>(null);
 
@@ -26,7 +27,8 @@ export default function FeedPage() {
         fetchLiveTour(session.wallet!)
           .then((t) => {
             if (!alive) return;
-            setShows(t?.shows.map((s) => ({ show: s.show, city: s.city })) ?? null);
+            setShows(t?.shows.map((s) => ({ show: s.show, city: s.city, state: s.state, ticketsSold: s.ticketsSold })) ?? null);
+            setInFans(!!t?.inApp);
             setFailed(false);
           })
           .catch(() => alive && setFailed(true));
@@ -73,7 +75,10 @@ export default function FeedPage() {
           </Link>
         </div>
       ) : (
-        <Feed source="chain" shows={shows.map((s) => s.show)} cityOf={Object.fromEntries(shows.map((s) => [s.show, s.city]))} empty="Your shows are booked; nothing else has happened yet. Venues sign within about 10 minutes." />
+        <Feed source="chain" shows={shows.map((s) => s.show)} cityOf={Object.fromEntries(shows.map((s) => [s.show, s.city]))}
+          inFans={inFans}
+          fallback={showsFeed(shows, inFans)}
+          empty="Your shows are booked; nothing else has happened yet. Venues sign within about 10 minutes." />
       )}
     </div>
   );

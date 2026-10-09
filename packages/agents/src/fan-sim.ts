@@ -53,7 +53,8 @@ export class FanSim {
    * One simulation tick. `progress` is 0..1 of the way to the deadline; fans
    * with low eagerness wait, fans with high eagerness buy early.
    */
-  async tick(shows: { booked: BookedShow; state: string; ticketsSold: number; capacity: number; progress: number }[]): Promise<number> {
+  /** maxBuys: a tighter limit for this tick (a caller's remaining budget). */
+  async tick(shows: { booked: BookedShow; state: string; ticketsSold: number; capacity: number; progress: number }[], maxBuys = Infinity): Promise<number> {
     // 1. decide who buys this tick (deterministic), 2. send purchases in
     // parallel batches so a slow validator does not starve the deadline.
     const intents: { s: (typeof shows)[number]; fan: FanProfile; qty: number; key: string }[] = [];
@@ -63,7 +64,7 @@ export class FanSim {
       const loyal = s.booked.replaces ? (this.holders.get(s.booked.replaces) ?? new Set<string>()) : new Set<string>();
       const candidates = this.fansNear(s.booked.city).sort((a, b) => Number(loyal.has(b.id)) - Number(loyal.has(a.id)));
       for (const fan of candidates) {
-        if (intents.length >= this.opts.maxBuysPerTick) break;
+        if (intents.length >= Math.min(this.opts.maxBuysPerTick, maxBuys)) break;
         if (planned >= s.capacity) break;
         const key = `${s.booked.show.toBase58()}:${fan.id}`;
         if (this.bought.has(key) || this.declined.has(key)) continue;

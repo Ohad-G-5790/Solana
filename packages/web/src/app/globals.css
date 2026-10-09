@@ -1090,6 +1090,8 @@ input[type="checkbox"] {
   }
   .shell {
     grid-template-columns: minmax(0, 1fr);
+    /* the nav takes its height, the page the rest: no empty band under the nav */
+    grid-template-rows: auto 1fr;
   }
   .sidebar {
     position: static;

@@ -6,7 +6,7 @@ import type { Greenroom } from "@/idl/greenroom";
 import idl from "@/idl/greenroom.json";
 import { bandPda, connection, programId, readProgram, stateName } from "./greenroom";
 import { getWorld, type FeedMessage, type RunShow, type RunSummary } from "./run";
-import { APP_REGION, DEMO_DAY_SEC } from "./config";
+import { APP_REGION, DEMO_DAY_SEC, SALES_SEC } from "./config";
 import { euros, fans } from "./format";
 import { venueKeys } from "./venue-keys";
 
@@ -89,6 +89,8 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
       state: stateName(s.account.state),
       date: Number(s.account.date),
       thresholdDeadline: Number(s.account.thresholdDeadline),
+      // dashboard bookings open sales SALES_SEC before the deadline: lets "behind pace" work
+      salesOpenAt: tourAcct?.region === APP_REGION ? Number(s.account.thresholdDeadline) - SALES_SEC : undefined,
       payees: s.account.payees.map((p) => ({ label: p.label, bps: p.bps })),
     };
   });
@@ -109,20 +111,27 @@ const parser = new EventParser(programId, new BorshCoder(idl as Idl));
 const seen = new Map<string, FeedMessage[]>(); // signature -> decoded messages
 let nextId = 1_000_000;
 
-// Chain events are shown for a band's own devnet tour, so they speak in its units: fans and euros.
+// Chain events speak in the tour's units: fans and euros for tours booked in the dashboard,
+// tickets and SOL for tours the agents booked at real devnet prices. Both texts are decoded once.
+interface Units {
+  count: (tickets: number) => string;
+  money: (lamports: number) => string;
+}
+const FANS: Units = { count: (t) => `${fans(t)} fans`, money: (l) => euros(l) };
+const TICKETS: Units = { count: (t) => `${t} ticket${t === 1 ? "" : "s"}`, money: (l) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 5 })} SOL` };
 const n = (x: unknown) => Number(x);
-const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, VenueInfo>) => string> = {
+const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, VenueInfo>, u: Units) => string> = {
   BandRegistered: (d) => `${d.name} registered its band profile.`,
   VenueRegistered: (d) => `${d.name} (${d.city}) joined as a venue, capacity ${d.capacity}.`,
   TourCreated: (d) => `Tour "${d.name}" booked.`,
-  ShowProposed: (d, v) => `${v.get(String(d.venueProfile))?.city ?? "A show"} booked: up to ${fans(n(d.capacity))} fans, goes ahead at ${n(d.thresholdBps) / 100}%.`,
+  ShowProposed: (d, v, u) => `${v.get(String(d.venueProfile))?.city ?? "A show"} booked: up to ${u.count(n(d.capacity))}, goes ahead at ${n(d.thresholdBps) / 100}%.`,
   ShowAccepted: (d, v) => `${v.get(String(d.venueAuthority))?.name ?? "The venue"} signed: ${v.get(String(d.venueAuthority))?.city ?? "the show"} is on sale.`,
   ShowRejected: () => `The venue said no; the show is off.`,
-  TicketBought: (d) => `${fans(n(d.quantity))} more fans bought tickets (${fans(n(d.ticketsSold))} so far).`,
-  ShowConfirmed: (d) => `Target reached with ${fans(n(d.ticketsSold))} of ${fans(n(d.capacity))} fans: the show goes ahead.`,
-  ShowCancelled: (d) => `Sales closed at ${fans(n(d.ticketsSold))} fans, ${fans(n(d.ticketsRequired))} were needed: the show is cancelled and fans are refunded.`,
-  TicketRefunded: (d) => `${euros(n(d.amountLamports))} went back to fans.`,
-  ShowSettled: (d) => `Paid out ${euros(n(d.totalLamports))}: you ${euros(n(d.bandLamports))}, the venue ${euros(n(d.venueLamports))}${n(d.payeeLamports) ? `, crew ${euros(n(d.payeeLamports))}` : ""}.`,
+  TicketBought: (d, _v, u) => `${u.count(n(d.quantity))} more sold (${u.count(n(d.ticketsSold))} so far).`,
+  ShowConfirmed: (d, _v, u) => `Target reached with ${u.count(n(d.ticketsSold))} of ${u.count(n(d.capacity))}: the show goes ahead.`,
+  ShowCancelled: (d, _v, u) => `Sales closed at ${u.count(n(d.ticketsSold))}, ${u.count(n(d.ticketsRequired))} were needed: the show is cancelled and fans are refunded.`,
+  TicketRefunded: (d, _v, u) => `${u.money(n(d.amountLamports))} went back to fans.`,
+  ShowSettled: (d, _v, u) => `Paid out ${u.money(n(d.totalLamports))}: band ${u.money(n(d.bandLamports))}, venue ${u.money(n(d.venueLamports))}${n(d.payeeLamports) ? `, crew ${u.money(n(d.payeeLamports))}` : ""}.`,
   PayeeAdded: (d) => `Crew hired: ${d.label} for ${n(d.bps) / 100}% of the show.`,
 };
 
@@ -150,7 +159,8 @@ function decode(sig: string, tx: ParsedTransactionWithMeta | null, venues: Map<s
   const out: FeedMessage[] = [];
   for (const ev of parser.parseLogs(tx.meta.logMessages)) {
     const data = camel(ev.data as Record<string, unknown>);
-    const text = describe[ev.name]?.(data, venues) ?? `${ev.name}`;
+    const text = describe[ev.name]?.(data, venues, FANS) ?? `${ev.name}`;
+    const textTickets = describe[ev.name]?.(data, venues, TICKETS) ?? `${ev.name}`;
     const show = typeof data.show === "object" && data.show ? String(data.show) : undefined;
     out.push({
       id: nextId++,
@@ -159,7 +169,7 @@ function decode(sig: string, tx: ParsedTransactionWithMeta | null, venues: Map<s
       from: ev.name.startsWith("Ticket") ? "fan" : ev.name.startsWith("Show") || ev.name === "PayeeAdded" ? "chain" : "chain",
       text,
       tx: sig,
-      data: { ...data, show },
+      data: { ...data, show, textTickets },
     });
   }
   return out;

@@ -90,8 +90,9 @@ export default function NewTourPage() {
   };
 
   const book = async () => {
-    if (!plan) return;
+    if (!plan || busy) return;
     setError(null);
+    setBusy("Preparing your booking…"); // disables the button at once: no double booking
     const { bookTour, bookingErrorText, PartialBooking } = await import("@/lib/book");
     try {
       setBooked(await bookTour(wallet, profile, plan, setBusy, partial ? { tourId: partial.tourId } : undefined));
@@ -108,6 +109,11 @@ export default function NewTourPage() {
     return (
       <div className="card" style={{ maxWidth: 720 }}>
         <h1>Your tour is booked</h1>
+        {booked.restarted ? (
+          <p className="small warn" style={{ marginTop: 8 }}>
+            Your unfinished booking was too old (or a different route) to complete, so this is a new tour. The shows that did go through earlier still run on their own.
+          </p>
+        ) : null}
         <p className="muted" style={{ marginTop: 8 }}>
           {booked.shows.length} shows are booked. Each venue signs its show within about 10 minutes, then fans start buying. Ticket sales run for about{" "}
           {SALES_MINUTES} minutes: a show that sells half its tickets by then goes ahead; the others are cancelled and their fans refunded automatically.
@@ -261,7 +267,7 @@ export default function NewTourPage() {
           </div>
           <p className="micro muted" style={{ marginTop: 10, maxWidth: 720 }}>
             Your wallet asks you once and pays a small deposit to store the tour on Solana (about 0.005 SOL per show). On devnet each show sells a sample of the room, one ticket per 20 people,
-            at €{a.priceEuro} = {(a.priceEuro * LAMPORTS_PER_EURO) / 1e9} SOL of play money, and sales run {SALES_MINUTES} minutes instead of months.
+            at €{a.priceEuro} (that is {(a.priceEuro * LAMPORTS_PER_EURO) / 1e9} SOL of devnet play money), and sales run {SALES_MINUTES} minutes instead of months.
           </p>
         </section>
       ) : null}

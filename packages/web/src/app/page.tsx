@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useBandSession } from "@/components/BandSession";
 import { RegisterBand } from "@/components/Connect";
 import { WalletPanel } from "@/components/WalletPanel";
-import { Feed } from "@/components/Feed";
+import { Feed, showsFeed } from "@/components/Feed";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary";
 import { RouteMap, type MapStop } from "@/components/RouteMap";
@@ -84,7 +84,8 @@ export default function DashboardPage() {
     void load();
     void getWorld().then((w) => alive && setWorld(w));
     const t = setInterval(load, POLL_MS);
-    const tick = setInterval(() => setNow((n) => n + 1), 1000);
+    // count seconds only once the chain clock is known (0 means "not yet")
+    const tick = setInterval(() => setNow((n) => (n ? n + 1 : 0)), 1000);
     return () => {
       alive = false;
       clearInterval(t);
@@ -115,9 +116,11 @@ export default function DashboardPage() {
   if (!run && isWalletBand && session.profile)
     return (
       <>
-        {panel}
         {rpcError ? <p className="small warn" style={{ marginBottom: 10 }}>{rpcError}</p> : null}
         <NoTourYet name={session.profile.name} authority={authority!} />
+        {/* the next step first; wallet details below it */}
+        <h2 style={{ margin: "28px 0 10px" }}>Your wallet</h2>
+        {panel}
       </>
     );
   if (!run) {
@@ -404,6 +407,11 @@ export default function DashboardPage() {
           source="chain"
           shows={run.shows.map((s) => s.show)}
           cityOf={Object.fromEntries(run.shows.map((s) => [s.show, s.city]))}
+          inFans={inFans}
+          fallback={showsFeed(
+            views.map((v) => ({ show: v.run.show, state: v.state, ticketsSold: v.sold })),
+            inFans
+          )}
           empty={sold > 0 ? "Reading the story so far from devnet; it can take a minute when devnet is busy." : "Your shows are booked; nothing else has happened yet."}
         />
       ) : (

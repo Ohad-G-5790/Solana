@@ -67,9 +67,9 @@ export function venueTermsProblems(
   const d = venueOfferHeuristic(venue, { genre: band.genre, draw: drawBehind(p.capacity), targetPriceLamports: p.ticketPriceLamports, trackRecord: band });
   const out: string[] = [];
   // at the sample cap the band's draw is unknown (it may be far bigger), so only judge fit below it
-  if (p.capacity < rules.maxCapacity && !d.offer && !venue.genres.includes(band.genre as never)) out.push(`${band.genre} is off our programme for a band this size`);
+  if (p.capacity < rules.maxCapacity && !d.offer) out.push(venue.genres.includes(band.genre as never) ? `a band this size does not fit our ${venue.capacity}-cap room` : `${band.genre} is off our programme for a band this size`);
   // the browser may have used a lower ask (a strong track record measured against the real draw): allow that discount
-  if (p.venueBps < d.askBps - 500) out.push(`venue share ${p.venueBps / 100}% below the ${d.askBps / 100}% we ask`);
+  if (p.venueBps < d.askBps - 300) out.push(`venue share ${p.venueBps / 100}% below the ${d.askBps / 100}% we ask`);
   if (p.ticketPriceLamports < rules.minPriceLamports || p.ticketPriceLamports > rules.maxPriceLamports) out.push("ticket price outside 1-200 €");
   if (p.capacity > Math.min(venue.capacity, rules.maxCapacity)) out.push(`capacity ${p.capacity} above what we sell on devnet`);
   if (p.thresholdBps < rules.minThresholdBps) out.push(`threshold ${p.thresholdBps / 100}% too low`);
@@ -123,6 +123,7 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
   const stats = { accepted: 0, rejected: 0, ticketsBought: 0, confirmed: 0, cancelled: 0, refunded: 0, settled: 0, failedTicks: 0, okTicks: 0 };
   // what the payer spent on fans this run, in all
   let spentTotal = 0;
+  const spentByBand = new Map<string, number>();
   const priceOf = new Map<string, { band: string; price: number }>();
   bus.on("fan.bought", (m) => {
     stats.ticketsBought++;
@@ -130,6 +131,7 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
     const p = priceOf.get(d.show);
     if (!p) return;
     spentTotal += d.quantity * p.price + TICKET_RENT_LAMPORTS;
+    spentByBand.set(p.band, (spentByBand.get(p.band) ?? 0) + d.quantity * p.price + TICKET_RENT_LAMPORTS);
   });
   const rules: KeeperRules = { ...KEEPER_RULES, ...opts.rules };
   let capNoted = false;
@@ -249,16 +251,26 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
       }
       const balance = await connection.getBalance(opts.payer.publicKey);
       if (balance > 0.02 * LAMPORTS_PER_SOL) {
-        for (const [bandProfile, views] of selling) {
-          if (spentTotal >= perRun) {
-            if (!capNoted) log(`fan budget for this run reached (${formatSol(spentTotal)} incl. ticket rent); fans resume next run`);
+        // fair shares: each selling band gets an equal part of the run's budget, and the
+        // band that goes first rotates every tick, so no wallet can take it all
+        const order = [...selling.keys()].sort();
+        const share = perRun / Math.max(1, order.length);
+        for (let i = 0; i < order.length; i++) {
+          const bandProfile = order[(i + stats.okTicks) % order.length];
+          const views = selling.get(bandProfile)!;
+          const left = Math.min(perRun - spentTotal, share - (spentByBand.get(bandProfile) ?? 0));
+          // the dearest ticket on sale for this band bounds how many buys still fit (quantity up to 2)
+          const dearest = Math.max(...views.map((v) => (v.booked as unknown as { ticketPriceLamports: number }).ticketPriceLamports)) * 2 + TICKET_RENT_LAMPORTS;
+          const buys = Math.floor(left / dearest);
+          if (buys <= 0) {
+            if (!capNoted) log(`fan budget reached (${formatSol(spentTotal)} this run, ticket rent included); fans resume next run`);
             capNoted = true;
-            break;
+            continue;
           }
           if (!fanSims.has(bandProfile)) {
             fanSims.set(bandProfile, new FanSim(bands.get(bandProfile)!, world.fans, world.cities, client, bus, { maxBuysPerTick: isLocal ? 40 : 10, radiusKm: 80, seed: `keeper:${bandProfile}`, concurrency: isLocal ? 6 : 1, gapMs: isLocal ? 0 : 300 }));
           }
-          await fanSims.get(bandProfile)!.tick(views);
+          await fanSims.get(bandProfile)!.tick(views, buys);
         }
       } else {
         log(`payer balance ${formatSol(balance)}: fans paused, fund ${opts.payer.publicKey.toBase58()}`);

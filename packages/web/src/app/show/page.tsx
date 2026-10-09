@@ -66,7 +66,8 @@ function ShowView() {
   useEffect(() => {
     void reload();
     const t = setInterval(reload, POLL_MS);
-    const tick = setInterval(() => setNow((n) => n + 1), 1000);
+    // count seconds only once the chain clock is known (0 means "not yet")
+    const tick = setInterval(() => setNow((n) => (n ? n + 1 : 0)), 1000);
     return () => {
       clearInterval(t);
       clearInterval(tick);
@@ -236,7 +237,8 @@ function ShowView() {
         ) : mine ? (
           <div style={{ marginTop: 8 }}>
             <p className="small">
-              You hold <b>{mine.quantity}</b> ticket{mine.quantity > 1 ? "s" : ""} ({sol(mine.amountLamports)}){mine.refunded ? " · refunded" : ""}.
+              You hold <b>{mine.quantity}</b> ticket{mine.quantity > 1 ? "s" : ""} ({live ? euros(mine.amountLamports) : sol(mine.amountLamports)}){mine.refunded ? " · refunded" : ""}. One wallet holds one
+              ticket purchase per show.
             </p>
             {state === "cancelled" && !mine.refunded ? (
               <button className="btn primary" style={{ marginTop: 10 }} disabled={busy} onClick={() => act("Refund", () => refundTicket(wallet, address, publicKey!))}>
@@ -277,6 +279,12 @@ function ShowView() {
       </div>
       )}
 
+      {tickets.length === 0 ? (
+        <p className="small muted" style={{ marginTop: 20 }}>
+          {state === "proposed" ? "Ticket sales open once the venue signs." : state === "onSale" || state === "confirmed" ? "No purchases read yet. They appear here as fans buy." : "No ticket purchases."}
+        </p>
+      ) : (
+        <>
       <h2 style={{ margin: "20px 0 10px" }}>{live ? `Ticket purchases (${tickets.length})` : `Tickets (${tickets.length})`}</h2>
       <div className="table-wrap">
       <table className="table">
@@ -304,6 +312,8 @@ function ShowView() {
         </tbody>
       </table>
       </div>
+        </>
+      )}
     </div>
   );
 }

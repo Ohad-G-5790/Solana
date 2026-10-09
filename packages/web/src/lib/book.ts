@@ -7,7 +7,7 @@ import { BN } from "@anchor-lang/core";
 import { PublicKey, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { bandPda, connection, vaultPda, walletProgram, type BandAccount, type WalletLike } from "./greenroom";
 import type { WorldCity, WorldVenue } from "./run";
-import { APP_REGION, DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO } from "./config";
+import { APP_REGION, DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO, SALES_SEC } from "./config";
 import { venueKeys } from "./venue-keys";
 
 /** How many people the band can bring: the one number the venues care about most. */
@@ -21,7 +21,7 @@ export const SAMPLE = 1 / FANS_PER_TICKET;
 const MIN_TICKETS = 12;
 const MAX_TICKETS = 40;
 /** Demo clock: sales run 40 minutes (the keeper visits every 10), the show is 30 minutes after the deadline. */
-export const SALES_MINUTES = 40;
+export const SALES_MINUTES = SALES_SEC / 60;
 const SHOW_AFTER_DEADLINE_MIN = 30;
 
 export interface TourAnswers {
@@ -122,6 +122,8 @@ const i64 = (n: number) => {
 };
 
 export interface BookedTour {
+  /** An unfinished earlier tour could not be completed, so this is a new one. */
+  restarted?: boolean;
   tour: string;
   tourId: number;
   shows: string[];
@@ -173,7 +175,10 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   if (resume) {
     const existing = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);
     const soonest = Math.min(...existing.map((e) => Number(e.account.thresholdDeadline)));
-    if (existing.length && soonest < now + 15 * 60) return bookTour(wallet, band, p, onStatus);
+    const planned = new Set(p.plan.map((s) => s.venuePubkey));
+    const fits = existing.every((e) => planned.has(e.account.venueProfile.toBase58()));
+    // too late to finish, or the new plan is another route: book it as its own tour and say so
+    if (existing.length && (soonest < now + 15 * 60 || !fits)) return { ...(await bookTour(wallet, band, p, onStatus)), restarted: true };
   }
   if (resume) {
     const existing = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);

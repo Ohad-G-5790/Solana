@@ -16,6 +16,8 @@ export const LAMPORTS_PER_EURO = 10_000;
 export const FANS_PER_TICKET = 20;
 /** The region the dashboard writes on tours it books; tells them apart from agent-booked tours. */
 export const APP_REGION = "Greenroom app";
+/** Ticket sales of a dashboard booking run this long before each show's deadline. */
+export const SALES_SEC = 40 * 60;
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export function explorerUrl(kind: "address" | "tx", value: string): string {

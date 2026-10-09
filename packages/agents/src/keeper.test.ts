@@ -27,7 +27,8 @@ test("keeper: registers venues, venues sign the band's proposals, fans buy, the 
     const { show } = await chain.proposeShow(band, tour, profile, {
       date: now + 80 + i,
       ticketPriceLamports: 1_000_000,
-      capacity: 12,
+      // as the dashboard books: a 1-in-20 sample of the room the venue offers (half the room or more)
+      capacity: Math.max(12, Math.min(40, Math.round(v.capacity * 0.025))),
       thresholdBps: 5000,
       thresholdDeadline: now + 40 + i,
       bandBps: 6500,
@@ -36,7 +37,7 @@ test("keeper: registers venues, venues sign the band's proposals, fans buy, the 
     proposals.push(show);
   }
 
-  const stats = await runKeeper({ rpcUrl: "fake", payer: band, minutes: 0.12, tickMs: 100, salesWindowSec: 40, rules: { minSalesSec: 5 }, log: () => {}, deps: { client: chain.client, connection: chain.connection } });
+  const stats = await runKeeper({ rpcUrl: "fake", payer: band, minutes: 0.12, tickMs: 100, salesWindowSec: 40, fansPerCity: 40, rules: { minSalesSec: 5 }, log: () => {}, deps: { client: chain.client, connection: chain.connection } });
   assert.equal(stats.accepted, 3, "every venue signed");
   assert.ok(stats.ticketsBought > 0, "fans bought tickets");
   const states = await Promise.all(proposals.map(async (p) => Object.keys((await chain.fetchShow(p)).state)[0]));

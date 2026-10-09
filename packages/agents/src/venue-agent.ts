@@ -95,7 +95,9 @@ export class VenueAgent {
             ? "askBps out of range"
             : x.offeredCapacity > v.capacity
               ? "capacity above venue"
-              : null,
+              : x.offer && (x.offeredCapacity < 1 || x.minPriceLamports < 1)
+                ? "an offer needs tickets and a price"
+                : null,
     });
 
     if (!decision.value.offer) {

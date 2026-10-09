@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchChainEvents, fetchShowEvents } from "@/lib/chain-live";
 import { explorerUrl, POLL_MS } from "@/lib/config";
+import { fans } from "@/lib/format";
 import { getFeed, type FeedMessage } from "@/lib/run";
 
 /**
@@ -13,6 +14,22 @@ export function plain(text: string): string {
   return text
     .replace(/\b(\d{4,}) lamports\b/g, (_, n: string) => `${(Number(n) / 1e9).toLocaleString("en", { maximumFractionDigits: 4 })} SOL`)
     .replace(/\bday (\d+)\b/gi, (_, n: string) => `day ${Number(n) + 1}`);
+}
+
+/** Where each show stands, as feed lines: the Activity view before devnet returns the event history. */
+export function showsFeed(shows: { show: string; state: string; ticketsSold: number }[], inFans: boolean): FeedMessage[] {
+  const count = (t: number) => (inFans ? `${fans(t)} fans` : `${t} ticket${t === 1 ? "" : "s"}`);
+  const line: Record<string, [string, (s: { ticketsSold: number }) => string]> = {
+    proposed: ["show.proposed", () => "Booked; waiting for the venue to sign."],
+    onSale: ["fan.bought", (s) => `On sale: ${count(s.ticketsSold)} so far.`],
+    confirmed: ["crank.confirmed", (s) => `Goes ahead: ${count(s.ticketsSold)} so far.`],
+    cancelled: ["crank.cancelled", () => "Cancelled; every fan is refunded automatically."],
+    settled: ["crank.settled", () => "Played and paid out."],
+  };
+  const now = Date.now();
+  return shows
+    .filter((s) => line[s.state])
+    .map((s, i) => ({ id: -1 - i, at: now, kind: line[s.state][0], from: "chain", text: line[s.state][1](s), data: { show: s.show } }) as FeedMessage);
 }
 
 /** What happened, in the band's words. Every message kind belongs to one group. */
@@ -53,6 +70,8 @@ export function Feed({
   shows,
   empty,
   cityOf,
+  inFans = true,
+  fallback,
 }: {
   limit?: number;
   compact?: boolean;
@@ -61,12 +80,17 @@ export function Feed({
   empty?: string;
   /** show address -> city, so chain events say where they happened */
   cityOf?: Record<string, string>;
+  /** chain events of a tour booked in the dashboard: fans and euros (else tickets and SOL) */
+  inFans?: boolean;
+  /** shown when the chain has no events yet but the tour already has news (e.g. tickets sold) */
+  fallback?: FeedMessage[];
 }) {
   const [items, setItems] = useState<FeedMessage[]>([]);
   const [loaded, setLoaded] = useState(false);
   const say = (m: FeedMessage) => {
     const city = cityOf?.[String((m.data as { show?: string } | undefined)?.show ?? "")];
-    const t = plain(m.text);
+    const chainText = (m.data as { textTickets?: string } | undefined)?.textTickets;
+    const t = plain(!inFans && chainText ? chainText : m.text);
     return city && !t.includes(city) ? `${city}: ${t}` : t;
   };
   const [error, setError] = useState<string | null>(null);
@@ -106,16 +130,19 @@ export function Feed({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit, source, shows?.join(",")]);
 
+  // no events read yet but the tour has news: start from the shows' current state
+  const usingFallback = items.length === 0 && (loaded || !!error) && !!fallback?.length;
+  const list = usingFallback ? fallback! : items;
   const groups = useMemo(() => {
     const by = new Map<string, FeedMessage[]>();
-    for (const m of items) {
+    for (const m of list) {
       const c = categoryOf(m.kind);
       by.set(c, [...(by.get(c) ?? []), m]);
     }
     return CATEGORIES.filter((c) => by.has(c.id)).map((c) => ({ ...c, items: by.get(c.id)!.slice().reverse() }));
-  }, [items]);
+  }, [list]);
 
-  if (items.length === 0)
+  if (list.length === 0)
     return (
       <p className="muted small">
         {error ? `Waiting for the network (${error.slice(0, 60)}); retrying.` : !loaded ? "Loading…" : (empty ?? (source === "chain" ? "Nothing has happened on-chain yet." : "Nothing has happened yet."))}
@@ -125,10 +152,11 @@ export function Feed({
   const shown = filter === "all" ? groups : groups.filter((g) => g.id === filter);
   return (
     <div className="activity">
+      {usingFallback ? <p className="micro muted" style={{ marginBottom: 6 }}>Where each show stands now; the step-by-step story loads from devnet when it answers.</p> : null}
       {!compact ? (
         <div className="toolbar" role="tablist" aria-label="Filter activity">
           <button className={`chip ${filter === "all" ? "on" : ""}`} onClick={() => setFilter("all")} role="tab" aria-selected={filter === "all"}>
-            All {items.length}
+            All {list.length}
           </button>
           {groups.map((g) => (
             <button key={g.id} className={`chip ${filter === g.id ? "on" : ""}`} onClick={() => setFilter(g.id)} role="tab" aria-selected={filter === g.id}>
