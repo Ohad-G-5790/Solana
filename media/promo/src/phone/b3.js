@@ -10,7 +10,7 @@
   window.VIDEO = {
     tag: tag("Musicians ", 3, "Mid-size"),
     kicker: "The Broken Tides · indie",
-    punch: "Every show we play\n{g:makes the next deal better.}",
+    punch: "Our record\n{g:pays us back.}",
     build(stage) {
       const ph = makePhone(stage, { me: "BT" });
 

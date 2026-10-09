@@ -10,7 +10,7 @@
   window.VIDEO = {
     tag: tag("Small or big ", 4, "Payday"),
     kicker: "Small or big · Payday",
-    punch: "Small or big,\n{g:paid by the same rules.}",
+    punch: "Small or big,\n{g:same rules.}",
     build(stage) {
       const d = duo(stage, LENA, RUSTY);
       const both = (fn) => [fn(d.L, LENA, 0), fn(d.R, RUSTY, 1)];
