@@ -31,11 +31,8 @@ npm install --no-audit --no-fund
 Write-Host "== program ==" -ForegroundColor Green
 npm run build:program
 
-Write-Host "== dashboard env ==" -ForegroundColor Green
-if (-not (Test-Path "packages\web\.env.local")) {
-  Copy-Item "packages\web\.env.local.example" "packages\web\.env.local"
-  Write-Host "wrote packages/web/.env.local (dashboard -> local validator; delete it to use devnet)"
-}
+Write-Host "== dashboard ==" -ForegroundColor Green
+Write-Host "The dashboard reads devnet by default. To point it at a local validator: copy packages\web\.env.local.example to packages\web\.env.local"
 
 Write-Host "== local validator ==" -ForegroundColor Green
 $releases = Join-Path $env:USERPROFILE ".local\share\solana\install\releases"

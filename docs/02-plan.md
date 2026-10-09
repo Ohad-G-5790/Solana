@@ -3,19 +3,19 @@
 ## Repository layout (monorepo, npm workspaces)
 
 ```
-L:\Solana Project\
+greenroom/   (repository root)
   Anchor.toml  Cargo.toml  rust-toolchain.toml   # Anchor workspace root
   programs/greenroom/                           # on-chain program (Rust, Anchor 1.2.1)
   tests/                                        # program integration tests (mocha + solana-test-validator)
   packages/
     sdk/        # TypeScript client: PDAs, instruction builders, account decoders (Kit + Anchor IDL)
     world/      # seed world: venues.json loader, 100 bands, crew and fan generators (seeded RNG)
-    agents/     # band / venue / crew / fan agents, message bus, LLM adapter (Claude Code CLI) + heuristic fallback, crank
+    agents/     # band / venue / crew / fan agents, message bus, brain (heuristic, optional Claude API) + crank
     web/        # Next.js dashboard following docs/DESIGN.md
   qa/           # QA bot: automated checks + rubric judge, reports, loop counter
   data/         # venues.json (real venues), generated seed files
   docs/         # kickoff, spec, plan, rubric, design system, submission copy
-  scripts/      # setup.ps1 / setup.sh, run-demo, deploy-devnet
+  scripts/      # setup.ps1 / setup.sh, local-validator.mjs, test-program.mjs, demo-local.mjs
 ```
 
 ## Milestones
@@ -25,8 +25,8 @@ L:\Solana Project\
 | Oct 8 night | M0 toolchain + scaffold | Anchor 1.2.1 builds and tests on this machine; repo initialised; CI-less but one-command setup script |
 | Oct 9 | M1 program | All 11 instructions, state machine, events, errors; mocha tests for the happy path and every error path; deployed to devnet |
 | Oct 9 | M2 world | `data/venues.json` real venues; 100 bands; 100 crew profiles per city; fan population per city; deterministic generator |
-| Oct 10 | M3 agents | Band agent plans a route from venue offers; venue agents accept/decline using on-chain track record; fan agents buy; crank confirms/cancels/refunds/settles; crew agents pitch on confirmed shows; whole run on localnet in one command; LLM via Claude Code CLI with heuristic fallback |
-| Oct 10-11 | M4 dashboard | Route map, show cards with threshold progress, live agent feed, wallet buy/refund, band track record page; design per DESIGN.md; deployed (Vercel) against devnet |
+| Oct 10 | M3 agents | Band agent plans a route from venue offers; venue agents accept/decline using on-chain track record; fan agents buy; crank confirms/cancels/refunds/settles; crew agents pitch on confirmed shows; whole run on localnet in one command; Claude API brain with heuristic fallback |
+| Oct 10-11 | M4 dashboard | Route map, show cards with threshold progress, live agent feed, wallet buy/refund, band track record page; design per DESIGN.md; deployed (GitHub Pages static export) against devnet |
 | Oct 11 | M5 QA + docs | QA bot overall ≥ 8.5 or loop 5 reached; README quick start; architecture doc; demo script; submission copy |
 | Oct 12 | M6 submission | Videos recorded by the owner; GitHub public; Colosseum form filled |
 
@@ -41,6 +41,6 @@ L:\Solana Project\
 
 ## Risks and fallbacks
 
-- No API key: the LLM layer runs through the owner's Claude Code subscription locally; the hosted demo replays a recorded negotiation and reads live on-chain state. Heuristic agents guarantee the pipeline never depends on the LLM.
+- No API key at kickoff: Anthropic's terms do not allow an app's agents to run on a Claude.ai subscription, so the Claude brain uses a Console API key when present and the heuristic brain otherwise; the hosted demo replays a recorded negotiation and reads live on-chain state.
 - Devnet airdrops are rate-limited: fund one treasury wallet via the faucet, and let it pay for simulated fans (`buy_ticket` separates payer from beneficiary).
 - Windows: no LiteSVM/Surfpool; tests use `anchor test --validator legacy`. Workspace members are listed explicitly.

@@ -1,5 +1,13 @@
-import anchorCjs from "@anchor-lang/core";
-import { AnchorProvider, Program, type Idl, type IdlAccounts, type Wallet } from "@anchor-lang/core";
+import * as anchor from "@anchor-lang/core";
+import type { Idl, IdlAccounts, Wallet } from "@anchor-lang/core";
+import BN from "bn.js";
+
+// @anchor-lang/core is CommonJS; under Node 22's ESM loader its re-exported
+// `BN` is neither a named export nor on the namespace object, so BN comes
+// straight from bn.js (the same class Anchor re-exports).
+const { AnchorProvider, Program } = anchor;
+type AnchorProvider = anchor.AnchorProvider;
+type Program<T extends Idl> = anchor.Program<T>;
 import {
   Connection,
   Keypair,
@@ -12,11 +20,6 @@ import {
   type ConfirmOptions,
 } from "@solana/web3.js";
 
-// Node 22's CommonJS export detection skips Anchor's getter-style re-exports
-// (BN, web3), so `import { BN } from "@anchor-lang/core"` fails to link there.
-// Read BN off the module object, and take web3 classes from @solana/web3.js.
-const { BN } = anchorCjs;
-type BN = InstanceType<typeof BN>;
 import type { Greenroom } from "../idl/greenroom.ts";
 import idlJson from "../idl/greenroom.json" with { type: "json" };
 import { bandPda, showPda, ticketPda, tourPda, vaultPda, venuePda } from "./pdas.ts";

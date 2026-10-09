@@ -12,6 +12,7 @@ Monorepo: Anchor program (`programs/greenroom`), TypeScript workspaces (`package
 - `npm run dev -w @greenroom/web` — dashboard; `packages/web/.env.local` points it at localnet.
 - `npm run typecheck -w <pkg>`, `npm test -w @greenroom/world`, `npm test -w @greenroom/agents`.
 - `npm run qa` — the QA bot. Every run counts as a loop; `npm run qa:dry` for a dry run that does not count.
+- CI: `.github/workflows/program.yml` is the Linux proof (Anchor 1.2.1 container, seccomp unconfined for io_uring); `ci.yml` is Node-only; `pages.yml` publishes the dashboard. `@anchor-lang/core` is CommonJS: under Node 22 ESM take `BN` from `bn.js`, not from the Anchor namespace.
 
 ## Windows specifics (this repo was built on Windows 11 without WSL)
 

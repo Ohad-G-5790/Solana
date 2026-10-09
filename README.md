@@ -2,6 +2,10 @@
 
 **Tours that book themselves, with the deal on Solana.**
 
+Live: [dashboard](https://ohad-g-5790.github.io/Solana/) · [program on devnet](https://explorer.solana.com/address/4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8?cluster=devnet) · [source](https://github.com/Ohad-G-5790/Solana)
+
+[![ci](https://github.com/Ohad-G-5790/Solana/actions/workflows/ci.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/ci.yml) [![program](https://github.com/Ohad-G-5790/Solana/actions/workflows/program.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/program.yml) [![pages](https://github.com/Ohad-G-5790/Solana/actions/workflows/pages.yml/badge.svg)](https://github.com/Ohad-G-5790/Solana/actions/workflows/pages.yml)
+
 Every band, venue, fan and crew member has an AI agent. A band's agent takes a brief ("November, Central Europe, eight shows, we draw 400"), negotiates with venue agents, plans a route that makes geographic sense, asks the band to approve the venues and the route, and only then opens ticket sales months early. Fans pay into an on-chain escrow per show. Each show carries a sell-through threshold and a deadline: hit it and the show is confirmed; miss it and every fan is refunded automatically. After the show date the escrow is split between the band, the venue and the crew the band hired. No booker, no promoter, no deposit risk, and the band's settled shows become a track record that venues can verify on-chain.
 
 Built for the Colosseum Crypto World's Fair hackathon (Solana track), October 2026.
@@ -25,8 +29,10 @@ git clone https://github.com/Ohad-G-5790/Solana.git greenroom && cd greenroom
 bash scripts/setup.sh                 # Windows: powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 npm run test:program                  # program tests on a local validator (~2 min)
 npm run demo:fast -- --keep           # agents book a tour end to end on a local validator (~4 min), validator stays up
-npm run dev -w @greenroom/web         # dashboard at http://localhost:3000, pointed at that validator
+npm run dev -w @greenroom/web         # dashboard (reads devnet by default; see below for the local validator)
 ```
+
+`npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. To watch a local run in the dashboard, copy `packages/web/.env.local.example` to `packages/web/.env.local` so it reads the local validator; without that file it reads devnet, where the program is deployed, and shows the recorded run from `packages/web/public/demo`.
 
 ### Approving the tour yourself
 
@@ -34,6 +40,7 @@ npm run dev -w @greenroom/web         # dashboard at http://localhost:3000, poin
 
 ```bash
 npm run demo:approve                  # local validator + agents; the run waits for you (validator stays up)
+cp packages/web/.env.local.example packages/web/.env.local   # once: point the dashboard at the local validator
 npm run dev -w @greenroom/web         # in a second terminal; open http://localhost:3000/approvals
 ```
 
@@ -46,8 +53,6 @@ The agent stops three times:
 Decisions go from the dashboard (`POST /api/approvals`) to `data/runs/<run>/decisions.jsonl`, which the running agent polls; each answer is validated before it is used. The hosted dashboard shows recorded runs, so its decision buttons are off.
 
 The **Venues** page filters the 136 venues by country, size, programme and maximum drive from any city, and the **Route planner** turns any list of venues into a day-by-day schedule with drive times, travel days for the long hauls, days off and a copyable itinerary. Drive times are estimates (road ≈ 1.2 × straight line, a loaded van at ~90 km/h with EU-style breaks), not routing.
-
-`npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. The setup script writes `packages/web/.env.local` pointing the dashboard at the local validator; delete it to point at devnet. Without `--keep` the demo stops its validator when it finishes, and the dashboard then shows the recorded run from `packages/web/public/demo`.
 
 ### Devnet
 
@@ -104,7 +109,13 @@ docs/                   kickoff, spec, plan, QA rubric, design system, demo scri
 
 The dashboard is published to GitHub Pages by `.github/workflows/pages.yml` on every push to `main`: https://ohad-g-5790.github.io/Solana/ . That build is a static export (`npm run build:static -w @greenroom/web`) that reads live account state from devnet and the recorded run bundled in `packages/web/public/demo`. To publish a new devnet run, copy its `summary.json` and `transcript.jsonl` over the bundled ones and push.
 
+Honest note on the bundled run: as of 2026-10-08 it is a three-show devnet tour in which every show was cancelled and refunded, because the demo's hub wallet ran out of devnet SOL mid-sale. The cancellations and refunds are real transactions; a funded eight-show run with confirmed and settled shows replaces it as soon as the faucet allows (the full local run is what the videos show).
+
 The same app also runs as a Node server (`npm run dev` / `next build`) with API routes that read `data/runs`; on Vercel set the root directory to `packages/web` and the `NEXT_PUBLIC_*` variables from `.env.example`.
+
+## Continuous integration
+
+Three workflows run on every push to `main`: `ci` (type checks, unit tests, dashboard lint and build on Node), `program` (builds the Anchor program, runs the 13 integration tests and a full agents run on a Linux validator inside the official Anchor 1.2.1 image; the container needs `--security-opt seccomp=unconfined` because the Agave 4.x validator requires io_uring), and `pages` (publishes the static dashboard).
 
 ## Windows note
 

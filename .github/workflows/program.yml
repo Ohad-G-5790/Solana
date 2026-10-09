@@ -1,0 +1,62 @@
+name: program
+
+# Builds the Anchor program and runs the integration tests on a Linux
+# validator inside the official Anchor 1.2.1 image (Rust, Solana CLI, Node).
+# This is the Unix counterpart of the Windows flow documented in the README.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "programs/**"
+      - "tests/**"
+      - "scripts/**"
+      - "packages/sdk/**"
+      - "packages/agents/**"
+      - "packages/world/**"
+      - "data/venues.json"
+      - "Anchor.toml"
+      - "Cargo.*"
+      - "package*.json"
+      - ".github/workflows/program.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    container:
+      image: quay.io/ottersec/anchor:v1.2.1
+      # Agave 4.x's validator asserts io_uring support; the default Docker
+      # seccomp profile blocks those syscalls, so the test job needs it relaxed.
+      options: --user root --security-opt seccomp=unconfined
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain versions
+        run: |
+          node --version && npm --version
+          rustc --version && solana --version && anchor --version
+          solana-test-validator --version
+          ulimit -n; nproc; free -m | head -2
+      - name: Validator smoke test
+        run: |
+          mkdir -p /tmp/ledger-smoke
+          (timeout 100 solana-test-validator --ledger /tmp/ledger-smoke --bind-address 127.0.0.1 --rpc-port 8899 --reset --quiet > /tmp/validator.log 2>&1; echo "validator exit: $?" >> /tmp/validator.log) &
+          for i in $(seq 1 90); do sleep 1; if curl -s -X POST -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' http://127.0.0.1:8899 | grep -q ok; then echo "validator healthy after ${i}s"; break; fi; done
+          echo "--- stdout ---"; tail -20 /tmp/validator.log
+          echo "--- ledger logs ---"; tail -30 /tmp/ledger-smoke/test-ledger-log.txt 2>/dev/null || true; tail -30 /tmp/ledger-smoke/validator.log 2>/dev/null || true
+          pkill -f solana-test-validator || true
+          sleep 3
+      - name: Dev wallet
+        run: |
+          mkdir -p ~/.config/solana
+          solana-keygen new --no-bip39-passphrase -s -o ~/.config/solana/id.json
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build program (SBPF v0, platform-tools v1.54)
+        run: npm run build:program
+      - name: Integration tests on a local validator
+        run: npm run test:program
+      - name: Agents end to end on a local validator
+        run: node scripts/demo-local.mjs --fast --shows 6 --max-venues 40
