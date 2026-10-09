@@ -3,7 +3,7 @@
 import { PublicKey } from "@solana/web3.js";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { explorerUrl } from "@/lib/config";
+import { explorerUrl, POLL_MS } from "@/lib/config";
 import { sol } from "@/lib/format";
 import { bandPda, fetchBand, type BandAccount } from "@/lib/greenroom";
 import { useBandSession } from "@/components/BandSession";
@@ -46,7 +46,7 @@ function BandView() {
       }
     };
     void load();
-    const t = setInterval(load, 5000);
+    const t = setInterval(load, Math.max(5000, POLL_MS));
     return () => clearInterval(t);
   }, [authority]);
 

@@ -2,6 +2,10 @@ name: devnet-demo
 
 # Runs the agents against the deployed devnet program with a dedicated demo
 # wallet held as an encrypted repository secret (GREENROOM_DEVNET_WALLET).
+# With band = mine, the tour is booked as your own band: its wallet (the
+# GREENROOM_BAND_WALLET secret, a Phantom base58 export or a Solana CLI JSON
+# array) signs the band's transactions, so connecting that wallet on the
+# dashboard shows the tour. The demo wallet still pays fees and the fans.
 # Nobody needs the key: anyone with write access can start this from the
 # Actions tab. The run's summary and transcript are uploaded as an artifact
 # and, when "publish" is true, committed to packages/web/public/demo so the
@@ -30,6 +34,14 @@ on:
       publish:
         description: "Commit the run to the dashboard bundle (true/false)"
         default: "true"
+      band:
+        description: "Whose band books the tour: demo (generated band) or mine (the GREENROOM_BAND_WALLET secret)"
+        type: choice
+        options: [demo, mine]
+        default: demo
+      band_profile:
+        description: "With band = mine: name|genre|draw|home city"
+        default: "The Running Pigeons|indie|400|Berlin"
 
 permissions:
   contents: write
@@ -56,14 +68,29 @@ jobs:
           mkdir -p ~/.config/solana
           umask 077
           printf '%s' '${{ secrets.GREENROOM_DEVNET_WALLET }}' > ~/.config/solana/demo.json
+      - name: Band wallet from the repository secret
+        if: ${{ inputs.band == 'mine' }}
+        env:
+          BAND_WALLET: ${{ secrets.GREENROOM_BAND_WALLET }}
+        run: |
+          test -n "$BAND_WALLET" || { echo "band = mine needs the GREENROOM_BAND_WALLET secret (your band wallet's private key)"; exit 1; }
+          umask 077
+          printf '%s' "$BAND_WALLET" > ~/.config/solana/band.key
       - name: Run the agents on devnet
         env:
           GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BAND: ${{ inputs.band }}
+          BAND_PROFILE: ${{ inputs.band_profile }}
         run: |
           ARGS="--rpc $GREENROOM_RPC_URL --wallet $HOME/.config/solana/demo.json --shows ${{ inputs.shows }} --max-venues ${{ inputs.max_venues }} --fans ${{ inputs.fans }} --deadline ${{ inputs.deadline }} --show ${{ inputs.show_after }}"
           if [ "${{ inputs.history }}" = "true" ]; then ARGS="$ARGS --history"; fi
-          npm run demo -w @greenroom/agents -- $ARGS 2>&1 | tee demo.log | grep -v "^\[fan.bought\]\|^\[venue\.\|429 Too Many"
+          BAND_ARGS=()
+          if [ "$BAND" = "mine" ]; then
+            IFS='|' read -r B_NAME B_GENRE B_DRAW B_HOME <<< "$BAND_PROFILE"
+            BAND_ARGS=(--band-keypair "$HOME/.config/solana/band.key" --band-name "$B_NAME" --genre "$B_GENRE" --draw "$B_DRAW" --home-city "$B_HOME")
+          fi
+          npm run demo -w @greenroom/agents -- $ARGS "${BAND_ARGS[@]}" 2>&1 | tee demo.log | grep -v "^\[fan.bought\]\|^\[venue\.\|429 Too Many"
       - name: Upload the run
         uses: actions/upload-artifact@v4
         with:
@@ -93,4 +120,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       - name: Remove the wallet file
         if: always()
-        run: rm -f ~/.config/solana/demo.json
+        run: rm -f ~/.config/solana/demo.json ~/.config/solana/band.key

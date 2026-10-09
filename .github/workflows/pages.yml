@@ -31,7 +31,9 @@ jobs:
         run: npm run build:static -w @greenroom/web
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
-          NEXT_PUBLIC_RPC_URL: https://api.devnet.solana.com
+          # A repository variable (not a secret: it ends up in the page) can point the
+          # dashboard at a faster devnet RPC than the rate-limited public one.
+          NEXT_PUBLIC_RPC_URL: ${{ vars.GREENROOM_PUBLIC_RPC_URL || 'https://api.devnet.solana.com' }}
           NEXT_PUBLIC_CLUSTER: devnet
           NEXT_PUBLIC_PROGRAM_ID: 4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8
       - uses: actions/upload-pages-artifact@v3

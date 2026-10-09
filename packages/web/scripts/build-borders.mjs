@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Writes src/lib/borders.json: European country outlines for the dashboard
+ * Writes public/borders.json: European country outlines for the dashboard
  * maps, from Natural Earth 1:50m (public domain) via the world-atlas package.
+ * The maps fetch it after the page has rendered, so it never slows the first paint.
  * Polygons outside Europe (overseas territories) are dropped, points far
  * outside the map are clamped to its edge (only off-screen shape changes),
  * coordinates are rounded to 0.01° and thinned so the file stays small.
@@ -18,7 +19,7 @@ const { feature } = require("topojson-client");
 const topo = JSON.parse(readFileSync(require.resolve("world-atlas/countries-50m.json"), "utf8"));
 const BOX = { minLng: -12, maxLng: 32, minLat: 35, maxLat: 61 };
 const CLAMP = { minLng: BOX.minLng - 2, maxLng: BOX.maxLng + 2, minLat: BOX.minLat - 2, maxLat: BOX.maxLat + 2 };
-const MIN_STEP = 0.05; // degrees between kept points
+const MIN_STEP = 0.08; // degrees between kept points (~6-9 km): plenty at map scale
 
 const inBox = ([lng, lat]) => lng >= BOX.minLng && lng <= BOX.maxLng && lat >= BOX.minLat && lat <= BOX.maxLat;
 const round = (x) => Math.round(x * 100) / 100;
@@ -49,6 +50,6 @@ for (const f of feature(topo, topo.objects.countries).features) {
   if (rings.length) countries.push({ name: f.properties.name, rings });
 }
 countries.sort((a, b) => a.name.localeCompare(b.name));
-const out = join(dirname(fileURLToPath(import.meta.url)), "../src/lib/borders.json");
+const out = join(dirname(fileURLToPath(import.meta.url)), "../public/borders.json");
 writeFileSync(out, JSON.stringify({ source: "Natural Earth 1:50m via world-atlas 2.0.2 (public domain)", countries }));
 console.log(`${countries.length} countries -> ${out}`);

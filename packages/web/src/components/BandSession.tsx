@@ -18,7 +18,7 @@ export interface BandSession {
   setGuest: (on: boolean) => void;
   /** The band authority the band pages show; null means "connect first". */
   authority: string | null;
-  /** The connected wallet's band profile: undefined while loading, null when it has none. */
+  /** The connected wallet's band profile: undefined while loading (or the RPC is unreachable), null when it has none. */
   profile: BandAccount | null | undefined;
   profileError: string | null;
   refreshProfile: () => void;
@@ -66,23 +66,37 @@ export function BandSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true;
-    setProfile(undefined);
-    setProfileError(null);
-    if (!publicKey) return;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    if (!publicKey) {
+      setProfile(undefined);
+      return;
+    }
     // The Anchor client loads in the browser only: its CommonJS build cannot be
     // evaluated while the shell renders on the server.
     import("@/lib/greenroom")
       .then(({ bandPda, fetchBand }) => fetchBand(bandPda(publicKey).toBase58()))
-      .then((p) => alive && setProfile(p))
+      .then((p) => {
+        if (!alive) return;
+        setProfile(p);
+        setProfileError(null);
+      })
       .catch((e) => {
         if (!alive) return;
-        setProfile(null);
-        setProfileError((e as Error).message.slice(0, 120));
+        // A busy or unreachable RPC is not "no band": keep loading and try again.
+        setProfileError((e as Error).message.slice(0, 160));
+        retry = setTimeout(() => setTick((n) => n + 1), 5000);
       });
     return () => {
       alive = false;
+      clearTimeout(retry);
     };
   }, [publicKey, tick]);
+
+  // A different wallet starts from scratch.
+  useEffect(() => {
+    setProfile(undefined);
+    setProfileError(null);
+  }, [publicKey]);
 
   const authority = wallet ?? (guest ? runAuthority : null);
   return (

@@ -1,12 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
-import borders from "@/lib/borders.json";
+import { useEffect, useMemo, useState } from "react";
+import { BASE_PATH } from "@/lib/config";
 import type { WorldVenue } from "@/lib/run";
 
 /** Countries the seed world has venues in; drawn a shade lighter and labelled. */
 const TOUR_COUNTRIES = new Set(["Germany", "Austria", "France", "Poland", "Czechia"]);
-const COUNTRIES = (borders as unknown as { countries: { name: string; rings: [number, number][][] }[] }).countries;
+
+type Country = { name: string; rings: [number, number][][] };
+let bordersPromise: Promise<Country[]> | null = null;
+
+/** Country outlines (public/borders.json), fetched once after the first paint. */
+function useBorders(): Country[] {
+  const [countries, setCountries] = useState<Country[]>([]);
+  useEffect(() => {
+    let alive = true;
+    bordersPromise ??= fetch(`${BASE_PATH}/borders.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<{ countries: Country[] }>) : { countries: [] }))
+      .then((d) => d.countries)
+      .catch(() => {
+        bordersPromise = null; // try again on the next map
+        return [];
+      });
+    void bordersPromise.then((c) => alive && setCountries(c));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return countries;
+}
 
 export type StopTone = "ok" | "cancelled" | "muted" | "warn";
 
@@ -53,9 +75,10 @@ export function RouteMap({ stops, venues = [], height = H }: { stops: MapStop[];
   const project = (lat: number, lng: number): [number, number] => [((lng * k - cx) / spanX + 0.5) * W, (0.5 - (lat - cy) / spanY) * h];
   const inView = ([x, y]: [number, number]) => x >= -10 && x <= W + 10 && y >= -10 && y <= h + 10;
 
+  const borders = useBorders();
   const countries = useMemo(
     () =>
-      COUNTRIES.map((c) => {
+      borders.map((c) => {
         let d = "";
         let best: { area: number; cx: number; cy: number } | null = null;
         for (const ring of c.rings) {
@@ -81,7 +104,7 @@ export function RouteMap({ stops, venues = [], height = H }: { stops: MapStop[];
       }),
     // the projection only depends on these numbers
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cx, cy, spanX, spanY, k, h]
+    [borders, cx, cy, spanX, spanY, k, h]
   );
   const placed = stops.map((s) => ({ ...s, xy: project(s.lat, s.lng) }));
   const onRoute = placed.filter((s) => !s.offRoute);

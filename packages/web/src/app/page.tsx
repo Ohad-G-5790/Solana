@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useBandSession } from "@/components/BandSession";
 import { RegisterBand } from "@/components/Connect";
+import { WalletPanel } from "@/components/WalletPanel";
 import { Feed } from "@/components/Feed";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary";
 import { RouteMap, type MapStop } from "@/components/RouteMap";
 import { HealthBadge, ShowCard } from "@/components/ShowCard";
 import { pendingItems, type ApprovalsView, type ApprovalView } from "@/lib/approvals";
-import { explorerUrl } from "@/lib/config";
+import { CLUSTER, explorerUrl, POLL_MS } from "@/lib/config";
+import { isRateLimit } from "@/lib/rpc";
 import { sol } from "@/lib/format";
 import { chainTime, fetchShows, type ShowAccount } from "@/lib/greenroom";
 import { bandTake, showView } from "@/lib/health";
@@ -30,10 +32,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let alive = true;
+    let first = true;
     const load = async () => {
       if (!authority) return;
       const bundled = await getRun();
       if (!alive) return;
+      // Paint the recorded run right away; chain reads below only refresh it.
+      if (first && bundled?.band.authority === authority) setRun((cur) => cur ?? bundled);
+      first = false;
       // The recorded/local run belongs to one band; any other band's tour comes
       // straight from chain state. Live mode on static hosting does the same for
       // the run's band, so a run executing anywhere is visible as it happens.
@@ -43,8 +49,13 @@ export default function DashboardPage() {
         try {
           const live = await fetchLiveTour(authority);
           if (live && live.shows.length) r = ownRun ? { ...bundled, ...live, band: { ...bundled?.band, ...live.band } } : live;
-        } catch {
-          /* chain unreachable; keep what we have */
+        } catch (e) {
+          // chain unreachable or busy: keep what we have and say so
+          if (alive) setRpcError(describeRpcError(e));
+          if (!ownRun) {
+            setRun((cur) => (cur === undefined ? null : cur));
+            return;
+          }
         }
       }
       if (!alive) return;
@@ -59,7 +70,7 @@ export default function DashboardPage() {
             setRpcError(null);
           }
         } catch (e) {
-          if (alive) setRpcError((e as Error).message.slice(0, 120));
+          if (alive) setRpcError(describeRpcError(e));
         }
       }
       try {
@@ -70,7 +81,7 @@ export default function DashboardPage() {
     };
     void load();
     void getWorld().then((w) => alive && setWorld(w));
-    const t = setInterval(load, 4000);
+    const t = setInterval(load, POLL_MS);
     const tick = setInterval(() => setNow((n) => n + 1), 1000);
     return () => {
       alive = false;
@@ -83,9 +94,30 @@ export default function DashboardPage() {
   const venueById = useMemo(() => new Map(world.venues.map((v) => [v.id, v])), [world.venues]);
 
   const isWalletBand = !!session.wallet && authority === session.wallet;
-  if (isWalletBand && session.profile === null) return <RegisterBand />;
-  if (run === undefined || (isWalletBand && session.profile === undefined)) return <p className="muted">Loading…</p>;
-  if (!run && isWalletBand && session.profile) return <NoTourYet name={session.profile.name} authority={authority!} />;
+  const panel = isWalletBand ? <WalletPanel /> : null;
+  if (isWalletBand && session.profile === null)
+    return (
+      <>
+        {panel}
+        <RegisterBand />
+      </>
+    );
+  if (isWalletBand && session.profile === undefined)
+    return (
+      <>
+        {panel}
+        <p className="muted">{session.profileError ? `Reading your band from ${CLUSTER}… (${describeRpcError(session.profileError)})` : "Reading your band…"}</p>
+      </>
+    );
+  if (run === undefined) return <p className="muted">Loading the tour…</p>;
+  if (!run && isWalletBand && session.profile)
+    return (
+      <>
+        {panel}
+        {rpcError ? <p className="small warn" style={{ marginBottom: 10 }}>{rpcError}</p> : null}
+        <NoTourYet name={session.profile.name} authority={authority!} />
+      </>
+    );
   if (!run) {
     return (
       <div className="card">
@@ -192,6 +224,7 @@ export default function DashboardPage() {
   const cities = new Set(run.shows.map((s) => s.city));
   return (
     <div>
+      {panel}
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <h1>{run.band.name}</h1>
@@ -222,7 +255,7 @@ export default function DashboardPage() {
 
       {rpcError ? (
         <p className="small warn" style={{ marginTop: 8 }}>
-          Live chain data unavailable ({rpcError}); showing the recorded run. Is the validator running and the RPC URL right?
+          {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
       {isStaticMode() ? (
@@ -379,4 +412,11 @@ function NoTourYet({ name, authority }: { name: string; authority: string }) {
       </div>
     </div>
   );
+}
+
+function describeRpcError(e: unknown): string {
+  const msg = String((e as Error)?.message ?? e);
+  if (isRateLimit(msg)) return `${CLUSTER === "devnet" ? "The public devnet RPC" : "The RPC"} is rate-limiting this page (too many requests).`;
+  if (CLUSTER === "localnet") return `Local validator unreachable (${msg.slice(0, 80)}). Is it running?`;
+  return `Could not reach ${CLUSTER} (${msg.slice(0, 80)}).`;
 }
