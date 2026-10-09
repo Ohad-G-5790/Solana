@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   // Pure TypeScript modules shared with the agents (planner, approvals, geo).
   transpilePackages: ["@greenroom/agents", "@greenroom/world"],
+  // Anchor ships CommonJS; let Node load it natively when pages render on the
+  // server instead of bundling it as ESM ("exports is not defined").
+  serverExternalPackages: ["@anchor-lang/core"],
   outputFileTracingIncludes: isExport ? undefined : { "/api/**": ["../../data/**"] },
   turbopack: {},
 };

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { generateWorld, type CrewProfile, type Venue, type World } from "@greenroom/world";
+import { GENRES, generateWorld, type Band, type CrewProfile, type Genre, type Venue, type World } from "@greenroom/world";
 import { bandPda, GreenroomClient, keypairFromSeedHex, showStateName, venuePda } from "@greenroom/sdk";
 import { findAlternatives } from "./alternatives.ts";
 import type { AlternativeOption, ApprovalMode } from "./approvals.ts";
@@ -20,6 +20,10 @@ export interface RunOptions {
   /** Fee payer + funder. On localnet it is airdropped; on devnet it must be funded already. */
   payer: Keypair;
   bandId?: string;
+  /** Run as your own band: this wallet signs every band transaction (its profile is registered if missing). */
+  bandKeypair?: Keypair;
+  /** Who the band is (name, genre, typical draw, home city); defaults come from the generated band. */
+  bandIdentity?: { name?: string; genre?: string; draw?: number; homeCity?: string };
   countries?: string[];
   wantedShows?: number;
   windowDays?: number;
@@ -128,9 +132,10 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
   // faucet-sized balance covers the whole run (the hub pays for every fan).
   const basePriceLamports = isLocal ? 0.01 * LAMPORTS_PER_SOL : 0.005 * LAMPORTS_PER_SOL;
   const world: World = generateWorld({ seed, fansPerCity: opts.fansPerCity ?? 60, crewPerCity: opts.crewPerCity ?? 100, basePriceLamports });
-  const band = opts.bandId ? world.bands.find((b) => b.id === opts.bandId) : world.bands[0];
-  if (!band) throw new Error(`band ${opts.bandId} not found`);
-  const bandKp = keypairFromSeedHex(band.seed);
+  const base = opts.bandId ? world.bands.find((b) => b.id === opts.bandId) : world.bands[0];
+  if (!base) throw new Error(`band ${opts.bandId} not found`);
+  const band = withIdentity(base, opts.bandIdentity, world);
+  const bandKp = opts.bandKeypair ?? keypairFromSeedHex(band.seed);
 
   let venues: Venue[] = world.venues.filter((v) => countries.includes(v.country));
   if (opts.maxVenues) venues = venues.slice(0, opts.maxVenues);
@@ -262,6 +267,21 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
   writeFileSync(join(dirname(runDir), "latest.json"), JSON.stringify({ runId, dir: runDir }, null, 2));
   log(`run ${runId} finished: ${JSON.stringify(summary.stats)}`);
   return summary;
+}
+
+/** A generated band with the caller's name, genre, draw and home city on top. */
+export function withIdentity(base: Band, id: RunOptions["bandIdentity"], world: Pick<World, "cities">): Band {
+  if (!id) return base;
+  const name = (id.name ?? base.name).trim();
+  if (!name || Buffer.byteLength(name) > 32) throw new Error(`band name must be 1-32 bytes: "${name}"`);
+  const genre = (id.genre ?? base.genre) as Genre;
+  if (!GENRES.includes(genre)) throw new Error(`genre must be one of ${GENRES.join(", ")}`);
+  const draw = id.draw ?? base.draw;
+  if (!Number.isFinite(draw) || draw < 20) throw new Error(`draw must be a number of people (got ${id.draw})`);
+  const home = world.cities.find((c) => c.name.toLowerCase() === (id.homeCity ?? base.homeCity).toLowerCase());
+  if (!home) throw new Error(`home city must be one of the dataset cities (got ${id.homeCity})`);
+  const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return { ...base, id: slug || base.id, name, genre, draw: Math.round(draw), homeCity: home.name, country: home.country };
 }
 
 /** getMultipleAccountsInfo accepts at most 100 keys per call. */

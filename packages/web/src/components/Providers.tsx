@@ -6,6 +6,7 @@ import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { useMemo, type ReactNode } from "react";
 import { RPC_URL } from "@/lib/config";
+import { BandSessionProvider } from "./BandSession";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 if (typeof window !== "undefined" && !(window as unknown as { Buffer?: unknown }).Buffer) {
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ConnectionProvider endpoint={RPC_URL}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          <BandSessionProvider>{children}</BandSessionProvider>
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );

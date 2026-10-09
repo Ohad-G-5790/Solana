@@ -1,6 +1,34 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { BASE_PATH } from "@/lib/config";
 import type { WorldVenue } from "@/lib/run";
+
+/** Countries the seed world has venues in; drawn a shade lighter and labelled. */
+const TOUR_COUNTRIES = new Set(["Germany", "Austria", "France", "Poland", "Czechia"]);
+
+type Country = { name: string; rings: [number, number][][] };
+let bordersPromise: Promise<Country[]> | null = null;
+
+/** Country outlines (public/borders.json), fetched once after the first paint. */
+function useBorders(): Country[] {
+  const [countries, setCountries] = useState<Country[]>([]);
+  useEffect(() => {
+    let alive = true;
+    bordersPromise ??= fetch(`${BASE_PATH}/borders.json`)
+      .then((r) => (r.ok ? (r.json() as Promise<{ countries: Country[] }>) : { countries: [] }))
+      .then((d) => d.countries)
+      .catch(() => {
+        bordersPromise = null; // try again on the next map
+        return [];
+      });
+    void bordersPromise.then((c) => alive && setCountries(c));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return countries;
+}
 
 export type StopTone = "ok" | "cancelled" | "muted" | "warn";
 
@@ -47,12 +75,57 @@ export function RouteMap({ stops, venues = [], height = H }: { stops: MapStop[];
   const project = (lat: number, lng: number): [number, number] => [((lng * k - cx) / spanX + 0.5) * W, (0.5 - (lat - cy) / spanY) * h];
   const inView = ([x, y]: [number, number]) => x >= -10 && x <= W + 10 && y >= -10 && y <= h + 10;
 
+  const borders = useBorders();
+  const countries = useMemo(
+    () =>
+      borders.map((c) => {
+        let d = "";
+        let best: { area: number; cx: number; cy: number } | null = null;
+        for (const ring of c.rings) {
+          const pts = ring.map(([lng, lat]) => project(lat, lng));
+          d += pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("") + "Z";
+          // label at the centre of the largest visible ring
+          let area = 0;
+          let cx = 0;
+          let cy = 0;
+          for (let i = 0; i < pts.length; i++) {
+            const [x0, y0] = pts[i];
+            const [x1, y1] = pts[(i + 1) % pts.length];
+            const f = x0 * y1 - x1 * y0;
+            area += f;
+            cx += (x0 + x1) * f;
+            cy += (y0 + y1) * f;
+          }
+          area /= 2;
+          if (area !== 0 && (!best || Math.abs(area) > best.area)) best = { area: Math.abs(area), cx: cx / (6 * area), cy: cy / (6 * area) };
+        }
+        const label = best && best.area > 1500 && inView([best.cx, best.cy]) ? { x: best.cx, y: best.cy } : null;
+        return { name: c.name, d, tour: TOUR_COUNTRIES.has(c.name), label };
+      }),
+    // the projection only depends on these numbers
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [borders, cx, cy, spanX, spanY, k, h]
+  );
   const placed = stops.map((s) => ({ ...s, xy: project(s.lat, s.lng) }));
   const onRoute = placed.filter((s) => !s.offRoute);
   const path = onRoute.map((s, i) => `${i === 0 ? "M" : "L"}${s.xy[0].toFixed(1)},${s.xy[1].toFixed(1)}`).join(" ");
   let n = 0;
   return (
     <svg className="map" viewBox={`0 0 ${W} ${h}`} role="img" aria-label={`Route map: ${onRoute.map((s) => s.label).join(", ")}`}>
+      <g className="countries">
+        {countries.map((c) => (
+          <path key={c.name} className={`country ${c.tour ? "tour" : ""}`} d={c.d}>
+            <title>{c.name}</title>
+          </path>
+        ))}
+        {countries.map((c) =>
+          c.label ? (
+            <text key={`l-${c.name}`} className={`country-label ${c.tour ? "tour" : ""}`} x={c.label.x} y={c.label.y} textAnchor="middle">
+              {c.name}
+            </text>
+          ) : null
+        )}
+      </g>
       {venues.map((v) => {
         const xy = project(v.lat, v.lng);
         return inView(xy) ? <circle key={v.id} className="venue" cx={xy[0]} cy={xy[1]} r={2} /> : null;

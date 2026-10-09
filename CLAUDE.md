@@ -9,7 +9,8 @@ Monorepo: Anchor program (`programs/greenroom`), TypeScript workspaces (`package
 - `npm run demo:fast` — full agent run on a local validator (~4 min), auto-pilot approvals. `--keep` leaves the validator up for the dashboard.
 - `npm run demo:approve` — same, but the run waits for the band's decisions on the dashboard's Approvals page.
 - `npx tsx src/testing/simulate.ts [--approve] [--empty-first]` (in `packages/agents`) — dev aid: one tour on an in-memory fake chain written to `data/runs/`, for working on the dashboard without a validator. Its addresses and signatures exist on no cluster.
-- `npm run dev -w @greenroom/web` — dashboard; `packages/web/.env.local` points it at localnet.
+- `npm run dev -w @greenroom/web` — dashboard; `packages/web/.env.local` points it at localnet. Band pages need a connected wallet (`components/BandSession.tsx`); the shell loads `lib/greenroom.ts` lazily and `next.config.ts` keeps `@anchor-lang/core` server-external, because Anchor's CommonJS build cannot be bundled for server rendering.
+- Agents as your own band: `--band-keypair <file> --band-name ... --genre ... --draw ... --home-city ...` (`keyfile.ts` reads JSON arrays or base58 exports). Never commit key files.
 - `npm run typecheck -w <pkg>`, `npm test -w @greenroom/world`, `npm test -w @greenroom/agents`.
 - `npm run qa` — the QA bot. Every run counts as a loop; `npm run qa:dry` for a dry run that does not count.
 - CI: `.github/workflows/program.yml` is the Linux proof (Anchor 1.2.1 container, seccomp unconfined for io_uring); `ci.yml` is Node-only; `pages.yml` publishes the dashboard. `@anchor-lang/core` is CommonJS: under Node 22 ESM take `BN` from `bn.js`, not from the Anchor namespace.

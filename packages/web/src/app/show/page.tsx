@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Progress, StateBadge } from "@/components/ShowCard";
-import { explorerUrl } from "@/lib/config";
+import { explorerUrl, POLL_MS } from "@/lib/config";
 import { demoDate, short, sol, timeLeft } from "@/lib/format";
 import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, vaultPda, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
 import { fetchLiveTour } from "@/lib/chain-live";
@@ -71,7 +71,7 @@ function ShowView() {
       setOthers(all);
       if (me) void getWorld().then((w) => setVenueName(w.venues.find((v) => v.id === me.venue)?.name ?? me.venueName ?? null));
     });
-    const t = setInterval(reload, 4000);
+    const t = setInterval(reload, POLL_MS);
     const tick = setInterval(() => setNow((n) => n + 1), 1000);
     return () => {
       clearInterval(t);

@@ -381,7 +381,7 @@ p {
 /* ---------- map ---------- */
 .map {
   width: 100%;
-  background: var(--surface);
+  background: var(--bg);
   border-radius: 8px;
   display: block;
 }
@@ -391,8 +391,30 @@ p {
   stroke-width: 2;
   stroke-dasharray: 6 6;
 }
-.map .venue {
+.map .country {
+  fill: var(--surface-mid);
+  stroke: var(--border);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
+.map .country.tour {
+  fill: var(--card);
+  stroke: var(--border-light);
+}
+.map .country-label {
   fill: var(--border);
+  font-size: 11px;
+  font-family: var(--font);
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.map .country-label.tour {
+  fill: var(--border-light);
+}
+.map .venue {
+  fill: var(--border-light);
 }
 .map .stop {
   fill: var(--accent);
@@ -819,9 +841,97 @@ input[type="checkbox"] {
   font-size: 12px;
   padding: 4px 16px;
 }
+.venue-pick {
+  background: transparent;
+  color: var(--text-muted);
+  border: 0;
+  font-family: var(--font);
+  font-size: 12px;
+  max-width: 100%;
+  cursor: pointer;
+  padding: 0;
+}
+.venue-pick:hover {
+  color: var(--text);
+}
 .plan-stop .controls {
   display: flex;
   gap: 4px;
+}
+
+/* ---------- wallet panel ---------- */
+.wallet-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px 20px;
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.wallet-panel .label {
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  margin-bottom: 4px;
+}
+
+/* ---------- connect / welcome ---------- */
+.welcome {
+  max-width: 760px;
+  padding: 40px 0 20px;
+}
+.welcome h1 {
+  margin-top: 24px;
+}
+.welcome > p {
+  margin-top: 10px;
+  max-width: 600px;
+}
+.brand.big {
+  padding: 0;
+  font-size: 24px;
+}
+.brand.big .dot {
+  width: 36px;
+  height: 36px;
+}
+.welcome .steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 32px;
+}
+.welcome .steps > div {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.link-btn {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  font-family: var(--font);
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 0;
 }
 
 /* ---------- responsive ---------- */

@@ -2,19 +2,27 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useBandSession } from "@/components/BandSession";
+import { RegisterBand } from "@/components/Connect";
+import { WalletPanel } from "@/components/WalletPanel";
 import { Feed } from "@/components/Feed";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { DriveNote, Itinerary, type ItineraryStop } from "@/components/Itinerary";
 import { RouteMap, type MapStop } from "@/components/RouteMap";
 import { HealthBadge, ShowCard } from "@/components/ShowCard";
 import { pendingItems, type ApprovalsView, type ApprovalView } from "@/lib/approvals";
-import { explorerUrl } from "@/lib/config";
+import { CLUSTER, explorerUrl, POLL_MS } from "@/lib/config";
+import { isRateLimit } from "@/lib/rpc";
 import { sol } from "@/lib/format";
 import { chainTime, fetchShows, type ShowAccount } from "@/lib/greenroom";
 import { bandTake, showView } from "@/lib/health";
 import { getApprovals, getRun, getWorld, isStaticMode, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
 
 export default function DashboardPage() {
+  const session = useBandSession();
+  // The band this page is about: the connected wallet, or the demo band (?band= overrides for links).
+  const [paramBand] = useState(() => (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("band")));
+  const authority = paramBand ?? session.authority;
   const [run, setRun] = useState<RunSummary | null | undefined>(undefined);
   const [accounts, setAccounts] = useState<Map<string, ShowAccount | null>>(new Map());
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
@@ -24,24 +32,36 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let alive = true;
+    let first = true;
     const load = async () => {
+      if (!authority) return;
       const bundled = await getRun();
       if (!alive) return;
-      // Live mode on static hosting: the band's latest tour and shows straight
-      // from chain state, so a run executing anywhere is visible as it happens.
-      let r = bundled;
-      const authority = new URLSearchParams(window.location.search).get("band") ?? bundled?.band.authority;
-      if (authority && (isStaticMode() || new URLSearchParams(window.location.search).has("band"))) {
+      // Paint the recorded run right away; chain reads below only refresh it.
+      if (first && bundled?.band.authority === authority) setRun((cur) => cur ?? bundled);
+      first = false;
+      // The recorded/local run belongs to one band; any other band's tour comes
+      // straight from chain state. Live mode on static hosting does the same for
+      // the run's band, so a run executing anywhere is visible as it happens.
+      const ownRun = bundled?.band.authority === authority;
+      let r: RunSummary | null = ownRun ? bundled : null;
+      if (!ownRun || isStaticMode() || paramBand) {
         try {
           const live = await fetchLiveTour(authority);
-          if (live && live.shows.length) r = { ...bundled, ...live, band: { ...bundled?.band, ...live.band } };
-        } catch {
-          /* chain unreachable; keep the bundle */
+          if (live && live.shows.length) r = ownRun ? { ...bundled, ...live, band: { ...bundled?.band, ...live.band } } : live;
+        } catch (e) {
+          // chain unreachable or busy: keep what we have and say so
+          if (alive) setRpcError(describeRpcError(e));
+          if (!ownRun) {
+            setRun((cur) => (cur === undefined ? null : cur));
+            return;
+          }
         }
       }
       if (!alive) return;
       setRun(r);
-      void getApprovals().then((a) => alive && setApprovals(a));
+      if (ownRun) void getApprovals().then((a) => alive && setApprovals(a));
+      else setApprovals(null);
       if (r && r.shows.length) {
         try {
           const accts = await fetchShows(r.shows.map((s) => s.show));
@@ -50,7 +70,7 @@ export default function DashboardPage() {
             setRpcError(null);
           }
         } catch (e) {
-          if (alive) setRpcError((e as Error).message.slice(0, 120));
+          if (alive) setRpcError(describeRpcError(e));
         }
       }
       try {
@@ -61,19 +81,43 @@ export default function DashboardPage() {
     };
     void load();
     void getWorld().then((w) => alive && setWorld(w));
-    const t = setInterval(load, 4000);
+    const t = setInterval(load, POLL_MS);
     const tick = setInterval(() => setNow((n) => n + 1), 1000);
     return () => {
       alive = false;
       clearInterval(t);
       clearInterval(tick);
     };
-  }, []);
+  }, [authority, paramBand]);
 
   const views = useMemo(() => (run ? [...run.shows].sort((a, b) => a.day - b.day || (a.replaces ? 1 : -1)).map((s) => showView(s, accounts.get(s.show), now)) : []), [run, accounts, now]);
   const venueById = useMemo(() => new Map(world.venues.map((v) => [v.id, v])), [world.venues]);
 
-  if (run === undefined) return <p className="muted">Loading…</p>;
+  const isWalletBand = !!session.wallet && authority === session.wallet;
+  const panel = isWalletBand ? <WalletPanel /> : null;
+  if (isWalletBand && session.profile === null)
+    return (
+      <>
+        {panel}
+        <RegisterBand />
+      </>
+    );
+  if (isWalletBand && session.profile === undefined)
+    return (
+      <>
+        {panel}
+        <p className="muted">{session.profileError ? `Reading your band from ${CLUSTER}… (${describeRpcError(session.profileError)})` : "Reading your band…"}</p>
+      </>
+    );
+  if (run === undefined) return <p className="muted">Loading the tour…</p>;
+  if (!run && isWalletBand && session.profile)
+    return (
+      <>
+        {panel}
+        {rpcError ? <p className="small warn" style={{ marginBottom: 10 }}>{rpcError}</p> : null}
+        <NoTourYet name={session.profile.name} authority={authority!} />
+      </>
+    );
   if (!run) {
     return (
       <div className="card">
@@ -180,6 +224,7 @@ export default function DashboardPage() {
   const cities = new Set(run.shows.map((s) => s.city));
   return (
     <div>
+      {panel}
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
           <h1>{run.band.name}</h1>
@@ -210,7 +255,7 @@ export default function DashboardPage() {
 
       {rpcError ? (
         <p className="small warn" style={{ marginTop: 8 }}>
-          Live chain data unavailable ({rpcError}); showing the recorded run. Is the validator running and the RPC URL right?
+          {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
       {isStaticMode() ? (
@@ -343,4 +388,35 @@ function PendingLine({ item }: { item: ApprovalView }) {
       <b>{p.city} was cancelled:</b> {p.options.length} replacement option{p.options.length > 1 ? "s" : ""} to choose from.
     </>
   );
+}
+
+function NoTourYet({ name, authority }: { name: string; authority: string }) {
+  return (
+    <div>
+      <h1>{name}</h1>
+      <p className="muted">Your band is registered on-chain. No tour yet.</p>
+      <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
+        <h3>Book your first tour</h3>
+        <p className="small muted" style={{ marginTop: 6 }}>
+          Your band agent books tours with your wallet&apos;s key, so it runs on your machine, not in the browser. Export the wallet&apos;s private key into a file on your
+          machine (keep it out of the repository) and start the agents as your band; this page then shows the tour as it is booked, and the Approvals page asks you about
+          venues and the route.
+        </p>
+        <pre className="mono" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>
+          {`npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "${name}" --approve`}
+        </pre>
+        <p className="small muted" style={{ marginTop: 10 }}>
+          Meanwhile: find rooms on the <Link href="/venues">Venues</Link> page and sketch a run in the <Link href="/planner">Route planner</Link>. Your record lives at{" "}
+          <Link href={`/band?authority=${authority}`}>Band record</Link>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function describeRpcError(e: unknown): string {
+  const msg = String((e as Error)?.message ?? e);
+  if (isRateLimit(msg)) return `${CLUSTER === "devnet" ? "The public devnet RPC" : "The RPC"} is rate-limiting this page (too many requests).`;
+  if (CLUSTER === "localnet") return `Local validator unreachable (${msg.slice(0, 80)}). Is it running?`;
+  return `Could not reach ${CLUSTER} (${msg.slice(0, 80)}).`;
 }

@@ -12,7 +12,7 @@ import { HeuristicBrain } from "./brain.ts";
 import { MessageBus, type BusMessage } from "./bus.ts";
 import { Crank } from "./crank.ts";
 import { FanSim } from "./fan-sim.ts";
-import { runTour } from "./orchestrator.ts";
+import { runTour, withIdentity } from "./orchestrator.ts";
 import { FakeChain } from "./testing/fake-chain.ts";
 import { VenueAgent } from "./venue-agent.ts";
 
@@ -153,4 +153,17 @@ test("dashboard: declining the route books nothing", { timeout: 30_000 }, async 
   assert.equal(out.tour, null);
   assert.equal(out.shows.length, 0);
   assert.equal(chain.calls.length, 0, "no transactions at all");
+});
+
+test("a band can run under its own name, genre, draw and home city", () => {
+  const b = withIdentity(band, { name: "The Running Pigeons", genre: "indie", draw: 350, homeCity: "leipzig" }, world);
+  assert.equal(b.name, "The Running Pigeons");
+  assert.equal(b.id, "the-running-pigeons");
+  assert.equal(b.genre, "indie");
+  assert.equal(b.draw, 350);
+  assert.equal(b.homeCity, "Leipzig");
+  assert.equal(b.country, "DE");
+  assert.throws(() => withIdentity(band, { genre: "polka" }, world), /genre/);
+  assert.throws(() => withIdentity(band, { homeCity: "Atlantis" }, world), /home city/);
+  assert.throws(() => withIdentity(band, { name: "x".repeat(33) }, world), /1-32/);
 });

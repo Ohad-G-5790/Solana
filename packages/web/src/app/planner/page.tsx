@@ -17,12 +17,47 @@ export default function PlannerPage() {
   );
 }
 
+/**
+ * A stop is a venue, or a whole city when the venue is still open
+ * ("city:<name>" in the saved plan): every venue there stays a candidate.
+ */
+interface Stop {
+  key: string;
+  city: string;
+  lat: number;
+  lng: number;
+  venue: WorldVenue | null;
+  options: WorldVenue[];
+}
+
+const CITY = "city:";
+
+function toStop(key: string, venues: WorldVenue[], cities: WorldCity[]): Stop | null {
+  if (key.startsWith(CITY)) {
+    const name = key.slice(CITY.length);
+    const c = cities.find((x) => x.name === name);
+    if (!c) return null;
+    return { key, city: name, lat: c.lat, lng: c.lng, venue: null, options: venues.filter((v) => v.city === name).sort((a, b) => b.capacity - a.capacity) };
+  }
+  const v = venues.find((x) => x.id === key);
+  if (!v) return null;
+  return { key, city: v.city, lat: v.lat, lng: v.lng, venue: v, options: venues.filter((x) => x.city === v.city).sort((a, b) => b.capacity - a.capacity) };
+}
+
+const capRange = (vs: WorldVenue[]) => {
+  if (!vs.length) return "";
+  const caps = vs.map((v) => v.capacity);
+  const lo = Math.min(...caps);
+  const hi = Math.max(...caps);
+  return lo === hi ? `${lo.toLocaleString()} cap` : `${lo.toLocaleString()}–${hi.toLocaleString()} cap`;
+};
+
 type Row =
-  | { kind: "show"; day: number; venue: WorldVenue; index: number; leg: Drive | null }
+  | { kind: "show"; day: number; stop: Stop; index: number; leg: Drive | null }
   | { kind: "travel"; day: number; from: string; to: string; leg: Drive }
   | { kind: "off"; day: number };
 
-function schedule(stops: WorldVenue[], restEvery: number): Row[] {
+function schedule(stops: Stop[], restEvery: number): Row[] {
   const rows: Row[] = [];
   let day = 0;
   let sinceRest = 0;
@@ -36,7 +71,7 @@ function schedule(stops: WorldVenue[], restEvery: number): Row[] {
       rows.push({ kind: "off", day: day++ });
       sinceRest = 0;
     }
-    rows.push({ kind: "show", day: day++, venue: v, index: i, leg: leg && leg.level === "travel-day" ? null : leg });
+    rows.push({ kind: "show", day: day++, stop: v, index: i, leg: leg && leg.level === "travel-day" ? null : leg });
     sinceRest++;
   });
   return rows;
@@ -82,8 +117,7 @@ function Planner() {
     }
   }, [fromTour, tourIds]);
 
-  const byId = useMemo(() => new Map(world.venues.map((v) => [v.id, v])), [world.venues]);
-  const stops = ids.map((id) => byId.get(id)).filter((v): v is WorldVenue => !!v);
+  const stops = useMemo(() => ids.map((id) => toStop(id, world.venues, world.cities)).filter((s): s is Stop => !!s), [ids, world]);
   const rows = schedule(stops, restEvery);
   const shows = rows.filter((r): r is Extract<Row, { kind: "show" }> => r.kind === "show");
   const legs = stops.slice(1).map((v, i) => drive(stops[i], v));
@@ -107,16 +141,19 @@ function Planner() {
   };
   const optimize = () => {
     if (stops.length < 3) return;
-    update(optimizeOrder(stops, 0).map((i) => stops[i].id));
+    update(optimizeOrder(stops, 0).map((i) => stops[i].key));
   };
   const cityVenues = world.venues.filter((v) => v.city === pickCity).sort((a, b) => b.capacity - a.capacity);
+  const pickKey = pickVenue || (pickCity ? `${CITY}${pickCity}` : "");
+  const pin = (index: number, key: string) => update(ids.map((x, i) => (i === index ? key : x)));
+  const label = (st: Stop) => (st.venue ? `${st.venue.name} (${st.venue.capacity} cap)` : `any of ${st.options.length} venues (${capRange(st.options)})`);
 
   const text = () =>
     [
       `Route plan (${shows.length} shows, ${days} days, ${km.toLocaleString()} km by road, ${formatMinutes(minutes)} driving; estimates)`,
       ...rows.map((r) =>
         r.kind === "show"
-          ? `${fmtDate(start, r.day)}  ${r.venue.city}: ${r.venue.name} (${r.venue.capacity} cap)${r.leg ? `  [${r.leg.km} km, ${formatMinutes(r.leg.minutes)} drive]` : ""}`
+          ? `${fmtDate(start, r.day)}  ${r.stop.city}: ${label(r.stop)}${r.leg ? `  [${r.leg.km} km, ${formatMinutes(r.leg.minutes)} drive]` : ""}`
           : r.kind === "travel"
             ? `${fmtDate(start, r.day)}  travel day: ${r.from} to ${r.to} (${r.leg.km} km, ${formatMinutes(r.leg.minutes)})`
             : `${fmtDate(start, r.day)}  day off`
@@ -160,7 +197,7 @@ function Planner() {
         </select>
         {pickCity ? (
           <select className="select" value={pickVenue} onChange={(e) => setPickVenue(e.target.value)} aria-label="Venue">
-            <option value="">Pick a venue…</option>
+            <option value="">Any venue ({cityVenues.length}, decide later)</option>
             {cityVenues.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name} ({v.capacity.toLocaleString()})
@@ -170,13 +207,13 @@ function Planner() {
         ) : null}
         <button
           className="btn small primary"
-          disabled={!pickVenue || ids.includes(pickVenue)}
+          disabled={!pickKey || ids.includes(pickKey)}
           onClick={() => {
-            update([...ids, pickVenue]);
+            update([...ids, pickKey]);
             setPickVenue("");
           }}
         >
-          Add stop
+          {pickVenue ? "Add venue" : pickCity ? `Add ${pickCity}` : "Add stop"}
         </button>
         <span className="spacer" />
         {tourIds.length ? (
@@ -216,7 +253,7 @@ function Planner() {
         <div className="card">
           <h3>No stops yet</h3>
           <p className="small muted" style={{ marginTop: 6 }}>
-            Add a city above, pick venues on the <Link href="/venues">Venues</Link> page{tourIds.length ? ", or load your current tour" : ""}.
+            Add a city above (the venue can stay open), pick venues on the <Link href="/venues">Venues</Link> page{tourIds.length ? ", or load your current tour" : ""}.
           </p>
         </div>
       ) : (
@@ -230,12 +267,12 @@ function Planner() {
             <Stat label="Travel days" value={travelDays} tone={travelDays ? "bad" : undefined} />
           </div>
           <div className="split">
-            <RouteMap stops={stops.map((v) => ({ key: v.id, label: v.city, lat: v.lat, lng: v.lng }))} venues={world.venues} />
+            <RouteMap stops={stops.map((v) => ({ key: v.key, label: v.city, lat: v.lat, lng: v.lng }))} venues={world.venues} />
             <div>
               <div className="itinerary">
                 {rows.map((r) =>
                   r.kind === "show" ? (
-                    <div key={`s-${r.venue.id}`}>
+                    <div key={`s-${r.stop.key}`}>
                       {r.leg ? (
                         <div className={`leg ${r.leg.level}`}>
                           <span aria-hidden>↓</span>
@@ -249,20 +286,30 @@ function Planner() {
                         <span className="micro muted">{fmtDate(start, r.day)}</span>
                         <div style={{ minWidth: 0 }}>
                           <span className="city" style={{ fontWeight: 700 }}>
-                            {r.venue.city}
+                            {r.stop.city}
                           </span>{" "}
-                          <span className="small muted">
-                            {r.venue.name} · {r.venue.capacity.toLocaleString()} cap
-                          </span>
+                          <select
+                            className="venue-pick"
+                            value={r.stop.venue?.id ?? ""}
+                            onChange={(e) => pin(r.index, e.target.value || `${CITY}${r.stop.city}`)}
+                            aria-label={`Venue in ${r.stop.city}`}
+                          >
+                            <option value="">Any venue · {r.stop.options.length} options · {capRange(r.stop.options)}</option>
+                            {r.stop.options.map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.name} · {v.capacity.toLocaleString()} cap
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div className="controls">
-                          <button className="icon-btn" aria-label={`Move ${r.venue.city} up`} disabled={r.index === 0} onClick={() => move(r.index, -1)}>
+                          <button className="icon-btn" aria-label={`Move ${r.stop.city} up`} disabled={r.index === 0} onClick={() => move(r.index, -1)}>
                             ↑
                           </button>
-                          <button className="icon-btn" aria-label={`Move ${r.venue.city} down`} disabled={r.index === stops.length - 1} onClick={() => move(r.index, 1)}>
+                          <button className="icon-btn" aria-label={`Move ${r.stop.city} down`} disabled={r.index === stops.length - 1} onClick={() => move(r.index, 1)}>
                             ↓
                           </button>
-                          <button className="icon-btn" aria-label={`Remove ${r.venue.city}`} onClick={() => update(ids.filter((x) => x !== r.venue.id))}>
+                          <button className="icon-btn" aria-label={`Remove ${r.stop.city}`} onClick={() => update(ids.filter((_, i) => i !== r.index))}>
                             ✕
                           </button>
                         </div>
