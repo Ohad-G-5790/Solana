@@ -19,6 +19,7 @@ export default function NewTourPage() {
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
   const [a, setA] = useState<TourAnswers>({ draw: 500, priceEuro: 20, startCity: "Berlin", days: 14 });
   const [plan, setPlan] = useState<TourPlan | null>(null);
+  const [priceText, setPriceText] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState<BookedTour | null>(null);
@@ -176,7 +177,21 @@ export default function NewTourPage() {
           ))}
           <label className="small muted row" style={{ gap: 6 }}>
             or
-            <input className="input" type="number" min={1} max={200} value={a.priceEuro} onChange={(e) => set({ priceEuro: Math.max(1, Math.min(200, Number(e.target.value) || 1)) })} aria-label="Ticket price in euros" />
+            <input
+              className="input"
+              type="number"
+              min={1}
+              max={200}
+              value={priceText ?? a.priceEuro}
+              // keep what is typed; take it once it is a valid price, tidy up on leaving the box
+              onChange={(e) => {
+                setPriceText(e.target.value);
+                const n = Number(e.target.value);
+                if (Number.isInteger(n) && n >= 1 && n <= 200) set({ priceEuro: n });
+              }}
+              onBlur={() => setPriceText(null)}
+              aria-label="Ticket price in euros"
+            />
           </label>
         </div>
       </section>

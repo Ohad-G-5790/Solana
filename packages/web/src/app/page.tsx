@@ -348,8 +348,9 @@ export default function DashboardPage() {
               <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
             </>
           )}
-          <Stat label="At risk" value={count.atRisk} tone={count.atRisk ? "warn" : undefined} />
-          <Stat label="Cancelled" value={count.cancelled} tone={count.cancelled ? "bad" : undefined} />
+          {/* only news: a zero here is noise */}
+          {count.atRisk ? <Stat label="At risk" value={count.atRisk} tone="warn" /> : null}
+          {count.cancelled ? <Stat label="Cancelled" value={count.cancelled} tone="bad" /> : null}
         </div>
       ) : null}
 
@@ -404,9 +405,11 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h2 style={{ margin: "24px 0 10px" }}>{live ? "What happened" : "What happened on this recorded tour"}</h2>
+      {live ? null : <h2 style={{ margin: "24px 0 10px" }}>What happened on this recorded tour</h2>}
       {live ? (
         <Feed
+          title={<h2 style={{ margin: "24px 0 10px" }}>What happened</h2>}
+          hideWhenEmpty
           limit={500}
           compact
           source="chain"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { fetchChainEvents, fetchShowEvents } from "@/lib/chain-live";
 import { explorerUrl, POLL_MS } from "@/lib/config";
 import { fans } from "@/lib/format";
@@ -72,6 +72,8 @@ export function Feed({
   cityOf,
   inFans = true,
   fallback,
+  title,
+  hideWhenEmpty,
 }: {
   limit?: number;
   compact?: boolean;
@@ -84,6 +86,9 @@ export function Feed({
   inFans?: boolean;
   /** shown when the chain has no events yet but the tour already has news (e.g. tickets sold) */
   fallback?: FeedMessage[];
+  /** a heading shown with the feed; with hideWhenEmpty, neither shows until there is something */
+  title?: ReactNode;
+  hideWhenEmpty?: boolean;
 }) {
   const [items, setItems] = useState<FeedMessage[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -143,6 +148,7 @@ export function Feed({
   }
   const groups = CATEGORIES.filter((c) => by.has(c.id)).map((c) => ({ ...c, items: by.get(c.id)!.slice().reverse() }));
 
+  if (list.length === 0 && hideWhenEmpty) return null;
   if (list.length === 0)
     return (
       <p className="muted small">
@@ -153,6 +159,7 @@ export function Feed({
   const shown = filter === "all" ? groups : groups.filter((g) => g.id === filter);
   return (
     <div className="activity">
+      {title}
       {usingFallback ? <p className="micro muted" style={{ marginBottom: 6 }}>Where each show stands now; the step-by-step story loads from devnet when it answers.</p> : null}
       {!compact ? (
         <div className="toolbar" role="tablist" aria-label="Filter activity">
