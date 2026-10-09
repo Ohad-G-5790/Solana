@@ -34,6 +34,20 @@ npm run dev -w @greenroom/web         # dashboard (reads devnet by default; see 
 
 `npm run demo:fast` prints the whole negotiation (offers, route, proposals, acceptances, fans buying, cancellations, refunds, crew hires, settlements) and writes `data/runs/<id>/transcript.jsonl` plus `summary.json`, which the dashboard reads. To watch a local run in the dashboard, copy `packages/web/.env.local.example` to `packages/web/.env.local` so it reads the local validator; without that file it reads devnet, where the program is deployed, and shows the recorded run from `packages/web/public/demo`.
 
+### Your band, your wallet
+
+The dashboard's band pages (Dashboard, Approvals, Band record) start with a **Connect wallet** screen: the connected wallet is the band. Venues and the Route planner stay open to everyone, and "Explore the demo band" shows the recorded demo without a wallet.
+
+1. In Phantom (or Solflare), create a new account for the band and switch the wallet to Solana devnet (Phantom: Settings → Developer settings → Testnet mode). Send it a little devnet SOL.
+2. Connect it on the dashboard. A wallet without a band profile gets a **Set up your band** form: name and genre, one transaction (about 0.002 SOL of rent) that creates the band's on-chain profile.
+3. To book a tour as that band, export the account's private key from the wallet into a file on your machine (base58 as exported, or the Solana CLI's JSON array) and start the agents with it; the band's wallet signs the band's transactions, `--wallet` still pays fees and the simulated fans:
+
+```bash
+npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "The Running Pigeons" --genre indie --draw 400 --home-city Berlin --approve
+```
+
+The connected dashboard then shows that band's latest tour straight from chain state, and with `--approve` and a local dashboard (`npm run dev -w @greenroom/web`, no `.env.local`, so it reads devnet) the Approvals page asks you about venues, the route and replacements. Keep the key file out of the repository.
+
 ### Approving the tour yourself
 
 `npm run demo:fast` runs on auto-pilot: the band agent approves its own recommendations. To make the band's decisions yourself, start the agents in approval mode and keep the dashboard open on **Approvals**:
@@ -52,7 +66,7 @@ The agent stops three times:
 
 Decisions go from the dashboard (`POST /api/approvals`) to `data/runs/<run>/decisions.jsonl`, which the running agent polls; each answer is validated before it is used. The hosted dashboard shows recorded runs, so its decision buttons are off.
 
-The **Venues** page filters the 136 venues by country, size, programme and maximum drive from any city, and the **Route planner** turns any list of venues into a day-by-day schedule with drive times, travel days for the long hauls, days off and a copyable itinerary. Drive times are estimates (road ≈ 1.2 × straight line, a loaded van at ~90 km/h with EU-style breaks), not routing.
+Maps show country borders (Natural Earth 1:50m, public domain; regenerate with `packages/web/scripts/build-borders.mjs`). The **Venues** page filters the 136 venues by country, size, programme and maximum drive from any city, and the **Route planner** turns any list of cities or venues (a city stop keeps every venue there open until you pin one) into a day-by-day schedule with drive times, travel days for the long hauls, days off and a copyable itinerary. Drive times are estimates (road ≈ 1.2 × straight line, a loaded van at ~90 km/h with EU-style breaks), not routing.
 
 ### Devnet
 

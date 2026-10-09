@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DecisionCard } from "@/components/Approvals";
+import { useBandSession } from "@/components/BandSession";
 import { pendingItems, type ApprovalsView } from "@/lib/approvals";
 import { getApprovals, getRun, getWorld, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
 
 export default function ApprovalsPage() {
+  const session = useBandSession();
   const [view, setView] = useState<ApprovalsView | null>(null);
   const [run, setRun] = useState<RunSummary | null>(null);
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
@@ -25,6 +27,26 @@ export default function ApprovalsPage() {
   }, [load]);
 
   if (!view) return <p className="muted">Loading…</p>;
+  // The questions belong to the band of the running (or recorded) tour.
+  if (run && session.authority && run.band.authority !== session.authority) {
+    const name = session.profile?.name ?? "your band";
+    return (
+      <div>
+        <h1>Approvals</h1>
+        <div className="card" style={{ marginTop: 16, maxWidth: 760 }}>
+          <h3>No questions for {name} yet</h3>
+          <p className="small muted" style={{ marginTop: 6 }}>
+            Your band agent asks here once it runs a tour for {name}: which venues you want to play, whether the route works, and what to do if a show does not
+            sell. Start it on your machine with your band&apos;s keypair and <span className="mono">--approve</span>, and keep this page open (locally:{" "}
+            <span className="mono">npm run dev -w @greenroom/web</span>).
+          </p>
+          <pre className="mono" style={{ marginTop: 10, whiteSpace: "pre-wrap" }}>
+            {`npm run demo:devnet -- --band-keypair ~/running-pigeons.key --band-name "${session.profile?.name ?? "The Running Pigeons"}" --approve`}
+          </pre>
+        </div>
+      </div>
+    );
+  }
   const pending = pendingItems(view);
   // Waiting items first (oldest first), then the history, newest first.
   const decided = view.items.filter((i) => i.decision).reverse();

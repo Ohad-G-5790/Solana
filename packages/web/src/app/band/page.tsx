@@ -6,6 +6,8 @@ import { Suspense, useEffect, useState } from "react";
 import { explorerUrl } from "@/lib/config";
 import { sol } from "@/lib/format";
 import { bandPda, fetchBand, type BandAccount } from "@/lib/greenroom";
+import { useBandSession } from "@/components/BandSession";
+import { RegisterBand } from "@/components/Connect";
 import { getRun, type RunSummary } from "@/lib/run";
 
 export default function BandPage() {
@@ -17,7 +19,8 @@ export default function BandPage() {
 }
 
 function BandView() {
-  const authority = useSearchParams().get("authority");
+  const session = useBandSession();
+  const authority = useSearchParams().get("authority") ?? session.authority;
   const [run, setRun] = useState<RunSummary | null>(null);
   const [band, setBand] = useState<BandAccount | null | undefined>(undefined);
   const [profile, setProfile] = useState<string>("");
@@ -48,6 +51,7 @@ function BandView() {
   }, [authority]);
 
   if (band === undefined) return <p className="muted">Loading…</p>;
+  if (band === null && !error && session.wallet && authority === session.wallet) return <RegisterBand />;
   if (band === null)
     return (
       <div className="card">
@@ -94,7 +98,7 @@ function BandView() {
           These counters can only grow through <span className="mono">settle_show</span>, after a show reached its threshold and its date passed. Venue agents read
           them as proof of past concerts before making an offer; no screenshots, no promoter&apos;s word.
         </p>
-        {run ? (
+        {run && run.band.authority === (authority ?? run.band.authority) ? (
           <p className="small" style={{ marginTop: 8 }}>
             Current tour: {run.shows.length} shows · {run.stats?.ticketsSold ?? "…"} tickets in this run.
           </p>

@@ -6,7 +6,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { pendingItems } from "@/lib/approvals";
 import { CLUSTER } from "@/lib/config";
+import { short } from "@/lib/format";
 import { getApprovals } from "@/lib/run";
+import { useBandSession } from "./BandSession";
+import { ConnectScreen } from "./Connect";
+
+/** Pages that are about one band; they need a connected wallet (or demo mode). */
+const BAND_PAGES = ["/", "/approvals", "/band"];
 
 const NAV = [
   { href: "/", label: "Dashboard" },
@@ -18,10 +24,17 @@ const NAV = [
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
-  const path = usePathname();
+  const rawPath = usePathname();
+  const path = rawPath.replace(/\/$/, "") || "/";
+  const session = useBandSession();
   const [waiting, setWaiting] = useState(0);
+  const ownRun = !!session.authority && session.authority === session.runAuthority;
   useEffect(() => {
     let alive = true;
+    if (!ownRun) {
+      setWaiting(0);
+      return;
+    }
     const load = () => void getApprovals().then((a) => alive && setWaiting(pendingItems(a).length));
     load();
     const t = setInterval(load, 4000);
@@ -29,7 +42,9 @@ export function Shell({ children }: { children: ReactNode }) {
       alive = false;
       clearInterval(t);
     };
-  }, []);
+  }, [ownRun]);
+  const gated = BAND_PAGES.includes(path) && !session.authority;
+  const who = session.wallet ? (session.profile ? session.profile.name : short(session.wallet)) : session.guest ? "demo band" : null;
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -53,11 +68,23 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="topbar">
           <div className="status">
             <span className="pill">{CLUSTER}</span>
-            <span className="muted small">AI agents negotiate the tour; you approve; the deal lives on Solana.</span>
+            {who ? (
+              <span className="small">
+                {session.wallet ? "Signed in as " : "Viewing the "}
+                <b>{who}</b>
+                {session.guest && !session.wallet ? (
+                  <button className="link-btn small" onClick={() => session.setGuest(false)}>
+                    leave demo
+                  </button>
+                ) : null}
+              </span>
+            ) : (
+              <span className="muted small">AI agents negotiate the tour; you approve; the deal lives on Solana.</span>
+            )}
           </div>
           <WalletMultiButton />
         </div>
-        {children}
+        {gated ? <ConnectScreen /> : children}
       </main>
     </div>
   );

@@ -119,3 +119,15 @@ export async function chainTime(): Promise<number> {
   const slot = await connection.getSlot("confirmed");
   return (await connection.getBlockTime(slot)) ?? Math.floor(Date.now() / 1000);
 }
+
+/** Create the band's on-chain profile, signed and paid by the connected wallet. */
+export async function registerBand(wallet: WalletLike, name: string, genre: string): Promise<string> {
+  return walletProgram(wallet)
+    .methods.registerBand(name, genre)
+    .accountsPartial({ authority: wallet.publicKey, bandProfile: bandPda(wallet.publicKey), systemProgram: SystemProgram.programId })
+    .rpc();
+}
+
+export async function balanceLamports(address: PublicKey): Promise<number> {
+  return connection.getBalance(address, "confirmed");
+}

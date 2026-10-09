@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Keypair } from "@solana/web3.js";
+import { readKeypairFile } from "./keyfile.ts";
 import { runDemo } from "./orchestrator.ts";
 
 // Load <repo>/.env (KEY=value lines) without adding a dependency; the real environment wins.
@@ -24,6 +25,11 @@ if (existsSync(envFile)) {
  *
  * --approve: the band decides in the dashboard (venues, route, replacement
  * shows) instead of auto-pilot; the run waits on the Approvals page.
+ *
+ * Your own band: [--band-keypair ~/band.json] [--band-name "The Running Pigeons"]
+ *   [--genre indie] [--draw 400] [--home-city Berlin]
+ * The key file is the Solana CLI's JSON array or a wallet's base58 export.
+ * The band's wallet signs the band's transactions; --wallet still pays fees and fans.
  */
 function arg(name: string, def?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -38,10 +44,21 @@ const payer = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(wall
 const fast = arg("fast") === "true";
 if (arg("brain")) process.env.GREENROOM_BRAIN = arg("brain");
 
+const bandKeypairPath = arg("band-keypair");
+const identity = {
+  name: arg("band-name"),
+  genre: arg("genre"),
+  draw: arg("draw") ? Number(arg("draw")) : undefined,
+  homeCity: arg("home-city"),
+};
+const hasIdentity = Object.values(identity).some((v) => v !== undefined);
+
 const summary = await runDemo({
   rpcUrl,
   payer,
   bandId: arg("band"),
+  bandKeypair: bandKeypairPath ? readKeypairFile(bandKeypairPath.replace(/^~(?=\/|$)/, homedir())) : undefined,
+  bandIdentity: hasIdentity ? identity : undefined,
   wantedShows: Number(arg("shows", "8")),
   countries: arg("countries")?.split(","),
   deadlineAfterSec: Number(arg("deadline", fast ? "40" : "90")),

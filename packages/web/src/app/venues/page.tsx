@@ -159,11 +159,21 @@ export default function VenuesPage() {
                 <h3 style={{ display: "inline" }}>{city}</h3> <span className="muted small">{c?.country}</span>
                 {c?.population ? <span className="muted micro"> · {(c.population / 1e6).toFixed(c.population >= 1e6 ? 1 : 2)}M people</span> : null}
               </div>
-              {d ? (
-                <span className={`small ${d.level === "travel-day" ? "bad" : d.level === "long" ? "warn" : "muted"}`}>
-                  {d.km === 0 ? "home city" : `${d.km.toLocaleString()} km · ${formatMinutes(d.minutes)} drive`}
-                </span>
-              ) : null}
+              <div className="row">
+                {d ? (
+                  <span className={`small ${d.level === "travel-day" ? "bad" : d.level === "long" ? "warn" : "muted"}`}>
+                    {d.km === 0 ? "home city" : `${d.km.toLocaleString()} km · ${formatMinutes(d.minutes)} drive`}
+                  </span>
+                ) : null}
+                <button
+                  className={`btn small ${plan.includes(`city:${city}`) ? "" : "outline"}`}
+                  onClick={() => togglePlan(`city:${city}`)}
+                  aria-pressed={plan.includes(`city:${city}`)}
+                  title="Add the city as a stop and decide the venue later"
+                >
+                  {plan.includes(`city:${city}`) ? "City in plan ✓" : "+ Plan city"}
+                </button>
+              </div>
             </div>
             {[...list]
               .sort((a, b) => b.capacity - a.capacity)
