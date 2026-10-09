@@ -38,7 +38,14 @@ function ShowView() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string; network?: boolean } | null>(null);
 
   const reload = async () => {
-    if (!address) {
+    let valid = !!address;
+    try {
+      if (address) new PublicKey(address);
+    } catch {
+      valid = false;
+    }
+    if (!valid) {
+      setMsg({ ok: false, text: "This link does not point to a show" });
       setAcct(null);
       return;
     }
@@ -80,7 +87,8 @@ function ShowView() {
           const live = await fetchLiveTour(bandAuthority);
           me = live?.shows.find((s) => s.show === address) ?? null;
           if (live) all = live.shows;
-          if (me && alive) setLive(true);
+          // fans and euros only for tours priced on the dashboard's scale
+          if (me && alive && live?.inApp) setLive(true);
         } catch {
           /* chain unreachable: the page still shows the account */
         }
@@ -171,11 +179,11 @@ function ShowView() {
             </div>
           </div>
           <div className="stat">
-            <div className="label">Deadline</div>
+            <div className="label">Sales close in</div>
             <div className="value">{timeLeft(Number(acct.thresholdDeadline), now)}</div>
           </div>
           <div className="stat">
-            <div className="label">Show date</div>
+            <div className="label">Show in</div>
             <div className="value">{timeLeft(Number(acct.date), now)}</div>
           </div>
           <div className="stat">
@@ -207,13 +215,23 @@ function ShowView() {
                     ? "It missed its target, so it is cancelled and every fan gets their money back automatically."
                     : "Played and paid out."}
           </p>
+          {state === "onSale" || state === "confirmed" ? (
+            <button
+              className="btn outline small"
+              style={{ marginTop: 10 }}
+              onClick={() => void navigator.clipboard?.writeText(window.location.href).then(() => setMsg({ ok: true, text: "Link copied: send it to your fans" }))}
+            >
+              Copy link for fans
+            </button>
+          ) : null}
+          {msg ? <p className="small" style={{ marginTop: 8, color: msg.ok ? "var(--accent)" : "var(--negative)" }}>{msg.text}</p> : null}
         </div>
       ) : (
       <div className="card" style={{ marginTop: 12 }}>
         <h3>Your ticket</h3>
         {!wallet ? (
           <p className="muted small" style={{ marginTop: 6 }}>
-            Connect a wallet (devnet) to buy a ticket into this show&apos;s escrow. If the show is cancelled you get it back automatically, or you can claim it here.
+            Connect a wallet (devnet) to buy a ticket. The money is held until the show; if it is cancelled you get it back automatically.
           </p>
         ) : mine ? (
           <div style={{ marginTop: 8 }}>
@@ -230,7 +248,7 @@ function ShowView() {
           <div className="row" style={{ marginTop: 10 }}>
             <input className="input" type="number" min={1} max={10} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(10, Number(e.target.value))))} />
             <button className="btn primary" disabled={busy} onClick={() => act("Purchase", () => buyTicket(wallet, address, qty))}>
-              Buy {qty} for {sol(Number(acct.ticketPriceLamports) * qty)}
+              Buy {qty} for {live ? `${euros(Number(acct.ticketPriceLamports) * qty)} (${fans(qty)} fans in this demo)` : sol(Number(acct.ticketPriceLamports) * qty)}
             </button>
           </div>
         ) : (
@@ -259,13 +277,13 @@ function ShowView() {
       </div>
       )}
 
-      <h2 style={{ margin: "20px 0 10px" }}>Tickets ({tickets.length})</h2>
+      <h2 style={{ margin: "20px 0 10px" }}>{live ? `Ticket purchases (${tickets.length})` : `Tickets (${tickets.length})`}</h2>
       <div className="table-wrap">
       <table className="table">
         <thead>
           <tr>
             <th>Fan</th>
-            <th>Qty</th>
+            <th>{live ? "Fans" : "Qty"}</th>
             <th>Paid</th>
             <th>Status</th>
           </tr>
@@ -278,9 +296,9 @@ function ShowView() {
                   {short(t.account.buyer.toBase58(), 6)}
                 </a>
               </td>
-              <td>{t.account.quantity}</td>
-              <td>{sol(t.account.amountLamports)}</td>
-              <td className="muted small">{t.account.refunded ? "refunded" : state === "settled" ? "attended" : "held in escrow"}</td>
+              <td>{live ? fans(t.account.quantity) : t.account.quantity}</td>
+              <td>{live ? euros(t.account.amountLamports) : sol(t.account.amountLamports)}</td>
+              <td className="muted small">{t.account.refunded ? "refunded" : state === "settled" ? "attended" : state === "cancelled" ? "being refunded" : "held until the show"}</td>
             </tr>
           ))}
         </tbody>

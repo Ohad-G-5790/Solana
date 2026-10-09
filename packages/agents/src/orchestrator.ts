@@ -14,6 +14,7 @@ import { MessageBus } from "./bus.ts";
 import { Crank } from "./crank.ts";
 import { FanSim } from "./fan-sim.ts";
 import { VenueAgent } from "./venue-agent.ts";
+import { formatSol } from "./sol.ts";
 
 export interface RunOptions {
   rpcUrl: string;
@@ -471,7 +472,7 @@ export async function runTour(brief: TourBrief, d: TourDeps): Promise<TourOutcom
         await fans.tick(views);
       } else if (!hubEmptyNoted) {
         hubEmptyNoted = true;
-        bus.publish({ kind: "note", from: "orchestrator", text: `Hub wallet is down to ${(hubBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL; fans stop buying. Fund ${d.hub.toBase58()} to continue.` });
+        bus.publish({ kind: "note", from: "orchestrator", text: `Hub wallet is down to ${formatSol(hubBalance)}; fans stop buying. Fund ${d.hub.toBase58()} to continue.` });
       }
       r = await crank.run(live.filter((b) => !done.has(b.show.toBase58())).map((b) => b.show), chainNow, accounts);
       failures = 0;

@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { DecisionCard } from "@/components/Approvals";
 import { useBandSession } from "@/components/BandSession";
+import { useBandTour } from "@/components/useBandTour";
 import { pendingItems, type ApprovalsView } from "@/lib/approvals";
 import { getApprovals, getRun, getWorld, type RunSummary, type WorldCity, type WorldVenue } from "@/lib/run";
 
 export default function ApprovalsPage() {
   const session = useBandSession();
+  const { tour: own } = useBandTour();
   const [view, setView] = useState<ApprovalsView | null>(null);
   const [run, setRun] = useState<RunSummary | null>(null);
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
@@ -40,9 +42,15 @@ export default function ApprovalsPage() {
             that misses its target is cancelled and every fan is refunded automatically, so there is nothing to approve here.
           </p>
           <div className="row" style={{ marginTop: 14 }}>
-            <Link className="btn primary" href="/tour/new">
-              Create a tour
-            </Link>
+            {own?.shows.length ? (
+              <Link className="btn primary" href="/">
+                Follow your tour
+              </Link>
+            ) : (
+              <Link className="btn primary" href="/tour/new">
+                Create a tour
+              </Link>
+            )}
           </div>
         </div>
       </div>

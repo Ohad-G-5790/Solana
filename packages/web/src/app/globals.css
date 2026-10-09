@@ -1084,6 +1084,10 @@ input[type="checkbox"] {
 
 /* ---------- responsive ---------- */
 @media (max-width: 896px) {
+  /* the sidebar brand is already on top: no second logo on the connect screen */
+  .welcome .brand.big {
+    display: none;
+  }
   .shell {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1095,13 +1099,10 @@ input[type="checkbox"] {
     padding: 12px 16px;
   }
   .nav {
+    /* every page in view: two rows rather than a hidden scroll */
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
-    overflow-x: auto;
-    /* fade the right edge: more pages are a swipe away */
-    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
-    mask-image: linear-gradient(to right, #000 85%, transparent);
-    padding-right: 24px;
   }
   .nav a {
     padding: 8px 12px;

@@ -34,6 +34,8 @@ export interface RunSummary {
   stats: Record<string, number | string>;
   /** Present while a run is still in progress (summary not yet written). */
   partial?: boolean;
+  /** Booked in the dashboard (tour region APP_REGION): priced in demo euros, 1 ticket = FANS_PER_TICKET fans. */
+  inApp?: boolean;
 }
 
 export interface FeedMessage {

@@ -56,7 +56,7 @@ export function ShowCard({ v, now, venueName, replacedByCity, bandUnits }: { v: 
         <span className="muted">{v.acct ? (bandUnits ? euros(v.escrowLamports) : sol(v.escrowLamports)) : ""}</span>
       </div>
       <p className={`micro ${v.health === "at-risk" ? "warn" : "muted"}`} style={{ marginTop: 6 }}>
-        {bandUnits && v.state === "onSale" ? `${fans(Math.max(0, v.required - v.sold))} more fans and it goes ahead` : v.status}
+        {v.status}
         {replacedByCity ? ` → ${replacedByCity}` : ""}
       </p>
       <div className="row micro muted" style={{ justifyContent: "space-between", marginTop: 4 }}>

@@ -72,9 +72,11 @@ function serve(dir: string): Promise<Server> {
 }
 
 /** The Show account's discriminator, base58 as RPC memcmp filters carry it. */
+const SHOW_DISC_BYTES = Buffer.from(
+  (JSON.parse(readFileSync(join(ROOT, "packages/web/src/idl/greenroom.json"), "utf8")) as { accounts: { name: string; discriminator: number[] }[] }).accounts.find((a) => a.name === "Show")!.discriminator
+);
 const SHOW_DISC = (() => {
-  const idl = JSON.parse(readFileSync(join(ROOT, "packages/web/src/idl/greenroom.json"), "utf8")) as { accounts: { name: string; discriminator: number[] }[] };
-  const bytes = idl.accounts.find((a) => a.name === "Show")!.discriminator;
+  const bytes = [...SHOW_DISC_BYTES];
   const A = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
   let n = 0n;
   for (const b of bytes) n = n * 256n + BigInt(b);
@@ -170,6 +172,7 @@ async function bookedShows(root: string): Promise<Map<string, string>> {
   const venues = JSON.parse(readFileSync(join(root, "packages/web/public/venue-profiles.json"), "utf8")).venues as Record<string, { authority: string; profile: string }>;
   const coder = new anchor.BorshAccountsCoder(idl);
   const band = new PublicKey(ADDRESS);
+  const PROGRAM = new PublicKey("4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8");
   const now = Math.floor(Date.now() / 1000);
   const plan: [string, number, string, number][] = [
     ["huxleys-neue-welt-berlin", 0, "OnSale", 4],
@@ -177,6 +180,12 @@ async function bookedShows(root: string): Promise<Map<string, string>> {
     ["grosse-freiheit-36-hamburg", 5, "Confirmed", 12],
   ];
   const out = new Map<string, string>();
+  // the tour itself, marked as booked in the dashboard (region APP_REGION)
+  const bandProfile = PublicKey.findProgramAddressSync([Buffer.from("band"), band.toBuffer()], PROGRAM)[0];
+  const tourId = Buffer.alloc(4);
+  const tour = PublicKey.findProgramAddressSync([Buffer.from("tour"), bandProfile.toBuffer(), tourId], PROGRAM)[0];
+  const tourData = await coder.encode("Tour", { band_profile: bandProfile, tour_id: 0, name: "The Running Pigeons tour 1", region: "Greenroom app", starts_at: new BN(now - 120), ends_at: new BN(now + 8 * 3600), shows_count: 3, bump: 255 });
+  out.set(tour.toBase58(), Buffer.from(tourData).toString("base64"));
   for (const [id, day, state, sold] of plan) {
     const v = venues[id];
     const deadline = now + 1800 + day * 2;
@@ -234,7 +243,7 @@ export async function newPage(browser: Browser, fake: Fake, width = 1280, root =
           const filters = ((r.params[1] as { filters?: { memcmp?: { offset: number; bytes: string } }[] } | undefined)?.filters ?? []).map((f) => f.memcmp).filter(Boolean);
           const disc = filters.find((f) => f!.offset === 0)?.bytes;
           if (disc && disc !== SHOW_DISC) return [];
-          return [...shows].map(([pubkey, data]) => ({ pubkey, account: { data: [data, "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 } }));
+          return [...shows].filter(([, data]) => Buffer.from(data, "base64").subarray(0, 8).equals(SHOW_DISC_BYTES)).map(([pubkey, data]) => ({ pubkey, account: { data: [data, "base64"], executable: false, lamports: 1, owner, rentEpoch: 0, space: 0 } }));
         }
         case "getSignaturesForAddress":
           return [];
@@ -427,9 +436,11 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
     await check("ux-phone-width", async () => {
       const wide: string[] = [];
       for (const p of PAGES) {
-        const page = await newPage(browser, { band: true, delay: 0 }, 390);
+        // a connected band with a booked tour: the pages a band actually uses on a phone
+        const page = await newPage(browser, { band: true, tour: true, delay: 0 }, 390);
         await page.goto(url(p), { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(1200);
+        await connect(page);
+        await page.waitForTimeout(1500);
         const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         await shot(page, `phone${p.replace(/\//g, "-").replace(/-$/, "") || "-home"}`);
         if (over > 1) wide.push(`${p} +${over}px`);

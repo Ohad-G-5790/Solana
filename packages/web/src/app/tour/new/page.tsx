@@ -10,7 +10,7 @@ import { RegisterBand } from "@/components/Connect";
 import { DriveNote, Itinerary } from "@/components/Itinerary";
 import { RouteMap } from "@/components/RouteMap";
 import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
-import { explorerUrl } from "@/lib/config";
+import { explorerUrl, FANS_PER_TICKET } from "@/lib/config";
 import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
 
 export default function NewTourPage() {
@@ -57,13 +57,20 @@ export default function NewTourPage() {
 
   const cities = useMemo(() => [...world.cities].sort((x, y) => x.country.localeCompare(y.country) || x.name.localeCompare(y.name)), [world.cities]);
   const set = (patch: Partial<TourAnswers>) => {
+    // other answers are another tour: the unfinished one is left as it is
+    if (partial) remember(null);
     setA((cur) => ({ ...cur, ...patch }));
     setPlan(null);
     setError(null);
   };
 
   if (profile === null) return <RegisterBand />;
-  if (!profile || !wallet) return <p className="muted">{profileError ? "Waiting for devnet…" : "Reading your band…"}</p>;
+  if (!profile || !wallet)
+    return (
+      <p className="muted">
+        {profileError ? "Devnet is busy, so your band takes a moment to load. This page keeps trying by itself." : "Reading your band…"}
+      </p>
+    );
 
   const makePlan = async () => {
     setBusy("Asking the venues…");
@@ -134,7 +141,10 @@ export default function NewTourPage() {
       ) : null}
       {partial && !plan ? (
         <p className="small warn" style={{ marginTop: 10 }}>
-          Your last booking stopped part-way. Your answers are back: press Plan my tour, then Finish booking to add the missing shows to the same tour.
+          Your last booking stopped part-way. Your answers are back: press Plan my tour, then Finish booking to add the missing shows to the same tour.{" "}
+          <button className="link-btn small" onClick={() => remember(null)}>
+            Start over instead
+          </button>
         </p>
       ) : null}
 
@@ -220,7 +230,7 @@ export default function NewTourPage() {
                   venueName: s.venueName ?? s.venueId,
                   lat: where.get(s.venueId)!.lat,
                   lng: where.get(s.venueId)!.lng,
-                  detail: `room ${where.get(s.venueId)!.capacity.toLocaleString()} · venue takes ${s.venueBps / 100}%`,
+                  detail: `up to ${(s.capacity * FANS_PER_TICKET).toLocaleString()} fans (room ${where.get(s.venueId)!.capacity.toLocaleString()}) · venue takes ${s.venueBps / 100}%`,
                 }))}
               />
               <DriveNote />
@@ -268,7 +278,12 @@ function Money({ plan }: { plan: TourPlan }) {
       <div>
         <span className="label">Full house</span>
         <b>about {euro(m.selloutEuro)}</b>
-        <span className="micro muted">for you, after the venues&apos; share (you keep about {m.bandPct}%)</span>
+        <span className="micro muted">
+          for you, after the venues&apos; share (you keep about {m.bandPct}%)
+          {plan.answers.draw > Math.max(...plan.plan.map((s) => s.capacity)) * FANS_PER_TICKET
+            ? `; on devnet a show sells at most ${(Math.max(...plan.plan.map((s) => s.capacity)) * FANS_PER_TICKET).toLocaleString()} fans' worth`
+            : ""}
+        </span>
       </div>
       <div>
         <span className="label">Each show goes ahead at</span>

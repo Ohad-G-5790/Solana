@@ -92,7 +92,7 @@ export default function DashboardPage() {
     };
   }, [authority, paramBand]);
 
-  const views = useMemo(() => (run ? [...run.shows].sort((a, b) => a.day - b.day || (a.replaces ? 1 : -1)).map((s) => showView(s, accounts.get(s.show), now)) : []), [run, accounts, now]);
+  const views = useMemo(() => (run ? [...run.shows].sort((a, b) => a.day - b.day || (a.replaces ? 1 : -1)).map((s) => showView(s, accounts.get(s.show), now, run.cluster === "live" && !!run.inApp)) : []), [run, accounts, now]);
   const venueById = useMemo(() => new Map(world.venues.map((v) => [v.id, v])), [world.venues]);
 
   const isWalletBand = !!session.wallet && authority === session.wallet;
@@ -150,6 +150,8 @@ export default function DashboardPage() {
   let take = 0;
   // a tour read from chain state was booked by the band itself (wizard or its own agents), not a recording
   const live = run.cluster === "live";
+  // fans and euros only for tours priced on the dashboard's scale (agent-booked tours use real SOL prices)
+  const inFans = live && !!run.inApp;
   const count = { proposed: 0, onSale: 0, atRisk: 0, confirmed: 0, settled: 0, cancelled: 0 };
   for (const v of views) {
     if (v.state === "rejected") continue;
@@ -186,11 +188,11 @@ export default function DashboardPage() {
         tone: rep ? "info" : "bad",
         text: rep ? (
           <>
-            <b>{v.run.city}</b> was cancelled ({v.sold}/{v.required}); replaced by {nameOf(rep.run.venue, rep.run.venueName)}, {rep.run.city}: <HealthBadge health={rep.health} />
+            <b>{v.run.city}</b> was cancelled ({inFans ? `${fans(v.sold)} of ${fans(v.required)} fans` : `${v.sold}/${v.required}`}); replaced by {nameOf(rep.run.venue, rep.run.venueName)}, {rep.run.city}: <HealthBadge health={rep.health} />
           </>
         ) : (
           <>
-            <b>{v.run.city}</b> was cancelled ({v.sold}/{v.required} sold); {v.sold > 0 ? "every fan was refunded" : "nobody had bought yet"}.
+            <b>{v.run.city}</b> was cancelled ({inFans ? `${fans(v.sold)} of the ${fans(v.required)} fans it needed` : `${v.sold}/${v.required} sold`}); {v.sold > 0 ? "every fan was refunded" : "nobody had bought yet"}.
           </>
         ),
       });
@@ -286,7 +288,7 @@ export default function DashboardPage() {
           {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
-      {live ? (
+      {inFans ? (
         <p className="small muted" style={{ marginTop: 8 }}>
           A devnet demo at small scale: each ticket on chain stands for {FANS_PER_TICKET} fans, money is play money shown in euros, and a tour runs in about an
           hour instead of months (one tour day is {DEMO_DAY_SEC} seconds).
@@ -329,7 +331,7 @@ export default function DashboardPage() {
 
       {views.length > 0 ? (
         <div className="stats">
-          {live ? (
+          {inFans ? (
             <>
               <Stat label="Fans so far" value={fans(sold)} />
               <Stat label="Ticket money held" value={euros(escrow)} hint="back to fans if a show is cancelled" />
@@ -372,7 +374,7 @@ export default function DashboardPage() {
                 now={now}
                 venueName={nameOf(v.run.venue, v.run.venueName)}
                 replacedByCity={v.run.replacedBy ? byShow.get(v.run.replacedBy)?.run.city : undefined}
-                bandUnits={live}
+                bandUnits={inFans}
               />
             ))}
           </div>
@@ -402,7 +404,7 @@ export default function DashboardPage() {
           source="chain"
           shows={run.shows.map((s) => s.show)}
           cityOf={Object.fromEntries(run.shows.map((s) => [s.show, s.city]))}
-          empty="Your shows are booked; nothing else has happened yet."
+          empty={sold > 0 ? "Reading the story so far from devnet; it can take a minute when devnet is busy." : "Your shows are booked; nothing else has happened yet."}
         />
       ) : (
         <Feed limit={2000} compact source="transcript" />

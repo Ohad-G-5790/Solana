@@ -6,7 +6,8 @@ import type { Greenroom } from "@/idl/greenroom";
 import idl from "@/idl/greenroom.json";
 import { bandPda, connection, programId, readProgram, stateName } from "./greenroom";
 import { getWorld, type FeedMessage, type RunShow, type RunSummary } from "./run";
-import { DEMO_DAY_SEC } from "./config";
+import { APP_REGION, DEMO_DAY_SEC } from "./config";
+import { euros, fans } from "./format";
 import { venueKeys } from "./venue-keys";
 
 /**
@@ -68,7 +69,7 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
   if (!band || band.toursCreated === 0) return null;
   const tourId = band.toursCreated - 1;
   const tour = PublicKey.findProgramAddressSync([enc("tour"), profile.toBuffer(), u32le(tourId)], programId)[0];
-  const shows = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);
+  const [shows, tourAcct] = await Promise.all([program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]), program.account.tour.fetchNullable(tour)]);
   const venues = await venuesByProfile();
   const sorted = [...shows].sort((a, b) => Number(a.account.date) - Number(b.account.date));
   const firstDate = sorted.length ? Number(sorted[0].account.date) : 0;
@@ -96,6 +97,7 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
     cluster: "live",
     band: { id: band.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name: band.name, authority: bandAuthority, profile: profile.toBase58() },
     tour: tour.toBase58(),
+    inApp: tourAcct?.region === APP_REGION,
     shows: runShows,
     stats: { ticketsSold: runShows.reduce((n, s) => n + s.ticketsSold, 0), live: 1 },
   };
@@ -103,24 +105,25 @@ async function fetchLiveTourUncached(bandAuthority: string): Promise<RunSummary 
 
 // ---------- program events from recent transactions ----------
 
-const sol = (l: number) => `${(l / 1e9).toLocaleString("en", { maximumFractionDigits: 5 })} SOL`;
 const parser = new EventParser(programId, new BorshCoder(idl as Idl));
 const seen = new Map<string, FeedMessage[]>(); // signature -> decoded messages
 let nextId = 1_000_000;
 
+// Chain events are shown for a band's own devnet tour, so they speak in its units: fans and euros.
+const n = (x: unknown) => Number(x);
 const describe: Record<string, (d: Record<string, unknown>, venues: Map<string, VenueInfo>) => string> = {
   BandRegistered: (d) => `${d.name} registered its band profile.`,
-  VenueRegistered: (d) => `${d.name} (${d.city}) registered as a venue, capacity ${d.capacity}.`,
-  TourCreated: (d) => `Tour "${d.name}" opened (#${d.tourId}).`,
-  ShowProposed: (d, v) => `Proposed ${v.get(String(d.venueProfile))?.city ?? "a show"}: ${d.capacity} tickets, ${Number(d.thresholdBps) / 100}% threshold.`,
+  VenueRegistered: (d) => `${d.name} (${d.city}) joined as a venue, capacity ${d.capacity}.`,
+  TourCreated: (d) => `Tour "${d.name}" booked.`,
+  ShowProposed: (d, v) => `${v.get(String(d.venueProfile))?.city ?? "A show"} booked: up to ${fans(n(d.capacity))} fans, goes ahead at ${n(d.thresholdBps) / 100}%.`,
   ShowAccepted: (d, v) => `${v.get(String(d.venueAuthority))?.name ?? "The venue"} signed: ${v.get(String(d.venueAuthority))?.city ?? "the show"} is on sale.`,
-  ShowRejected: () => `Venue declined the proposal; the show was closed.`,
-  TicketBought: (d) => `A fan bought ${d.quantity} ticket${Number(d.quantity) > 1 ? "s" : ""} (${d.ticketsSold} sold so far).`,
-  ShowConfirmed: (d) => `Threshold met (${d.ticketsSold}/${d.capacity}): show confirmed.`,
-  ShowCancelled: (d) => `Deadline passed with ${d.ticketsSold} sold (needed ${d.ticketsRequired}): show cancelled, refunds follow.`,
-  TicketRefunded: (d) => `A fan got ${sol(Number(d.amountLamports))} back.`,
-  ShowSettled: (d) => `Paid out ${sol(Number(d.totalLamports))}: band ${sol(Number(d.bandLamports))}, venue ${sol(Number(d.venueLamports))}${Number(d.payeeLamports) ? `, crew ${sol(Number(d.payeeLamports))}` : ""}.`,
-  PayeeAdded: (d) => `Crew hired: ${d.label} for ${Number(d.bps) / 100}% of the show.`,
+  ShowRejected: () => `The venue said no; the show is off.`,
+  TicketBought: (d) => `${fans(n(d.quantity))} more fans bought tickets (${fans(n(d.ticketsSold))} so far).`,
+  ShowConfirmed: (d) => `Target reached with ${fans(n(d.ticketsSold))} of ${fans(n(d.capacity))} fans: the show goes ahead.`,
+  ShowCancelled: (d) => `Sales closed at ${fans(n(d.ticketsSold))} fans, ${fans(n(d.ticketsRequired))} were needed: the show is cancelled and fans are refunded.`,
+  TicketRefunded: (d) => `${euros(n(d.amountLamports))} went back to fans.`,
+  ShowSettled: (d) => `Paid out ${euros(n(d.totalLamports))}: you ${euros(n(d.bandLamports))}, the venue ${euros(n(d.venueLamports))}${n(d.payeeLamports) ? `, crew ${euros(n(d.payeeLamports))}` : ""}.`,
+  PayeeAdded: (d) => `Crew hired: ${d.label} for ${n(d.bps) / 100}% of the show.`,
 };
 
 const kindOf: Record<string, string> = {

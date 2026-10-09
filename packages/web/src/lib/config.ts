@@ -14,6 +14,8 @@ export const DEMO_DAY_SEC = 2;
 export const LAMPORTS_PER_EURO = 10_000;
 /** On devnet a show sells a sample of the room: one on-chain ticket stands for this many fans. */
 export const FANS_PER_TICKET = 20;
+/** The region the dashboard writes on tours it books; tells them apart from agent-booked tours. */
+export const APP_REGION = "Greenroom app";
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export function explorerUrl(kind: "address" | "tx", value: string): string {

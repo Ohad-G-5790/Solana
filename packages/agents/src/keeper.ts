@@ -10,8 +10,10 @@
  * Demo only: the seed venues' keys derive from the public world seed, so
  * anyone can sign as them; the keeper refuses to run on mainnet. It accepts a
  * proposal only on the terms a venue would offer (venueTermsProblems) and
- * rejects the rest, and the demo wallet's fan spending is capped per band and
- * per run, so a crafted proposal cannot drain it.
+ * rejects the rest. What the demo wallet spends on fans is bounded twice: a
+ * show sells at most its capacity (40 tickets at most 200 € each, KEEPER_RULES),
+ * and each run spends at most maxFanSolPerRun, ticket rent included. A fresh
+ * band wallet gets no more than any other; the payer floor stops fans entirely.
  */
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { generateWorld, type Band, type Venue } from "@greenroom/world";
@@ -36,8 +38,6 @@ export const KEEPER_RULES = {
   maxSalesSec: 6 * 3600,
   /** The show is at most this long after its deadline. */
   maxShowAfterDeadlineSec: 24 * 3600,
-  /** What the payer spends on fans for one band, over the band's whole life (read from chain). */
-  maxFanLamportsPerBand: 0.05e9,
 };
 
 export type KeeperRules = typeof KEEPER_RULES;
@@ -94,7 +94,7 @@ export interface KeeperOptions {
   registerVenues?: number;
   /** Seconds between sales opening and the deadline, used to pace fans (the dashboard books with 40 min). */
   salesWindowSec?: number;
-  /** Most the payer spends on simulated fans in one run (SOL); per band, see KEEPER_RULES. */
+  /** Most the payer spends on simulated fans in one run (SOL), ticket rent included. */
   maxFanSolPerRun?: number;
   /** Overrides, e.g. shorter sales windows for tests on a fast fake clock. */
   rules?: Partial<KeeperRules>;
@@ -102,6 +102,9 @@ export interface KeeperOptions {
   /** Tests inject an in-memory chain. */
   deps?: { client: GreenroomClient; connection: Pick<Connection, "getBalance" | "getMultipleAccountsInfo"> };
 }
+
+/** Rent of one Ticket account, paid by the payer and not returned to it. */
+const TICKET_RENT_LAMPORTS = 1_800_000;
 
 const MAINNET_GENESIS = "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d";
 
@@ -126,10 +129,10 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
     const d = m.data as { show: string; quantity: number };
     const p = priceOf.get(d.show);
     if (!p) return;
-    spentTotal += d.quantity * p.price;
+    spentTotal += d.quantity * p.price + TICKET_RENT_LAMPORTS;
   });
   const rules: KeeperRules = { ...KEEPER_RULES, ...opts.rules };
-  const capped = new Set<string>(); // bands told about their cap this run
+  let capNoted = false;
   const perRun = (opts.maxFanSolPerRun ?? 0.3) * LAMPORTS_PER_SOL;
 
   const byProfile = new Map<string, { venue: Venue; kp: Keypair }>();
@@ -180,9 +183,9 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
   const bandInfo = async (profile: string) => {
     if (!bands.has(profile)) {
       const b = await client.fetchBand(new PublicKey(profile));
-      bands.set(profile, { ...world.bands[0], id: profile, name: b.name, genre: b.genre as Band["genre"], showsCompleted: b.showsCompleted, ticketsSoldTotal: Number(b.ticketsSoldTotal), grossSettled: Number(b.grossSettledLamports ?? 0) } as Band);
+      bands.set(profile, { ...world.bands[0], id: profile, name: b.name, genre: b.genre as Band["genre"], showsCompleted: b.showsCompleted, ticketsSoldTotal: Number(b.ticketsSoldTotal) } as Band);
     }
-    return bands.get(profile)! as Band & { showsCompleted: number; ticketsSoldTotal: number; grossSettled: number };
+    return bands.get(profile)! as Band & { showsCompleted: number; ticketsSoldTotal: number };
   };
   const terms = (s: ShowAccount): ProposalTerms => ({ venueBps: s.venueBps, ticketPriceLamports: Number(s.ticketPriceLamports), capacity: s.capacity, thresholdBps: s.thresholdBps, date: Number(s.date), thresholdDeadline: Number(s.thresholdDeadline) });
   let backoffMs = 0;
@@ -191,13 +194,9 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
       const now = await client.chainTime();
       // only shows that can still change: settled ones never need the keeper again
       // (state byte at offset 218; base58 of 0..3 is "1".."4")
-      const all = (await Promise.all(["1", "2", "3", "4"].map((b) => client.program.account.show.all([{ memcmp: { offset: 218, bytes: b } }])))).flat();
-      // what each band's shows have taken in, over its life: settled gross plus live sales
-      const intake = new Map<string, number>();
-      for (const { account: s } of all) {
-        const k = s.bandProfile.toBase58();
-        intake.set(k, (intake.get(k) ?? 0) + s.ticketsSold * Number(s.ticketPriceLamports));
-      }
+      const reads = (await Promise.all(["1", "2", "3", "4"].map((b) => client.program.account.show.all([{ memcmp: { offset: 218, bytes: b } }])))).flat();
+      // a show that changed state between two reads would appear twice
+      const all = [...new Map(reads.map((r) => [r.publicKey.toBase58(), r])).values()];
       const accounts = new Map<string, ShowAccount>(all.map((s) => [s.publicKey.toBase58(), s.account]));
       // live dates per venue, for double bookings
       const liveDates = new Map<string, { show: string; date: number }[]>();
@@ -251,12 +250,10 @@ export async function runKeeper(opts: KeeperOptions): Promise<{ accepted: number
       const balance = await connection.getBalance(opts.payer.publicKey);
       if (balance > 0.02 * LAMPORTS_PER_SOL) {
         for (const [bandProfile, views] of selling) {
-          // the cap lives on chain (the band's own intake), so it holds across runs and wallets
-          const lifetime = (await bandInfo(bandProfile)).grossSettled + (intake.get(bandProfile) ?? 0);
-          if (lifetime >= rules.maxFanLamportsPerBand || spentTotal >= perRun) {
-            if (!capped.has(bandProfile)) log(`fan budget reached for ${bandProfile.slice(0, 8)}: ${formatSol(lifetime)} taken in so far`);
-            capped.add(bandProfile);
-            continue;
+          if (spentTotal >= perRun) {
+            if (!capNoted) log(`fan budget for this run reached (${formatSol(spentTotal)} incl. ticket rent); fans resume next run`);
+            capNoted = true;
+            break;
           }
           if (!fanSims.has(bandProfile)) {
             fanSims.set(bandProfile, new FanSim(bands.get(bandProfile)!, world.fans, world.cities, client, bus, { maxBuysPerTick: isLocal ? 40 : 10, radiusKm: 80, seed: `keeper:${bandProfile}`, concurrency: isLocal ? 6 : 1, gapMs: isLocal ? 0 : 300 }));

@@ -92,7 +92,7 @@ test("keeper: venue terms follow the venue's own offer rule", () => {
   assert.match(venueTermsProblems({ ...v, capacity: 1000 }, { ...band, genre: offGenre }, { ...ok, capacity: 12 }, []).join(), /programme/);
 });
 
-test("keeper: the fan budget is read from chain, so a band at its cap gets no more simulated fans", { timeout: 30_000 }, async () => {
+test("keeper: a run spends no more than its fan budget (ticket rent included)", { timeout: 30_000 }, async () => {
   const chain = new FakeChain(20);
   const world = generateWorld({ seed: "greenroom-2026", bands: 1, crewPerCity: 1, fansPerCity: 10 });
   const v = world.venues.find((x) => x.city === "Berlin")!;
@@ -103,7 +103,7 @@ test("keeper: the fan budget is read from chain, so a band at its cap gets no mo
   const now = chain.now();
   const { tour } = await chain.createTour(band, 0, "Capped", "EU", now - 60, now + 3600);
   await chain.proposeShow(band, tour, profile, { ticketPriceLamports: 1_000_000, capacity: 12, thresholdBps: 5000, bandBps: 6500, venueBps: 3500, date: now + 300, thresholdDeadline: now + 200 });
-  const stats = await runKeeper({ rpcUrl: "fake", payer: band, minutes: 0.02, tickMs: 50, registerVenues: 0, rules: { minSalesSec: 5, maxFanLamportsPerBand: 0 }, log: () => {}, deps: { client: chain.client, connection: chain.connection } });
+  const stats = await runKeeper({ rpcUrl: "fake", payer: band, minutes: 0.02, tickMs: 50, registerVenues: 0, maxFanSolPerRun: 0, rules: { minSalesSec: 5 }, log: () => {}, deps: { client: chain.client, connection: chain.connection } });
   assert.equal(stats.accepted, 1, "the venue still signs");
-  assert.equal(stats.ticketsBought, 0, "no fans once the band is at its cap");
+  assert.equal(stats.ticketsBought, 0, "no fans once the run's budget is spent");
 });

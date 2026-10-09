@@ -57,7 +57,18 @@ export class FakeChain {
 
   /** The slice of Anchor's program the keeper reads: every show account. */
   get program() {
-    return { account: { show: { all: async () => [...this.shows.values()].map((s) => ({ publicKey: s.key, account: this.view(s) })) } } };
+    // honours the keeper's state filter (memcmp on the state byte, base58 "1".."5" = Proposed..Settled)
+    const order: State[] = ["proposed", "onSale", "confirmed", "cancelled", "settled"];
+    return {
+      account: {
+        show: {
+          all: async (filters: { memcmp: { offset: number; bytes: string } }[] = []) =>
+            [...this.shows.values()]
+              .filter((s) => filters.every((f) => f.memcmp.offset !== 218 || order[Number(f.memcmp.bytes) - 1] === s.state))
+              .map((s) => ({ publicKey: s.key, account: this.view(s) })),
+        },
+      },
+    };
   }
 
   /** The slice of a Connection the keeper uses. */

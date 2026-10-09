@@ -7,7 +7,7 @@ import { BN } from "@anchor-lang/core";
 import { PublicKey, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { bandPda, connection, vaultPda, walletProgram, type BandAccount, type WalletLike } from "./greenroom";
 import type { WorldCity, WorldVenue } from "./run";
-import { DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO } from "./config";
+import { APP_REGION, DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO } from "./config";
 import { venueKeys } from "./venue-keys";
 
 /** How many people the band can bring: the one number the venues care about most. */
@@ -47,14 +47,15 @@ export function emptyPlanReason(p: TourPlan): string {
   return `${p.offers.length} venues said yes, but no route fits ${p.answers.days} days from ${p.answers.startCity}. Try a longer tour or another first city.`;
 }
 
-/** Money at a full house and at the 50% target, in euros, for the real rooms (not the devnet sample). */
+/**
+ * Money at a full house and at the 50% target, in euros, for exactly what is
+ * booked: each show's tickets on chain times the fans one ticket stands for.
+ */
 export function planMoney(p: TourPlan): { selloutEuro: number; targetEuro: number; bandPct: number } {
-  const offerOf = new Map(p.offers.map((o) => [o.venueId, o]));
   let sellout = 0;
   let bandBps = 0;
   for (const s of p.plan) {
-    const room = Math.min(p.answers.draw, offerOf.get(s.venueId)?.offeredCapacity ?? p.answers.draw);
-    sellout += room * p.answers.priceEuro * (s.bandBps / 10_000);
+    sellout += s.capacity * FANS_PER_TICKET * p.answers.priceEuro * (s.bandBps / 10_000);
     bandBps += s.bandBps;
   }
   const n = Math.max(1, p.plan.length);
@@ -167,6 +168,13 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   const firstDay = p.plan[0]?.day ?? 0;
   // the clock the tour's deadlines count from: now, or the one the first attempt used
   let base = now + SALES_MINUTES * 60;
+  // a half-finished tour whose sales would close within 15 minutes cannot be finished: venues
+  // would refuse the late shows. Book the plan as a new tour instead.
+  if (resume) {
+    const existing = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);
+    const soonest = Math.min(...existing.map((e) => Number(e.account.thresholdDeadline)));
+    if (existing.length && soonest < now + 15 * 60) return bookTour(wallet, band, p, onStatus);
+  }
   if (resume) {
     const existing = await program.account.show.all([{ memcmp: { offset: 8, bytes: tour.toBase58() } }]);
     for (const e of existing) {
@@ -178,7 +186,7 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
   } else {
     ixs.push(
       await program.methods
-        .createTour(tourId, `${band.name} tour ${tourId + 1}`.slice(0, 32), "Central EU", new BN(now - 120), new BN(now + 8 * 3600))
+        .createTour(tourId, `${band.name} tour ${tourId + 1}`.slice(0, 32), APP_REGION, new BN(now - 120), new BN(now + 8 * 3600))
         .accountsPartial({ bandAuthority: wallet.publicKey, bandProfile, tour, systemProgram: SystemProgram.programId })
         .instruction()
     );

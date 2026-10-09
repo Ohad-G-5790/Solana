@@ -10,6 +10,8 @@ import type { ShowProposedData, TourRequest } from "./venue-agent.ts";
 import { formatSol } from "./sol.ts";
 
 const lamportsToSol = formatSol;
+/** One tour day on the demo clock, in seconds between show dates (the dashboard's DEMO_DAY_SEC). */
+const DEMO_DAY_SEC = 2;
 
 export interface TourBrief {
   countries: string[];
@@ -161,7 +163,7 @@ export class BandAgent {
       // demo clock: every show's deadline/date are offsets from sales opening,
       // spread by the planned day so the dashboard shows a sequence
       const thresholdDeadline = salesOpenAt + brief.deadlineAfterSec + p.day;
-      const date = salesOpenAt + brief.showAfterSec + p.day * 2;
+      const date = salesOpenAt + brief.showAfterSec + p.day * DEMO_DAY_SEC;
       try {
         const { show, sig: psig } = await this.client.proposeShow(this.keypair, tour, new PublicKey(p.venuePubkey), {
           date,
