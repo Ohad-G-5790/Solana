@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers Builds deploys the static dashboard from packages/web/out.
+  // Build command (dashboard setting): npm run build:static -w @greenroom/web
+  // Deploy command (default):        npx wrangler deploy
+  // Keep NEXT_PUBLIC_BASE_PATH unset here: the site is served from the domain root.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "greenroom",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./packages/web/out",
+    "not_found_handling": "404-page"
+  }
+}
