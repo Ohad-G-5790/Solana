@@ -143,7 +143,7 @@ export function venueDecides(rules: VenueRules, req: BandRequest): VenueDecision
 
 /** Sample tour requests a venue agent receives in a season (fictional bands). */
 export const SAMPLE_REQUESTS: BandRequest[] = [
-  { band: "The Running Pigeons", genre: "indie", draw: 400, priceEuro: 30, showsPlayed: 5, homeCity: "Berlin" },
+  { band: "Son of a Pigeon", genre: "indie", draw: 400, priceEuro: 30, showsPlayed: 5, homeCity: "Berlin" },
   { band: "Northern Static", genre: "rock", draw: 900, priceEuro: 35, showsPlayed: 12, homeCity: "Hamburg" },
   { band: "Velvet Ash", genre: "metal", draw: 650, priceEuro: 32, showsPlayed: 20, homeCity: "Prague" },
   { band: "Lena Kraus Trio", genre: "jazz", draw: 150, priceEuro: 25, showsPlayed: 30, homeCity: "Munich" },

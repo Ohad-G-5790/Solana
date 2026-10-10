@@ -41,7 +41,7 @@ on:
         default: demo
       band_profile:
         description: "With band = mine: name|genre|draw|home city"
-        default: "The Running Pigeons|indie|400|Berlin"
+        default: "Son of a Pigeon|indie|400|Berlin"
 
 permissions:
   contents: write
@@ -81,8 +81,8 @@ jobs:
         shell: bash
         env:
           GREENROOM_RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
-          # the wallet that receives the 10% platform fee of every booked show (empty: no fee)
-          GREENROOM_PLATFORM_WALLET: ${{ vars.GREENROOM_PLATFORM_WALLET }}
+          # the wallet that receives the 10% platform fee of every booked show (the repository variable overrides it)
+          GREENROOM_PLATFORM_WALLET: ${{ vars.GREENROOM_PLATFORM_WALLET || 'VWmCwdcsueHfRemR2jKfxCvBTfzzr1R7aQpZrkN112a' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           BAND: ${{ inputs.band }}
           BAND_PROFILE: ${{ inputs.band_profile }}

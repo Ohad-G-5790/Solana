@@ -185,7 +185,7 @@ async function bookedShows(root: string): Promise<Map<string, string>> {
   const bandProfile = PublicKey.findProgramAddressSync([Buffer.from("band"), band.toBuffer()], PROGRAM)[0];
   const tourId = Buffer.alloc(4);
   const tour = PublicKey.findProgramAddressSync([Buffer.from("tour"), bandProfile.toBuffer(), tourId], PROGRAM)[0];
-  const tourData = await coder.encode("Tour", { band_profile: bandProfile, tour_id: 0, name: "The Running Pigeons tour 1", region: "Greenroom app", starts_at: new BN(now - 120), ends_at: new BN(now + 8 * 3600), shows_count: 3, bump: 255 });
+  const tourData = await coder.encode("Tour", { band_profile: bandProfile, tour_id: 0, name: "Son of a Pigeon tour 1", region: "Greenroom app", starts_at: new BN(now - 120), ends_at: new BN(now + 8 * 3600), shows_count: 3, bump: 255 });
   out.set(tour.toBase58(), Buffer.from(tourData).toString("base64"));
   for (const [id, day, state, sold] of plan) {
     const v = venues[id];
@@ -219,7 +219,7 @@ async function bookedShows(root: string): Promise<Map<string, string>> {
 export async function newPage(browser: Browser, fake: Fake, width = 1280, root = ROOT): Promise<Page> {
   const page = await browser.newPage({ viewport: { width, height: 900 } });
   await page.addInitScript({ content: `${WALLET_SCRIPT}(${JSON.stringify(ADDRESS)});` });
-  const profile = fake.band ? bandProfile("The Running Pigeons", "indie", fake.tour ? 1 : 0) : null;
+  const profile = fake.band ? bandProfile("Son of a Pigeon", "indie", fake.tour ? 1 : 0) : null;
   const shows = fake.tour ? await bookedShows(root) : new Map<string, string>();
   const { PublicKey } = await import("@solana/web3.js");
   const bandKey = PublicKey.findProgramAddressSync([Buffer.from("band"), new PublicKey(ADDRESS).toBuffer()], new PublicKey("4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8"))[0].toBase58();
@@ -384,7 +384,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.close();
       if (!home || !back) return `with a wallet connected the logo does not lead to the main page and back (landing: ${home}, way back: ${back})`;
       if (!panel.includes(ADDRESS.slice(0, 6))) return `the wallet panel does not show the connected address (${panel.slice(0, 80)})`;
-      if (!/Running Pigeons/.test(h1)) return `the heading does not name the wallet's band (h1: ${h1})`;
+      if (!/Son of a Pigeon/.test(h1)) return `the heading does not name the wallet's band (h1: ${h1})`;
       if (!button.includes(ADDRESS.slice(0, 4))) return `the wallet button changes the address's case ("${button}")`;
       return null;
     });
