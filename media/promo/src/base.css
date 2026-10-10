@@ -1,0 +1,374 @@
+/* Greenroom promo videos. Tokens mirror packages/web/src/app/globals.css (docs/DESIGN.md),
+   scaled up for a 1920x1080 frame. */
+:root {
+  --bg: #121212;
+  --surface: #181818;
+  --surface-mid: #1f1f1f;
+  --card: #252525;
+  --card-alt: #272727;
+  --accent: #1ed760;
+  --accent-border: #1db954;
+  --text: #ffffff;
+  --text-muted: #b3b3b3;
+  --text-soft: #cbcbcb;
+  --border: #4d4d4d;
+  --border-light: #7c7c7c;
+  --negative: #f3727f;
+  --warning: #ffa42b;
+  --info: #539df5;
+  --shadow-heavy: rgba(0, 0, 0, 0.5) 0px 16px 48px;
+  --shadow-medium: rgba(0, 0, 0, 0.3) 0px 16px 16px;
+  --inset: rgb(18, 18, 18) 0px 2px 0px, rgb(124, 124, 124) 0px 0px 0px 2px inset;
+  --font: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --display: "Inter Display", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+#stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: radial-gradient(1400px 900px at 50% 38%, #171717 0%, var(--bg) 62%, #0f0f0f 100%);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 0, "cv11" 1;
+}
+.abs {
+  position: absolute;
+  will-change: transform, opacity;
+}
+.layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- type ---------- */
+.label {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.label.g {
+  color: var(--accent);
+}
+.label.r {
+  color: var(--negative);
+}
+.headline {
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+  color: var(--text);
+}
+.headline .w {
+  display: inline-block;
+  white-space: pre;
+}
+.headline .em-g {
+  color: var(--accent);
+}
+.headline .em-r {
+  color: var(--negative);
+}
+.headline .em-m {
+  color: var(--text-muted);
+}
+.sub {
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.32;
+  color: var(--text-muted);
+}
+.sub b {
+  color: var(--text);
+  font-weight: 700;
+}
+.foot {
+  font-size: 17px;
+  font-weight: 500;
+  color: #8a8a8a;
+  letter-spacing: 0.2px;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.mono {
+  font-family: "DejaVu Sans Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* ---------- chrome ---------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.01em;
+}
+.brand .dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+}
+.player {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.player .track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  background: #3a3a3a;
+  border-radius: 9999px;
+}
+.player .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--text);
+  border-radius: 9999px;
+}
+.player .knob {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  background: var(--text);
+  border-radius: 50%;
+}
+
+/* ---------- components (dashboard look, 2x) ---------- */
+.card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: var(--shadow-heavy);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.between {
+  justify-content: space-between;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-mid);
+  color: var(--text-muted);
+  border-radius: 9999px;
+  padding: 10px 22px;
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pill.g {
+  background: var(--accent);
+  color: #000;
+}
+.pill.outline {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--border-light);
+  color: var(--text);
+}
+.pill.outline-g {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--accent);
+}
+.pill.outline-r {
+  background: rgba(243, 114, 127, 0.08);
+  box-shadow: inset 0 0 0 2px var(--negative);
+  color: var(--negative);
+}
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  border-radius: 9999px;
+  padding: 20px 36px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+.badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 21px;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--surface-mid);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.badge.onSale {
+  color: var(--info);
+}
+.badge.confirmed {
+  color: var(--accent);
+}
+.badge.cancelled {
+  color: var(--negative);
+}
+.badge.settled {
+  background: var(--accent);
+  color: #000;
+}
+.badge.proposed {
+  color: var(--warning);
+}
+.progress {
+  position: relative;
+  height: 16px;
+  background: var(--surface-mid);
+  border-radius: 9999px;
+  margin: 22px 0 14px;
+}
+.progress .clip {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress .fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 9999px;
+}
+.progress .fill.cancelled {
+  background: var(--negative);
+}
+.progress .threshold {
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 26px;
+  margin-left: -2px;
+  background: var(--text);
+  border-radius: 2px;
+}
+.show h3 {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+}
+.show .meta {
+  font-size: 22px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+.show .counts {
+  font-size: 23px;
+  color: var(--text-soft);
+}
+.show .counts b {
+  color: var(--text);
+}
+.show .micro span {
+  white-space: nowrap;
+}
+.show .micro {
+  font-size: 19px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  min-height: 24px;
+}
+.feed-item {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 24px;
+  padding: 18px 24px;
+  background: var(--surface);
+  border-radius: 12px;
+  font-size: 23px;
+  line-height: 1.35;
+  color: var(--text-soft);
+  box-shadow: var(--shadow-medium);
+}
+.feed-item.tx {
+  box-shadow: inset 4px 0 0 var(--accent), var(--shadow-medium);
+}
+.feed-item .who {
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feed-item .kind {
+  color: var(--text-muted);
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+.input {
+  background: var(--surface-mid);
+  color: var(--text);
+  border-radius: 500px;
+  padding: 26px 40px;
+  font-size: 32px;
+  font-weight: 500;
+  box-shadow: var(--inset);
+  white-space: nowrap;
+}
+.caret {
+  display: inline-block;
+  width: 3px;
+  height: 36px;
+  background: var(--accent);
+  vertical-align: -6px;
+  margin-left: 4px;
+}
+.stat {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px 32px;
+}
+.stat .k {
+  color: var(--text-muted);
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2.8px;
+}
+.stat .v {
+  font-size: 56px;
+  font-weight: 800;
+  font-family: var(--display);
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+svg text {
+  font-family: var(--font);
+}
