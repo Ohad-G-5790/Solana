@@ -12,6 +12,7 @@ import { RouteMap } from "@/components/RouteMap";
 import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, replan, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
 import { explorerUrl, FANS_PER_TICKET } from "@/lib/config";
 import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
+import { latestBandAgent } from "@/lib/agents";
 
 export default function NewTourPage() {
   const wallet = useAnchorWallet();
@@ -41,6 +42,10 @@ export default function NewTourPage() {
       if (saved) {
         setPartial({ tourId: saved.tourId, message: saved.message });
         setA(saved.answers);
+      } else {
+        // a band agent made on the Agents page: its rules are the first answers
+        const agent = latestBandAgent()?.band;
+        if (agent) setA((cur) => ({ ...cur, draw: agent.draw, priceEuro: agent.priceEuro, startCity: agent.homeCity, roundTrip: agent.roundTrip }));
       }
     } catch {
       /* storage blocked: the banner lasts for this page view */

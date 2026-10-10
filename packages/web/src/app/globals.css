@@ -2375,3 +2375,225 @@ a.brand:hover {
     justify-content: flex-start;
   }
 }
+
+/* ---------- landing entry points ---------- */
+.hero-ctas {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ---------- agents: create in a few clicks ---------- */
+.kind-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.tile.kind {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 20px;
+  text-align: left;
+  border-radius: 14px;
+}
+.tile.kind b {
+  font-size: 20px;
+}
+.tile.kind.on {
+  box-shadow: 0 0 0 2px var(--accent) inset;
+  background: rgba(30, 215, 96, 0.08);
+}
+.agent-card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-card.hero {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 22px;
+  padding: 26px;
+  background: radial-gradient(ellipse 70% 120% at 10% 0%, rgba(30, 215, 96, 0.24), transparent 65%), var(--surface);
+}
+.agent-card.hero h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 4px 0 8px;
+}
+.band-avatar.small {
+  width: 72px;
+  height: 72px;
+  font-size: 26px;
+  flex: none;
+}
+.rules {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.agent-test {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.route-line {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* ---------- a venue agent's inbox ---------- */
+.inbox ul {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inbox li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+.inbox li.yes {
+  box-shadow: 0 0 0 1px rgba(30, 215, 96, 0.3) inset;
+}
+.inbox li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.inbox-money {
+  font-weight: 800;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* ---------- venue demo ---------- */
+.split-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+.split-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 14px 0 10px;
+  background: var(--surface-mid);
+}
+.split-bar span.venue,
+.split-list i.venue {
+  background: var(--accent);
+}
+.split-bar span.band,
+.split-list i.band {
+  background: #8fbfff;
+}
+.split-bar span.crew,
+.split-list i.crew {
+  background: var(--warning);
+}
+.split-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.split-list i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.venue-story {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.venue-story li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.4;
+}
+.nights {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.night {
+  min-height: 64px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+.night.booked {
+  background: var(--surface-mid);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+.night.chain {
+  background: rgba(30, 215, 96, 0.14);
+  box-shadow: 0 0 0 1px rgba(30, 215, 96, 0.6) inset;
+}
+.night b {
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+@media (max-width: 720px) {
+  .agent-card.hero {
+    flex-direction: column;
+  }
+  .nights {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .inbox li {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .inbox-money {
+    grid-column: 2;
+  }
+}
+
+/* public pages other than the landing: room under the top bar */
+.public-main > :not(.landing):first-child {
+  margin-top: 28px;
+}

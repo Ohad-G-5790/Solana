@@ -42,13 +42,14 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-plain-language", title: "band-facing pages speak plainly (no lamports, bps, PDAs or shell commands)" },
   { id: "ux-shared-controls", title: "buttons come from the shared set (btn, chip, choice, icon) so they look and behave alike" },
   { id: "ux-activity-grouped", title: "the agent feed tells the tour in phases, says who speaks, and starts compact" },
+  { id: "ux-agent-venue", title: "an agent is made in a few clicks and tries its first deals at once; the venue demo shows a venue's side (its agent's answers, the night signed on Solana, who got the money)" },
   { id: "ux-guest-path", title: "visitors without a wallet can still explore (demo band, venues, route planner): a live-demo banner, no wallet asked, and the logo always leads back to the main page" },
 ];
 
 const BASE = "/Solana";
 const ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
 const ADDRESS = "cSppNhmf1Ng2JAyf5UeNb7Di9mukwRDjBgcRXvTCfsj";
-const PAGES = ["/", "/approvals/", "/venues/", "/planner/", "/band/", "/feed/", "/tour/new/"];
+const PAGES = ["/", "/approvals/", "/venues/", "/planner/", "/band/", "/feed/", "/tour/new/", "/agents/", "/agents/new/", "/venue-demo/"];
 const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain", ".jsonl": "text/plain", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 
 export function serve(dir: string): Promise<Server> {
@@ -547,7 +548,8 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
         const h1s = await page.locator("h1:visible").count();
         const active = await page.locator(".nav a.active").count();
         if (h1s !== 1) problems.push(`${p}: ${h1s} main headings`);
-        if (p !== "/tour/new/" && active !== 1) problems.push(`${p}: ${active} nav items marked current`);
+        // the wizards sit outside the menu; the venue demo is a public page without it
+        if (!["/tour/new/", "/agents/new/", "/venue-demo/"].includes(p) && active !== 1) problems.push(`${p}: ${active} nav items marked current`);
         await page.close();
       }
       return problems.length ? problems.join("; ") : null;
@@ -603,6 +605,37 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (visible > 4 * phases + 2) return `${visible} messages show at first; each phase should start with its latest few`;
       if (named < visible) return "some messages do not say who is speaking";
       if (chips < 3) return "no way to filter by who is speaking";
+      return null;
+    });
+
+    await check("ux-agent-venue", async () => {
+      const page = await newPage(browser, { band: false, delay: 0 });
+      // a venue agent: who it works for, then Create (the rest has defaults)
+      await page.goto(url("/agents/new/"), { waitUntil: "domcontentloaded" });
+      let clicks = 0;
+      await page.getByRole("button", { name: /^a venue/i }).click();
+      clicks++;
+      await page.getByRole("button", { name: /create agent/i }).click();
+      clicks++;
+      const answered = await page.locator(".inbox li").first().waitFor({ timeout: 8000 }).then(() => page.locator(".inbox li").count(), () => 0);
+      const offered = await page.locator(".inbox li.yes").count();
+      await shot(page, "10-agent-created");
+      await page.goto(url("/agents/"), { waitUntil: "domcontentloaded" });
+      const listed = await page.locator(".agent-card").first().waitFor({ timeout: 5000 }).then(() => page.locator(".agent-card").count(), () => 0);
+      // the venue demo: public, its agent's inbox, the devnet night and its split
+      await page.goto(url("/venue-demo/"), { waitUntil: "domcontentloaded" });
+      const venue = await page.locator(".split-list li").first().waitFor({ timeout: 8000 }).then(() => true, () => false);
+      const banner = /live demo/i.test((await page.locator(".demo-banner").textContent().catch(() => "")) ?? "");
+      const inbox = await page.locator(".inbox li").count();
+      const story = await page.locator(".venue-story li").count();
+      await shot(page, "11-venue-demo");
+      await page.close();
+      if (!answered || !offered) return `the new venue agent did not answer its first requests (${answered} answers, ${offered} offers)`;
+      if (clicks > 4) return `${clicks} clicks to make an agent`;
+      if (!listed) return "the new agent is not listed on Your agents";
+      if (!banner) return "the venue demo does not say it is a live demo";
+      if (!venue || story < 3) return `the venue demo does not show the night signed on Solana and how it was agreed (split: ${venue}, story: ${story})`;
+      if (!inbox) return "the venue demo does not show its agent's inbox";
       return null;
     });
 
