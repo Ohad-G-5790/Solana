@@ -1,25 +1,29 @@
-/* Greenroom design tokens — see docs/DESIGN.md (Spotify-inspired, content-first darkness) */
+/* Greenroom design tokens — see docs/DESIGN.md (content-first darkness; palette and type shared with the brand deck) */
 :root {
-  --bg: #121212;
-  --surface: #181818;
-  --surface-mid: #1f1f1f;
-  --card: #252525;
-  --card-alt: #272727;
+  /* the brand palette, shared with the agency deck: green-tinted darks, a warm off-white, one green */
+  --bg: #111512;
+  --surface: #171c19;
+  --surface-mid: #1f2622;
+  --card: #242c27;
+  --card-alt: #27302a;
   --accent: #1ed760;
   --accent-border: #1db954;
-  --text: #ffffff;
-  --text-muted: #b3b3b3;
-  --text-soft: #cbcbcb;
-  --border: #4d4d4d;
-  --border-light: #7c7c7c;
+  --on-accent: #0e1a12;
+  --line: #0a0d0b;
+  --text: #f3f5ef;
+  --text-muted: #a9b4ac;
+  --text-soft: #c9d3cc;
+  --border: #46524a;
+  --border-light: #75827a;
   --negative: #f3727f;
-  --warning: #ffa42b;
+  --warning: #f5a524;
   --info: #539df5;
-  --light-surface: #eeeeee;
+  --light-surface: #f3f5ef;
   --shadow-heavy: rgba(0, 0, 0, 0.5) 0px 8px 24px;
   --shadow-medium: rgba(0, 0, 0, 0.3) 0px 8px 8px;
-  --inset: rgb(18, 18, 18) 0px 1px 0px, rgb(124, 124, 124) 0px 0px 0px 1px inset;
-  --font: "SpotifyMixUI", "CircularSp", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --inset: rgb(17, 21, 18) 0px 1px 0px, rgb(117, 130, 122) 0px 0px 0px 1px inset;
+  --font: "DM Sans Variable", "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display: "Space Grotesk Variable", "Space Grotesk", "DM Sans Variable", "Helvetica Neue", Arial, sans-serif;
   --sidebar: 232px;
 }
 
@@ -48,6 +52,18 @@ h1,
 h2,
 h3 {
   margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+.brand,
+.stat .value,
+.facts b,
+.rep-score,
+.step-no,
+.choice,
+.inbox-money,
+.route-line {
+  font-family: var(--font-display);
 }
 h1 {
   font-size: 24px;
@@ -88,7 +104,7 @@ p {
 .sidebar {
   background: var(--bg);
   padding: 20px 12px;
-  border-right: 1px solid #000;
+  border-right: 1px solid var(--line);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -172,11 +188,11 @@ p {
   line-height: 1;
 }
 .btn:hover {
-  background: #2a2a2a;
+  background: #29312c;
 }
 .btn.primary {
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
 }
 .btn.primary:hover {
   background: #1fdf64;
@@ -294,7 +310,7 @@ p {
   color: var(--warning);
 }
 .badge.at-risk {
-  color: #000;
+  color: var(--on-accent);
   background: var(--warning);
 }
 .badge.on-track {
@@ -511,7 +527,7 @@ p {
 }
 .wallet-adapter-button-trigger {
   background: var(--accent) !important;
-  color: #000 !important;
+  color: var(--on-accent) !important;
 }
 /* a connected wallet shows its address: base58 is case-sensitive, keep it as is */
 .wallet-adapter-button:has(.wallet-adapter-button-start-icon) {
@@ -819,7 +835,7 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 .chip:hover {
-  background: #2a2a2a;
+  background: #29312c;
 }
 .chip.on {
   background: var(--light-surface);
@@ -857,7 +873,7 @@ input[type="checkbox"] {
   line-height: 1;
 }
 .icon-btn:hover {
-  background: #2a2a2a;
+  background: #29312c;
 }
 .icon-btn:disabled {
   opacity: 0.35;
@@ -955,7 +971,7 @@ input[type="checkbox"] {
   gap: 4px;
 }
 .choice:hover {
-  background: #2a2a2a;
+  background: #29312c;
 }
 .choice.on {
   box-shadow: 0 0 0 2px var(--accent) inset;
@@ -1097,7 +1113,7 @@ input[type="checkbox"] {
     position: static;
     height: auto;
     border-right: 0;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--line);
     padding: 12px 16px;
   }
   .nav {
@@ -1237,7 +1253,7 @@ input[type="checkbox"] {
   justify-content: space-between;
   gap: 12px;
   padding: 14px max(24px, calc((100vw - 1120px) / 2));
-  background: rgba(18, 18, 18, 0.72);
+  background: rgba(17, 21, 18, 0.72);
   backdrop-filter: saturate(180%) blur(16px);
   -webkit-backdrop-filter: saturate(180%) blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1441,13 +1457,13 @@ input[type="checkbox"] {
   gap: 7px;
   padding: 12px 16px;
   background: var(--surface-mid);
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid var(--line);
 }
 .window-bar i {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: #3a3a3a;
+  background: #3a463f;
 }
 .window-bar span {
   margin-left: 10px;
@@ -1460,8 +1476,8 @@ input[type="checkbox"] {
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
 }
 .window-map {
-  border-right: 1px solid #000;
-  background: #151515;
+  border-right: 1px solid var(--line);
+  background: #141916;
 }
 .window-map .map {
   display: block;
@@ -1552,7 +1568,7 @@ input[type="checkbox"] {
   padding: 10px 22px;
   border-radius: 9999px;
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 1.4px;
@@ -1696,7 +1712,7 @@ input[type="checkbox"] {
 }
 .mark.yes {
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
 }
 
 /* how it works */
@@ -1854,7 +1870,7 @@ img.monogram {
   }
   .window-map {
     border-right: 0;
-    border-bottom: 1px solid #000;
+    border-bottom: 1px solid var(--line);
   }
   .facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2069,7 +2085,7 @@ img.monogram {
 
 /* ---------- app polish: sidebar, demo banner, band header, numbers (matches the landing) ---------- */
 .sidebar {
-  background: #0d0d0d;
+  background: #0c0f0d;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 a.brand:hover {
@@ -2150,7 +2166,7 @@ a.brand:hover {
 }
 .live-badge {
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
   font-size: 15px;
 }
 .live-badge i,
@@ -2216,7 +2232,7 @@ a.brand:hover {
   font-size: 40px;
   font-weight: 800;
   letter-spacing: -1px;
-  color: #000;
+  color: var(--on-accent);
   background: linear-gradient(135deg, #1ed760, #8ef0b0);
   box-shadow: 0 16px 48px -12px rgba(0, 0, 0, 0.8);
 }
