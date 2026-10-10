@@ -1,5 +1,8 @@
 # Design System Inspired by Spotify
 
+> **Greenroom brand (current).** The site shares its look with the agency deck: **Space Grotesk** for headings, the brand and big numbers, **DM Sans** for text (both served with the site from `@fontsource-variable`, no third-party font requests), and a green-tinted dark palette: background `#111512`, surfaces `#171C19`/`#1F2622`, text `#F3F5EF`, muted `#A9B4AC`, accent `#1ED760` (dark text `#0E1A12` on it), warning `#F5A524`. The tokens live in `packages/web/src/app/globals.css`; the Spotify reference below still describes the layout language (content-first darkness, pills, one green).
+
+
 ## 1. Visual Theme & Atmosphere
 
 Spotify's web interface is a dark, immersive music player that wraps listeners in a near-black cocoon (`#121212`, `#181818`, `#1f1f1f`) where album art and content become the primary source of color. The design philosophy is "content-first darkness" — the UI recedes into shadow so that music, podcasts, and playlists can glow. Every surface is a shade of charcoal, creating a theater-like environment where the only true color comes from the iconic Spotify Green (`#1ed760`) and the album artwork itself.

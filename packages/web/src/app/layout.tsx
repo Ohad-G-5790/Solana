@@ -1,13 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Providers } from "@/components/Providers";
 import { Shell } from "@/components/Shell";
+// the brand type, shared with the agency deck, served with the site (no third-party font requests)
+import "@fontsource-variable/dm-sans";
+import "@fontsource-variable/space-grotesk";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Greenroom",
   description: "AI agents that book concert tours on Solana: escrowed tickets, sell-through thresholds, automatic refunds and settlement.",
 };
+
+export const viewport: Viewport = { themeColor: "#111512" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
