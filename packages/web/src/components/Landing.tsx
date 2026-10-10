@@ -35,7 +35,7 @@ const STEPS: { title: string; text: string; icon: ReactNode }[] = [
   },
   {
     title: "Get paid",
-    text: "After the show the ticket money is split between band, venue and crew, automatically.",
+    text: "After the show the ticket money is split between band, venue and crew, automatically. Greenroom takes 10%, only from shows that are played.",
     icon: <path d="M3 7h18v10H3zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 10v4M18 10v4" />,
   },
 ];

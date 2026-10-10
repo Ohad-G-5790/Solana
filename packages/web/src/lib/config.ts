@@ -21,6 +21,12 @@ export const SALES_SEC = 40 * 60;
 /** Where the demo notice sends sign-up emails (a form service endpoint); empty hides the form. */
 export const SIGNUP_URL = process.env.NEXT_PUBLIC_SIGNUP_URL ?? "";
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+/**
+ * Where the 10% platform fee of every booked show goes (a payee paid at
+ * settlement). Set per build (repository variable GREENROOM_PLATFORM_WALLET);
+ * without it the dashboard books shows without the fee and says nothing about one.
+ */
+export const PLATFORM_WALLET = process.env.NEXT_PUBLIC_PLATFORM_WALLET ?? "";
 
 export function explorerUrl(kind: "address" | "tx", value: string): string {
   const base = `https://explorer.solana.com/${kind}/${value}`;

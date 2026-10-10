@@ -335,7 +335,7 @@ function Money({ plan }: { plan: TourPlan }) {
         <span className="label">Full house</span>
         <b>about {euro(m.selloutEuro)}</b>
         <span className="micro muted">
-          for you, after the venues&apos; share (you keep about {m.bandPct}%)
+          for you, after the venues&apos; share{m.feePct ? ` and the ${m.feePct}% Greenroom fee` : ""} (you keep about {m.bandPct}%)
           {plan.answers.draw > Math.max(...plan.plan.map((s) => s.capacity)) * FANS_PER_TICKET
             ? `; on devnet a show sells at most ${(Math.max(...plan.plan.map((s) => s.capacity)) * FANS_PER_TICKET).toLocaleString()} fans' worth`
             : ""}

@@ -2,12 +2,16 @@
 
 import { toVenueOffer, venueOfferHeuristic } from "@greenroom/agents/offers";
 import { planTour, scheduleRoute, type PlannedShow, type VenueOffer } from "@greenroom/agents/planner";
+import { PLATFORM_FEE_BPS, PLATFORM_LABEL } from "@greenroom/agents/platform";
 import type { City } from "@greenroom/world";
 import { BN } from "@anchor-lang/core";
 import { PublicKey, SystemProgram, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { bandPda, connection, vaultPda, walletProgram, type BandAccount, type WalletLike } from "./greenroom";
 import type { FeedMessage, WorldCity, WorldVenue } from "./run";
-import { APP_REGION, DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO, SALES_SEC } from "./config";
+import { APP_REGION, DEMO_DAY_SEC, FANS_PER_TICKET, LAMPORTS_PER_EURO, PLATFORM_WALLET, SALES_SEC } from "./config";
+
+/** The platform fee this build books with: 10% to the configured wallet, or none. */
+export const PLATFORM_FEE = PLATFORM_WALLET ? { wallet: new PublicKey(PLATFORM_WALLET), bps: PLATFORM_FEE_BPS, label: PLATFORM_LABEL } : null;
 import { saveStory } from "./story";
 import { venueKeys } from "./venue-keys";
 
@@ -60,15 +64,17 @@ export function emptyPlanReason(p: TourPlan): string {
  * Money at a full house and at the 50% target, in euros, for exactly what is
  * booked: each show's tickets on chain times the fans one ticket stands for.
  */
-export function planMoney(p: TourPlan): { selloutEuro: number; targetEuro: number; bandPct: number } {
+export function planMoney(p: TourPlan): { selloutEuro: number; targetEuro: number; bandPct: number; feePct: number } {
+  // the platform fee comes out of the band's share, as the program's add_payee does
+  const fee = PLATFORM_FEE?.bps ?? 0;
   let sellout = 0;
   let bandBps = 0;
   for (const s of p.plan) {
-    sellout += s.capacity * FANS_PER_TICKET * p.answers.priceEuro * (s.bandBps / 10_000);
-    bandBps += s.bandBps;
+    sellout += s.capacity * FANS_PER_TICKET * p.answers.priceEuro * ((s.bandBps - fee) / 10_000);
+    bandBps += s.bandBps - fee;
   }
   const n = Math.max(1, p.plan.length);
-  return { selloutEuro: Math.round(sellout), targetEuro: Math.round(sellout / 2), bandPct: Math.round(bandBps / n / 100) };
+  return { selloutEuro: Math.round(sellout), targetEuro: Math.round(sellout / 2), bandPct: Math.round(bandBps / n / 100), feePct: fee / 100 };
 }
 
 /** Shows for a tour of `days` days: about two in three nights, with travel and rest days between. */
@@ -250,6 +256,9 @@ export async function bookTour(wallet: WalletLike, band: BandAccount, p: TourPla
         .accountsPartial({ bandAuthority: wallet.publicKey, bandProfile, tour, venueProfile, show, vault: vaultPda(show), systemProgram: SystemProgram.programId })
         .instruction()
     );
+    // the platform fee: a payee on the show, paid only if the show is played
+    if (PLATFORM_FEE)
+      ixs.push(await program.methods.addPayee(PLATFORM_FEE.wallet, PLATFORM_FEE.bps, PLATFORM_FEE.label).accountsPartial({ bandAuthority: wallet.publicKey, show }).instruction());
   }
 
   if (!ixs.length) return { tour: tour.toBase58(), tourId, shows, signatures: [] };

@@ -4,12 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { generateWorld } from "@greenroom/world";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { keypairFromSeedHex, venuePda } from "@greenroom/sdk";
 import type { ApprovalAnswer, ApprovalRequest } from "./approvals.ts";
 import { AutoApprover, FileApprover, type Approver } from "./approver.ts";
 import { BandAgent, type TourBrief } from "./band-agent.ts";
 import { HeuristicBrain } from "./brain.ts";
 import { MessageBus, type BusMessage } from "./bus.ts";
+import { PLATFORM_FEE_BPS, PLATFORM_LABEL } from "./platform.ts";
 import { Crank } from "./crank.ts";
 import { FanSim } from "./fan-sim.ts";
 import { runTour, withIdentity } from "./orchestrator.ts";
@@ -40,7 +42,7 @@ class FansSkipping extends FanSim {
   }
 }
 
-function setup(approver: Approver) {
+function setup(approver: Approver, platform?: PublicKey) {
   const chain = new FakeChain(10);
   const bus = new MessageBus();
   const brain = new HeuristicBrain();
@@ -54,7 +56,15 @@ function setup(approver: Approver) {
       a.start();
       return a;
     });
-  const bandAgent = new BandAgent(band, keypairFromSeedHex(band.seed), chain.client, bus, brain, world.cities);
+  const bandAgent = new BandAgent(
+    band,
+    keypairFromSeedHex(band.seed),
+    chain.client,
+    bus,
+    brain,
+    world.cities,
+    platform ? { address: platform, bps: PLATFORM_FEE_BPS, label: PLATFORM_LABEL } : undefined
+  );
   const fans = new FansSkipping(band, world.fans, world.cities, chain.client, bus, { maxBuysPerTick: 40, radiusKm: 80, seed: "test", concurrency: 6 });
   bus.on("band.plan", (m) => {
     fans.skipCity ??= (m.data as { plan: { city: string }[] }).plan[0]?.city ?? null;
@@ -83,8 +93,9 @@ function setup(approver: Approver) {
 const kinds = (log: BusMessage[]) => log.map((m) => m.kind);
 const idOf = (m: BusMessage) => (m.data as { id: string }).id;
 
-test("auto-pilot: venues and route approved before anything is proposed; a cancelled show gets a replacement", { timeout: 60_000 }, async () => {
-  const { chain, bus, run } = setup(new AutoApprover());
+test("auto-pilot: venues and route approved before anything is proposed; a cancelled show gets a replacement; every show pays the platform fee", { timeout: 60_000 }, async () => {
+  const platform = Keypair.generate().publicKey;
+  const { chain, bus, run } = setup(new AutoApprover(), platform);
   const out = await run();
 
   const log = bus.log;
@@ -107,6 +118,15 @@ test("auto-pilot: venues and route approved before anything is proposed; a cance
   assert.ok(out.shows.every((s) => ["settled", "cancelled", "rejected"].includes(s.state)), "every show is terminal");
   assert.ok(out.stats.settled >= 1, "some shows settled");
   assert.ok(chain.calls.some(([n]) => n === "refundTicket") || original.ticketsSold === 0, "cancelled tickets refunded");
+  // the 10% platform fee rides on every proposed show, replacements included, out of the band's share
+  for (const s of out.shows.filter((x) => x.state !== "rejected")) {
+    const acct = await chain.client.fetchShow(new PublicKey(s.show));
+    const fee = acct.payees.find((p) => p.address.equals(platform));
+    assert.ok(fee, `${s.city} carries the platform fee`);
+    assert.equal(fee.bps, PLATFORM_FEE_BPS);
+    assert.equal(fee.label, PLATFORM_LABEL);
+    assert.equal(acct.bandBps + acct.venueBps + acct.payees.reduce((n, p) => n + p.bps, 0), 10_000, `${s.city} splits 100%`);
+  }
 });
 
 test("dashboard: the band drops a stop, approves the re-plan; nothing is on-chain before that", { timeout: 60_000 }, async () => {

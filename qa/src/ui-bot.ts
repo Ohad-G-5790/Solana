@@ -33,7 +33,7 @@ export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-public-first", title: "the first screen is a short pitch with the email sign-up; no app menu or band data until a wallet connects or the visitor explores the demo" },
   { id: "ux-connect-shows-mine", title: "connecting a wallet shows that wallet's own data right away" },
   { id: "ux-next-step", title: "a band without a tour sees one obvious next step" },
-  { id: "ux-create-tour", title: "creating a tour takes four answers, shows the route and the drive home before anything is booked, and lets the band reorder it" },
+  { id: "ux-create-tour", title: "creating a tour takes four answers, shows the route, the drive home and the money (Greenroom fee included) before anything is booked, and lets the band reorder it" },
   { id: "ux-booked-tour", title: "after booking, the dashboard shows your own tour in fans and euros: planned days, booked by you, what waits on whom, your show pages, your activity only, also on a phone" },
   { id: "ux-fast-paint", title: "every page shows its heading within 1.5 s even when the chain answers slowly" },
   { id: "ux-phone-width", title: "no sideways scrolling at phone width (390 px)" },
@@ -286,7 +286,10 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       cwd: root,
       encoding: "utf8",
       shell: process.platform === "win32",
-      env: { ...process.env, NEXT_PUBLIC_BASE_PATH: BASE, NEXT_PUBLIC_RPC_URL: "https://api.devnet.solana.com", NEXT_PUBLIC_CLUSTER: "devnet", NEXT_PUBLIC_SIGNUP_URL: "https://signup.invalid/greenroom" },
+      env: { ...process.env, NEXT_PUBLIC_BASE_PATH: BASE, NEXT_PUBLIC_RPC_URL: "https://api.devnet.solana.com", NEXT_PUBLIC_CLUSTER: "devnet", NEXT_PUBLIC_SIGNUP_URL: "https://signup.invalid/greenroom",
+        // any valid address: the booking packs the platform-fee payee with each show (the test wallet never signs)
+        NEXT_PUBLIC_PLATFORM_WALLET: "So11111111111111111111111111111111111111112",
+      },
     });
     if (r.status !== 0) return UI_CHECKS.map((c) => ({ ...c, ok: false, detail: `static build failed: ${(r.stdout + r.stderr).slice(-400)}` }));
   }
@@ -412,6 +415,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       await page.getByRole("button", { name: /book this tour/i }).waitFor({ timeout: 20_000 });
       const stops = await page.locator(".itinerary .stop").count();
       const money = await page.locator(".money").count();
+      const fee = /Greenroom fee/.test((await page.locator(".money").first().textContent()) ?? "");
       const homeLine = (await page.locator("#your-route").textContent())?.includes("Home from") ?? false;
       await shot(page, "4-route-preview");
       // the band can rearrange the route: move the second stop later and see the comparison
@@ -431,6 +435,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (primaries !== 1) return `${primaries} primary buttons on the questions step (want exactly one: Plan my tour)`;
       if (stops < 2) return `the route preview shows ${stops} stops`;
       if (!money) return "the route preview does not say what the tour earns or risks";
+      if (!fee) return "the route preview does not show the 10% Greenroom fee";
       if (!homeLine) return "the route preview does not say how far the last stop is from home";
       if (before === after || !compared) return `moving a stop does not change the route or compare it (${before} / ${after})`;
       if (!/cannot sign|cancelled/i.test(bookError ?? "")) return `booking did not reach the wallet: ${bookError}`;
