@@ -40,6 +40,9 @@ The band's "proof of past concerts" is the `BandProfile` counters, which only `s
 | 9 | `refund_ticket()` | anyone | `Cancelled`, ticket not refunded | vault → beneficiary (`amount_lamports`), ticket account closed to the beneficiary, counters updated, emits `TicketRefunded` |
 | 10 | `settle_show()` | anyone | `Confirmed`, `now ≥ date` | vault split by bps to band authority, venue authority and payees (passed as remaining accounts in stored order; dust to band), → `Settled`, band and venue counters updated, emits `ShowSettled` |
 | 11 | `add_payee(address, bps, label)` | band authority | `Proposed`/`OnSale`/`Confirmed`, `payees.len() < 4`, `bps < band_bps` | pushes payee, `band_bps -= bps` |
+| 12 | `rename_band(name)` | band authority (the profile's PDA is derived from its key) | `1 ≤ len(name) ≤ 32` | `BandProfile.name = name`; genre and the track record are untouched; emits `BandRenamed` |
+
+The 10% platform fee is not a program rule: clients add it as a payee (`add_payee`, label "Greenroom fee") right after each proposal.
 
 Threshold check: `tickets_sold * 10_000 ≥ capacity * threshold_bps` (u64 math, checked).
 
@@ -51,7 +54,7 @@ Settlement dust rule: a share that would leave its recipient below the rent-exem
 
 ## Events
 
-`BandRegistered`, `VenueRegistered`, `TourCreated`, `ShowProposed`, `ShowAccepted`, `ShowRejected`, `TicketBought`, `ShowConfirmed`, `ShowCancelled`, `TicketRefunded`, `ShowSettled`, `PayeeAdded`.
+`BandRegistered`, `BandRenamed`, `VenueRegistered`, `TourCreated`, `ShowProposed`, `ShowAccepted`, `ShowRejected`, `TicketBought`, `ShowConfirmed`, `ShowCancelled`, `TicketRefunded`, `ShowSettled`, `PayeeAdded`.
 
 ## Security notes (from the Solana security checklist)
 

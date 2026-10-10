@@ -740,6 +740,58 @@ export type Greenroom = {
       "args": []
     },
     {
+      "name": "renameBand",
+      "docs": [
+        "Change the band's name; its track record stays as it is."
+      ],
+      "discriminator": [
+        236,
+        7,
+        59,
+        174,
+        123,
+        182,
+        179,
+        184
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "bandProfile"
+          ]
+        },
+        {
+          "name": "bandProfile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  110,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "settleShow",
       "docs": [
         "Permissionless: after the show date, split the escrow between band, venue and payees."
@@ -896,6 +948,19 @@ export type Greenroom = {
         151,
         72,
         207
+      ]
+    },
+    {
+      "name": "bandRenamed",
+      "discriminator": [
+        34,
+        116,
+        204,
+        82,
+        172,
+        202,
+        160,
+        247
       ]
     },
     {
@@ -1196,6 +1261,26 @@ export type Greenroom = {
           {
             "name": "authority",
             "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "bandRenamed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bandProfile",
+            "type": "pubkey"
+          },
+          {
+            "name": "oldName",
+            "type": "string"
           },
           {
             "name": "name",

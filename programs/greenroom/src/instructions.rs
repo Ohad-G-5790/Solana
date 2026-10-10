@@ -8,6 +8,7 @@ pub mod refund_ticket;
 pub mod register_band;
 pub mod register_venue;
 pub mod reject_show;
+pub mod rename_band;
 pub mod settle_show;
 
 pub use accept_show::*;
@@ -20,4 +21,5 @@ pub use refund_ticket::*;
 pub use register_band::*;
 pub use register_venue::*;
 pub use reject_show::*;
+pub use rename_band::*;
 pub use settle_show::*;

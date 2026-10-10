@@ -415,6 +415,34 @@ describe("greenroom", () => {
     expect((await program.account.show.fetch(showT)).state).to.deep.equal({ settled: {} });
   });
 
+  // ---------- renaming ----------
+
+  it("renames the band and keeps its track record; only the band can, and not too long", async () => {
+    const before = await program.account.bandProfile.fetch(bandPda);
+    expect(before.showsCompleted).to.be.greaterThan(0);
+    await program.methods.renameBand("Son of a Pigeon").accounts({ authority: bandAuth.publicKey, bandProfile: bandPda }).signers([bandAuth]).rpc();
+    const after = await program.account.bandProfile.fetch(bandPda);
+    expect(after.name).to.equal("Son of a Pigeon");
+    expect(after.genre).to.equal(before.genre);
+    expect(after.showsCompleted).to.equal(before.showsCompleted);
+    expect(after.toursCreated).to.equal(before.toursCreated);
+    expect(after.ticketsSoldTotal.toString()).to.equal(before.ticketsSoldTotal.toString());
+    expect(after.grossSettledLamports.toString()).to.equal(before.grossSettledLamports.toString());
+
+    // another wallet cannot rename it: the profile is derived from the band's own key
+    const other = Keypair.generate();
+    await fund(other.publicKey, 1);
+    await expectAnchorError(
+      program.methods.renameBand("Not Yours").accounts({ authority: other.publicKey, bandProfile: bandPda }).signers([other]).rpc(),
+      "ConstraintSeeds"
+    );
+    await expectAnchorError(
+      program.methods.renameBand("x".repeat(33)).accounts({ authority: bandAuth.publicKey, bandProfile: bandPda }).signers([bandAuth]).rpc(),
+      "TextLength"
+    );
+    expect((await program.account.bandProfile.fetch(bandPda)).name).to.equal("Son of a Pigeon");
+  });
+
   // ---------- cancellation and refunds ----------
 
   it("cancels an under-sold show after the deadline and refunds every ticket", async () => {

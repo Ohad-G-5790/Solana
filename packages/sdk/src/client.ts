@@ -181,6 +181,15 @@ export class GreenroomClient {
     return { sig, bandProfile };
   }
 
+  /** Change the band's name; the track record stays as it is. */
+  async renameBand(authority: Keypair, name: string): Promise<string> {
+    return this.program.methods
+      .renameBand(name)
+      .accountsPartial({ authority: authority.publicKey, bandProfile: bandPda(authority.publicKey, this.programId) })
+      .signers([authority])
+      .rpc();
+  }
+
   async registerVenue(
     authority: Keypair,
     name: string,
