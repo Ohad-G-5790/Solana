@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { dayLabel, euros, fans, pct, sol, timeLeft } from "@/lib/format";
 import { HEALTH_LABEL, type Health, type ShowView } from "@/lib/health";
+import { PLATFORM_LABEL } from "@greenroom/agents/platform";
 
 /** "sales close in 29m", or "sales closed" once the time has passed. */
 function until(what: string, unix: number, now: number): string {
@@ -29,6 +30,13 @@ export function Progress({ sold, capacity, thresholdBps, state }: { sold: number
   );
 }
 
+/** Crew by role, and the platform fee by name: "crew: drummer · Greenroom fee 10%". */
+function payeeLine(payees: { label: string; bps: number }[]): string {
+  const crew = payees.filter((p) => p.label !== PLATFORM_LABEL).map((p) => p.label);
+  const fee = payees.find((p) => p.label === PLATFORM_LABEL);
+  return [crew.length ? `crew: ${crew.join(", ")}` : "", fee ? `${PLATFORM_LABEL} ${fee.bps / 100}%` : ""].filter(Boolean).join(" · ");
+}
+
 /** bandUnits: a band's own devnet tour, shown in fans and euros instead of sample tickets and SOL. */
 export function ShowCard({ v, now, venueName, replacedByCity, bandUnits }: { v: ShowView; now: number; venueName: string; replacedByCity?: string; bandUnits?: boolean }) {
   const { run } = v;
@@ -44,15 +52,10 @@ export function ShowCard({ v, now, venueName, replacedByCity, bandUnits }: { v: 
       {run.replaces ? <p className="micro good" style={{ marginTop: 4 }}>Replacement show</p> : null}
       <Progress sold={v.sold} capacity={v.capacity} thresholdBps={v.thresholdBps} state={v.state} />
       <div className="row small" style={{ justifyContent: "space-between" }}>
-        {bandUnits ? (
-          <span>
-            <b>{fans(v.sold)}</b> of {fans(v.capacity)} fans · goes ahead at {fans(v.required)}
-          </span>
-        ) : (
-          <span>
-            <b>{v.sold}</b> / {v.capacity} sold · need {v.required}
-          </span>
-        )}
+        {/* fans on every page (one ticket on chain stands for FANS_PER_TICKET people); the ticket target in the same unit */}
+        <span>
+          <b>{fans(v.sold)}</b> of {fans(v.capacity)} fans · ticket target {fans(v.required)}
+        </span>
         <span className="muted">{v.acct ? (bandUnits ? euros(v.escrowLamports) : sol(v.escrowLamports)) : ""}</span>
       </div>
       <p className={`micro ${v.health === "at-risk" ? "warn" : "muted"}`} style={{ marginTop: 6 }}>
@@ -61,7 +64,7 @@ export function ShowCard({ v, now, venueName, replacedByCity, bandUnits }: { v: 
       </p>
       <div className="row micro muted" style={{ justifyContent: "space-between", marginTop: 4 }}>
         <span>{v.state === "onSale" ? until("sales close", v.deadline, now) : v.state === "confirmed" ? until("show", v.date, now) : ""}</span>
-        <span>{run.payees.length > 0 || (v.acct && v.acct.payees.length > 0) ? `crew: ${(v.acct ? v.acct.payees.map((p) => p.label) : run.payees.map((p) => p.label)).join(", ")}` : ""}</span>
+        <span>{payeeLine(v.acct ? v.acct.payees.map((p) => ({ label: p.label, bps: p.bps })) : run.payees)}</span>
       </div>
     </Link>
   );

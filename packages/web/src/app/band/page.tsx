@@ -138,7 +138,7 @@ function BandRecord({ band, profile, run, authority, note }: { band: BandNumbers
           <div className="value">{fans(avg)}</div>
         </div>
         <div className="stat">
-          <div className="label">Paid out in all</div>
+          <div className="label">Ticket money paid out</div>
           <div className="value">{sol(band.grossSettledLamports, 2)}</div>
         </div>
         <div className="stat">

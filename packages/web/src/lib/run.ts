@@ -86,7 +86,8 @@ async function getJson<T>(path: string): Promise<T | null> {
   }
 }
 
-let staticMode = false;
+/** No /api routes behind this page: the static export says so at build time, a dev server finds out on the first failed call. */
+let staticMode = process.env.NEXT_PUBLIC_STATIC === "1";
 
 /** True once the API is known to be missing (static hosting): the dashboard is a replay. */
 export function isStaticMode(): boolean {

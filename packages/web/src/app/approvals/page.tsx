@@ -67,7 +67,7 @@ export default function ApprovalsPage() {
       <h1>Approvals</h1>
       <p className="muted" style={{ margin: "6px 0 16px", maxWidth: 760 }}>
         The band agent negotiates, but you decide. It stops to ask which venues you are happy to play, whether the route works for you, and, if a show misses its
-        threshold, which replacement to book. Nothing goes on-chain before you approve the route.
+        ticket target, which replacement to book. Nothing goes on-chain before you approve the route.
       </p>
 
       {mode === "auto" && view.writable ? (

@@ -138,7 +138,7 @@ export function Landing() {
             Explore as a venue →
           </Link>
           <Link href="/agents/new" className="btn outline big">
-            Create your agent
+            Create your agent →
           </Link>
         </div>
 
@@ -248,7 +248,7 @@ export function Landing() {
             <li key={p.name}>
               {/* logos live in public/partners/ */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="monogram" src={`${BASE_PATH}/partners/${p.logo}`} alt="" width={34} height={34} />
+              <img className="monogram" src={`${BASE_PATH}/partners/${p.logo}`} alt="" width={34} height={34} loading="lazy" decoding="async" />
               {p.name}
             </li>
           ))}
@@ -262,7 +262,7 @@ export function Landing() {
         <SignupForm big source="greenroom-demo-bottom" />
         {runAuthority && !wallet ? (
           <button className="btn outline big" onClick={explore}>
-            Try the demo
+            Explore the demo →
           </button>
         ) : null}
       </section>

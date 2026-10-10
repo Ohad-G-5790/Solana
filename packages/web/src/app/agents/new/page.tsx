@@ -7,8 +7,9 @@ import { BandAgentTest, VenueInbox } from "@/components/AgentTest";
 import { describeAgent, GENRES, newAgentId, saveAgent, type AgentConfig, type AgentKind, type BandRules, type VenueRules } from "@/lib/agents";
 import { getWorld, type WorldCity } from "@/lib/run";
 
-const DRAWS = [100, 200, 500, 1000, 2500];
-const PRICES = [15, 20, 30, 40];
+/** The same sizes and prices as the tour wizard, which starts from this agent. */
+const DRAWS = [100, 200, 500, 1000, 2500, 5000];
+const PRICES = [10, 15, 20, 30, 50];
 const DRIVES = [3, 5, 7];
 const CAPACITIES = [150, 300, 600, 1000, 2000];
 const SHARES = [25, 30, 35];

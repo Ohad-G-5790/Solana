@@ -6,7 +6,7 @@ import { planTour } from "@greenroom/agents/planner";
 import { drive, formatMinutes, routeTotals, legs } from "@greenroom/world/geo";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ApprovalView } from "@/lib/approvals";
-import { dayLabel, sol } from "@/lib/format";
+import { dayLabel, fans, sol } from "@/lib/format";
 import { sendDecision, type WorldCity, type WorldVenue } from "@/lib/run";
 import { DriveNote, Itinerary } from "./Itinerary";
 import { RouteMap } from "./RouteMap";
@@ -28,7 +28,7 @@ function StatusChip({ item }: { item: ApprovalView }) {
   const d = item.decision;
   if (!d) return <span className="badge at-risk">waiting for you</span>;
   const yes = d.answer.approve;
-  const label = d.by === "expired" ? "expired" : `${yes ? "approved" : d.answer.step === "route" && d.answer.dropVenueIds.length ? "changes asked" : "declined"} by ${d.by === "you" ? "you" : "auto-pilot"}`;
+  const label = d.by === "expired" ? "expired" : `${yes ? "approved" : d.answer.step === "route" && d.answer.dropVenueIds.length ? "changes asked" : "declined"} by ${d.by === "you" ? "you" : "the auto-pilot (recording)"}`;
   return <span className={`badge ${d.by === "expired" ? "rejected" : yes ? "confirmed" : "cancelled"}`}>{label}</span>;
 }
 
@@ -314,7 +314,7 @@ function RouteDecision({ item, p, ctx }: { item: ApprovalView; p: Payload<"route
         </div>
       </div>
       <p className="small muted">
-        Gross if every show just reaches its threshold: {sol(s.grossAtThresholdLamports, 2)}; sold out: {sol(s.grossAtSelloutLamports, 2)}. {s.daysOff} day{s.daysOff === 1 ? "" : "s"} off.
+        Ticket money if every show just reaches its ticket target: {sol(s.grossAtThresholdLamports, 2)}; sold out: {sol(s.grossAtSelloutLamports, 2)} (devnet SOL, before shares and the 10% Greenroom fee on tours booked now). {s.daysOff} day{s.daysOff === 1 ? "" : "s"} off.
         {s.travelDayLegs ? <span className="bad"> {s.travelDayLegs} leg{s.travelDayLegs > 1 ? "s are" : " is"} too long to drive on a show day.</span> : null}
       </p>
       <div className="split" style={{ marginTop: 12 }}>
@@ -401,7 +401,7 @@ function AlternativeDecision({ item, p, ctx }: { item: ApprovalView; p: Payload<
                 {names.get(o.venueId) ?? o.venueName}, {o.city}
               </b>
               <span className="small">
-                {dayLabel(o.day)} · {o.capacity} tickets · confirms at <b>{o.required}</b>
+                {dayLabel(o.day)} · {fans(o.capacity)} fans · ticket target <b>{fans(o.required)}</b>
               </span>
               <span className="small muted">
                 Venue {o.venueBps / 100}% · {o.detourKm > 0 ? `+${o.detourKm} km to the tour` : "no extra driving"}

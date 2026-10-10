@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VenueInbox } from "@/components/AgentTest";
 import { SAMPLE_REQUESTS, venueDecides, type VenueRules } from "@/lib/agents";
-import { CLUSTER, explorerUrl } from "@/lib/config";
-import { sol } from "@/lib/format";
+import { CLUSTER, explorerUrl, FANS_PER_TICKET } from "@/lib/config";
+import { fans, sol } from "@/lib/format";
 import { getFeed, getRun, getWorld, type FeedMessage, type RunShow, type RunSummary, type WorldVenue } from "@/lib/run";
 
 const NIGHTS = 28;
@@ -116,10 +116,10 @@ export default function VenueDemoPage() {
       </header>
 
       <div className="stats">
-        <Stat label="Band agents asked" value={String(SAMPLE_REQUESTS.length + 1)} hint="this season" />
-        <Stat label="Nights offered" value={String(offers.length + 1)} hint="by your agent" />
-        <Stat label="Fans on devnet" value={`${show.ticketsSold} / ${show.capacity}`} hint="tickets on chain for the booked night" />
-        <Stat label="Paid to you" value={show.state === "settled" ? sol((total * venueBps) / 10_000, 3) : "after the show"} hint="automatically, at settlement" />
+        <Stat label="Band agents asked" value={String(SAMPLE_REQUESTS.length)} hint="sample requests this season (below)" />
+        <Stat label="Nights offered" value={String(offers.length)} hint="by your agent's rules" />
+        <Stat label="Booked on devnet" value={`${fans(show.ticketsSold)} fans`} hint={`of ${fans(show.capacity)} for the night signed on Solana`} />
+        <Stat label="Paid to you" value={show.state === "settled" ? sol((total * venueBps) / 10_000, 3) : "after the show"} hint="devnet SOL, automatically at settlement" />
       </div>
 
       <h2 style={{ margin: "26px 0 10px" }}>Booked on Solana {CLUSTER}</h2>
@@ -128,7 +128,7 @@ export default function VenueDemoPage() {
           <span className="eyebrow">Day {show.day} · {show.state}</span>
           <h3 style={{ marginTop: 4 }}>{run.band.name}</h3>
           <p className="small muted">
-            {show.ticketsSold} of {show.capacity} tickets sold at {sol(show.ticketPriceLamports ?? 0, 4)} · confirmed at {Math.ceil((show.capacity * (show.thresholdBps ?? 5000)) / 10_000)}
+            {fans(show.ticketsSold)} of {fans(show.capacity)} fans · ticket target {fans(Math.ceil((show.capacity * (show.thresholdBps ?? 5000)) / 10_000))} · one ticket on chain ({sol(show.ticketPriceLamports ?? 0, 4)}) stands for {FANS_PER_TICKET} fans
           </p>
           <div className="split-bar" role="img" aria-label="Who got the ticket money">
             {split.map((s) => (

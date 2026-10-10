@@ -16,20 +16,22 @@ export function ConnectScreen() {
   const { setGuest, runAuthority, connectStalled } = useBandSession();
   const path = usePathname();
   const router = useRouter();
-  // creating a tour needs your own wallet; the demo band lives on the dashboard
+  // the demo band can plan a tour too (booking it takes your own wallet): stay on the planner
+  const planning = path.startsWith("/tour");
   const explore = () => {
     setGuest(true);
-    if (path.startsWith("/tour")) router.push("/");
+    if (!planning) router.push("/");
   };
   return (
     <div className="welcome">
       <div className="brand big">
         <span className="dot" /> Greenroom
       </div>
-      <h1>Your tour, booked by agents. Approved by you.</h1>
+      <h1>{planning ? "Plan your tour" : "Your tour, booked by agents. Approved by you."}</h1>
       <p className="muted">
-        Connect your band&apos;s wallet. It is your login and your signature: the dashboard shows your band, your tours and your money, and asks you before
-        anything is booked.
+        {planning
+          ? "Booking a tour takes your band's wallet: it signs the deals and receives the money. Connect it, or plan the tour as the demo band first: your agent's rules carry over, nothing is booked."
+          : "Connect your band's wallet. It is your login and your signature: the dashboard shows your band, your tours and your money, and asks you before anything is booked."}
       </p>
       {connectStalled ? (
         <p className="small" style={{ marginTop: 16, color: "var(--warning)" }}>
@@ -41,7 +43,7 @@ export function ConnectScreen() {
         <WalletButton>Connect wallet</WalletButton>
         {runAuthority ? (
           <button className="btn outline" onClick={explore}>
-            Explore the demo band
+            {planning ? "Plan as the demo band" : "Explore the demo band"}
           </button>
         ) : null}
       </div>
@@ -116,7 +118,7 @@ export function RegisterBand({ onBack }: { onBack?: () => void } = {}) {
   };
   return (
     <div className="card" style={{ maxWidth: 640 }}>
-      <h2>Set up your band</h2>
+      <h1>Set up your band</h1>
       <p className="small muted" style={{ marginTop: 6 }}>
         This wallet has no band profile yet. Registering creates it on Solana {CLUSTER}: the profile is where your settled shows add up into a track record venues
         can check. It costs a small deposit (about 0.002 SOL of devnet money).
@@ -258,7 +260,7 @@ export function RegisterVenue({ onBack }: { onBack?: () => void }) {
   };
   return (
     <div className="card" style={{ maxWidth: 640 }}>
-      <h2>Set up your venue</h2>
+      <h1>Set up your venue</h1>
       <p className="small muted" style={{ marginTop: 6 }}>
         Registering creates your venue&apos;s profile on Solana {CLUSTER}. Bands&apos; agents can then propose nights to your room, and every show you host adds to
         your record. It costs a small deposit (about 0.002 SOL of devnet money).
