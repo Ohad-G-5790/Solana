@@ -11,6 +11,8 @@ import { dayLabel, short, sol, timeLeft, euros, fans } from "@/lib/format";
 import { buyTicket, chainTime, checkThreshold, fetchShow, fetchTicket, fetchTicketsForShow, refundTicket, stateName, type ShowAccount, type TicketAccount } from "@/lib/greenroom";
 import { fetchLiveTour } from "@/lib/chain-live";
 import { getRun, getWorld, type RunShow } from "@/lib/run";
+import { WalletButton } from "@/components/WalletButton";
+import { PLATFORM_LABEL } from "@greenroom/agents/platform";
 
 export default function ShowPage() {
   return (
@@ -36,6 +38,15 @@ function ShowView() {
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string; tx?: string; network?: boolean } | null>(null);
+  /** The show as the recording has it: what the page shows when the chain has no account (or does not answer). */
+  const [recorded, setRecorded] = useState<RunShow | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    void getRun().then((r) => alive && setRecorded(r?.shows.find((s) => s.show === address) ?? null));
+    return () => {
+      alive = false;
+    };
+  }, [address]);
 
   const reload = async () => {
     let valid = !!address;
@@ -108,13 +119,28 @@ function ShowView() {
   }, [address, bandAuthority]);
 
   if (acct === undefined) return <p className="muted">Loading…</p>;
-  if (acct === null)
+  if (acct === null) {
+    if (recorded === undefined) return <p className="muted">Loading…</p>;
+    if (recorded) return <RecordedShow show={recorded} network={!!msg?.network} />;
     return (
-      <div className="card">
-        <h2>Show not found</h2>
-        <p className="muted">{msg && !msg.ok ? `${msg.text}.` : "It may have been rejected by the venue (the account is closed) or belong to another cluster."}</p>
+      <div className="card" style={{ maxWidth: 640 }}>
+        <h1>This show is not available</h1>
+        <p className="muted" style={{ marginTop: 8 }}>
+          {msg?.network
+            ? "Devnet is not answering right now; this page tries again by itself."
+            : "The link may be incomplete, or the venue declined this show, which removes it."}
+        </p>
+        <div className="row" style={{ marginTop: 16 }}>
+          <Link href="/" className="btn primary">
+            ← Back to the tour
+          </Link>
+          <Link href="/home" className="btn outline">
+            Main page
+          </Link>
+        </div>
       </div>
     );
+  }
 
   const state = stateName(acct.state);
   const isBand = !!publicKey && publicKey.equals(acct.bandAuthority);
@@ -137,7 +163,8 @@ function ShowView() {
   return (
     <div>
       <p className="small">
-        <Link href="/">← Tour</Link>
+        {/* the band goes back to its tour; a fan who came with a link learns what Greenroom is */}
+        {isBand ? <Link href="/">← Your tour</Link> : <Link href="/home">What is Greenroom? →</Link>}
       </p>
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end", marginTop: 8 }}>
         <div>
@@ -171,15 +198,15 @@ function ShowView() {
         <Progress sold={acct.ticketsSold} capacity={acct.capacity} thresholdBps={acct.thresholdBps} state={state} />
         <div className="stats" style={{ margin: "12px 0 0" }}>
           <div className="stat">
-            <div className="label">{live ? "Fans" : "Sold"}</div>
+            <div className="label">Fans</div>
             <div className="value">
-              {live ? fans(acct.ticketsSold) : acct.ticketsSold} <span className="muted small">/ {live ? fans(acct.capacity) : acct.capacity}</span>
+              {fans(acct.ticketsSold)} <span className="muted small">/ {fans(acct.capacity)}</span>
             </div>
           </div>
           <div className="stat">
-            <div className="label">Threshold</div>
+            <div className="label">Ticket target</div>
             <div className="value">
-              {acct.thresholdBps / 100}% <span className="muted small">= {live ? `${fans(required)} fans` : required}</span>
+              {fans(required)} <span className="muted small">fans ({acct.thresholdBps / 100}%)</span>
             </div>
           </div>
           <div className="stat">
@@ -200,8 +227,9 @@ function ShowView() {
           </div>
         </div>
         <p className="small muted" style={{ marginTop: 12 }}>
-          Split: band {acct.bandBps / 100}% · venue {acct.venueBps / 100}%
-          {acct.payees.map((p) => ` · ${p.label} ${p.bps / 100}% (${short(p.address.toBase58())})`).join("")}
+          Who gets the ticket money: band {acct.bandBps / 100}% · venue {acct.venueBps / 100}%
+          {acct.payees.map((p) => ` · ${p.label} ${p.bps / 100}%`).join("")}
+          {acct.payees.some((p) => p.label === PLATFORM_LABEL) ? " (only if the show is played)" : ""}
         </p>
       </div>
 
@@ -237,6 +265,11 @@ function ShowView() {
           <p className="muted small" style={{ marginTop: 6 }}>
             Connect a wallet (devnet) to buy a ticket. The money is held until the show; if it is cancelled you get it back automatically.
           </p>
+        ) : null}
+        {!wallet ? (
+          <div style={{ marginTop: 10 }}>
+            <WalletButton>Connect wallet</WalletButton>
+          </div>
         ) : mine ? (
           <div style={{ marginTop: 8 }}>
             <p className="small">
@@ -251,9 +284,9 @@ function ShowView() {
           </div>
         ) : state === "onSale" || state === "confirmed" ? (
           <div className="row" style={{ marginTop: 10 }}>
-            <input className="input" type="number" min={1} max={10} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(10, Number(e.target.value))))} />
+            <input className="input" type="number" min={1} max={10} value={qty} aria-label="Number of tickets" onChange={(e) => setQty(Math.max(1, Math.min(10, Number(e.target.value))))} />
             <button className="btn primary" disabled={busy} onClick={() => act("Purchase", () => buyTicket(wallet, address, qty))}>
-              Buy {qty} for {live ? `${euros(Number(acct.ticketPriceLamports) * qty)} (${fans(qty)} fans in this demo)` : sol(Number(acct.ticketPriceLamports) * qty)}
+              Buy {qty} ticket{qty > 1 ? "s" : ""} · {live ? euros(Number(acct.ticketPriceLamports) * qty) : sol(Number(acct.ticketPriceLamports) * qty)}
             </button>
           </div>
         ) : (
@@ -323,6 +356,46 @@ function ShowView() {
       </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** A show from the recording, when the chain has no account for it: city, venue, day, fans and how it ended. */
+function RecordedShow({ show, network }: { show: RunShow; network: boolean }) {
+  const required = Math.ceil((show.capacity * (show.thresholdBps ?? 5000)) / 10_000);
+  const outcome: Record<string, string> = {
+    settled: "Played and paid out: band, venue and crew got their shares automatically.",
+    cancelled: "Missed its ticket target: every fan was refunded automatically.",
+    confirmed: "Reached its ticket target: the show goes ahead.",
+    onSale: "Tickets were on sale.",
+    proposed: "Waiting for the venue to sign.",
+    rejected: "The venue declined this date.",
+  };
+  return (
+    <div className="card" style={{ maxWidth: 720 }}>
+      <p className="small">
+        <Link href="/">← Back to the tour</Link>
+      </p>
+      <h1 style={{ marginTop: 8 }}>{show.city}</h1>
+      <p className="muted">
+        {show.venueName ?? show.venue} · {dayLabel(show.day)}
+      </p>
+      <div className="stats">
+        <div className="stat">
+          <div className="label">Fans</div>
+          <div className="value">
+            {fans(show.ticketsSold)} of {fans(show.capacity)}
+          </div>
+        </div>
+        <div className="stat">
+          <div className="label">Ticket target</div>
+          <div className="value">{fans(required)}</div>
+        </div>
+      </div>
+      <p>{outcome[show.state] ?? show.state}</p>
+      <p className="small muted" style={{ marginTop: 10 }}>
+        {network ? "Devnet is not answering right now, so this is the recording of the show." : "From the recording of this tour; the show's account is no longer on devnet."}
+      </p>
     </div>
   );
 }

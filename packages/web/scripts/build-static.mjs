@@ -30,7 +30,8 @@ try {
     cwd: web,
     stdio: "inherit",
     shell: isWin,
-    env: { ...process.env, NEXT_OUTPUT: "export" },
+    // a static site has no /api routes: the pages start in static mode instead of probing them
+    env: { ...process.env, NEXT_OUTPUT: "export", NEXT_PUBLIC_STATIC: "1" },
   });
   status = r.status ?? 1;
 } finally {

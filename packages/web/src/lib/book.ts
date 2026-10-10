@@ -194,7 +194,8 @@ export function bookingErrorText(e: unknown): string {
   if (/reject|denied|cancel/i.test(m)) return "You cancelled in your wallet. Nothing new was booked.";
   if (/insufficient|0x1\b|debit an account/i.test(m)) return "Your wallet needs a little more devnet SOL (about 0.005 per show). Top it up and try again.";
   if (/429|rate|fetch|network|timed out|not confirmed/i.test(m)) return "Devnet is busy right now. Wait a minute and try again.";
-  return m.slice(0, 200);
+  console.warn("booking failed:", m);
+  return `The booking did not go through (your wallet said: "${m.slice(0, 120)}"). Nothing new was booked; try again.`;
 }
 
 /**

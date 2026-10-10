@@ -155,7 +155,10 @@ export default function DashboardPage() {
   // a tour read from chain state was booked by the band itself (wizard or its own agents), not a recording
   const live = run.cluster === "live";
   // fans and euros only for tours priced on the dashboard's scale (agent-booked tours use real SOL prices)
+  // money in euros for tours priced in the app's euro scale; agent runs keep their devnet SOL, said as such.
+  // Counts are fans everywhere: one ticket on chain stands for FANS_PER_TICKET people.
   const inFans = live && !!run.inApp;
+  const money = (lamports: number) => (inFans ? euros(lamports) : `${sol(lamports, 3)}`);
   const count = { proposed: 0, onSale: 0, atRisk: 0, confirmed: 0, settled: 0, cancelled: 0 };
   for (const v of views) {
     if (v.state === "rejected") continue;
@@ -171,7 +174,9 @@ export default function DashboardPage() {
   }
 
   // ---------- what needs the band ----------
-  const attention: { key: string; tone: "wait" | "risk" | "bad" | "info"; text: ReactNode; cta?: ReactNode }[] = [];
+  type Attention = { key: string; tone: "wait" | "risk" | "bad" | "info"; text: ReactNode; cta?: ReactNode };
+  const attention: Attention[] = [];
+  const missed: Attention[] = [];
   for (const i of pending) attention.push({ key: i.request.id, tone: "wait", text: <PendingLine item={i} />, cta: <Link className="btn primary small" href={`/approvals#${i.request.id}`}>Review</Link> });
   if (count.proposed)
     attention.push({
@@ -187,22 +192,53 @@ export default function DashboardPage() {
     if (v.health === "at-risk") attention.push({ key: v.run.show, tone: "risk", text: <><b>{v.run.city}</b> is at risk: {v.status.toLowerCase()}. If it misses, every fan is refunded automatically{live ? "" : " and you get replacement options"}.</>, cta: <Link className="btn outline small" href={`/show?address=${v.run.show}`}>Open</Link> });
     if (v.state === "cancelled") {
       const rep = v.run.replacedBy ? byShow.get(v.run.replacedBy) : undefined;
-      attention.push({
+      const sameVenue = rep && rep.run.venue === v.run.venue;
+      const item = {
         key: v.run.show,
-        tone: rep ? "info" : "bad",
+        tone: (rep ? "info" : "bad") as "info" | "bad",
         text: rep ? (
           <>
-            <b>{v.run.city}</b> was cancelled ({inFans ? `${fans(v.sold)} of ${fans(v.required)} fans` : `${v.sold}/${v.required}`}); replaced by {nameOf(rep.run.venue, rep.run.venueName)}, {rep.run.city}: <HealthBadge health={rep.health} />
+            <b>{v.run.city}</b> missed its ticket target ({fans(v.sold)} of the {fans(v.required)} fans it needed); every fan was refunded.{" "}
+            {sameVenue
+              ? `The agent tried a smaller room at ${nameOf(rep.run.venue, rep.run.venueName)} the same night (${fans(rep.capacity)} fans):`
+              : `The agent moved the night to ${nameOf(rep.run.venue, rep.run.venueName)}, ${rep.run.city}:`}{" "}
+            <HealthBadge health={rep.health} />
           </>
         ) : (
           <>
-            <b>{v.run.city}</b> was cancelled ({inFans ? `${fans(v.sold)} of the ${fans(v.required)} fans it needed` : `${v.sold}/${v.required} sold`}); {v.sold > 0 ? "every fan was refunded" : "nobody had bought yet"}.
+            <b>{v.run.city}</b> missed its ticket target ({fans(v.sold)} of the {fans(v.required)} fans it needed); {v.sold > 0 ? "every fan was refunded" : "nobody had bought yet"}.
           </>
         ),
-      });
+      };
+      // a recording tells its story in one line; the details stay one click away
+      if (live) attention.push(item);
+      else missed.push(item);
     }
     if (v.state === "rejected" && !v.run.replaces) attention.push({ key: v.run.show, tone: "bad", text: <><b>{v.run.city}</b>: {nameOf(v.run.venue, v.run.venueName)} declined the proposal (the date was taken).</> });
     if (v.state === "rejected" && v.run.replaces) attention.push({ key: v.run.show, tone: "bad", text: <>The replacement in <b>{v.run.city}</b> was declined by the venue; that date is off.</> });
+  }
+  if (missed.length) {
+    const refunded = views.filter((v) => v.state === "cancelled").reduce((n, v) => n + v.sold, 0);
+    attention.unshift({
+      key: "story",
+      tone: "info",
+      text: (
+        <span className="story-line">
+          <b>
+            {count.settled} show{count.settled === 1 ? "" : "s"} played and paid out.
+          </b>{" "}
+          {missed.length} date{missed.length === 1 ? "" : "s"} missed the ticket target{refunded ? `, and ${fans(refunded)} fans got their money back automatically` : ""}; the agent tried a smaller room where one was free.
+          <details className="story-details">
+            <summary>What happened to each date</summary>
+            <ul>
+              {missed.map((m) => (
+                <li key={m.key}>{m.text}</li>
+              ))}
+            </ul>
+          </details>
+        </span>
+      ),
+    });
   }
 
   // ---------- stepper ----------
@@ -247,7 +283,7 @@ export default function DashboardPage() {
     href: `/show?address=${v.run.show}`,
     right: <HealthBadge health={v.health} />,
     // a band's own tour: each stop carries its progress, so the page needs no second list of shows
-    detail: inFans ? `${fans(v.sold)} of ${fans(v.capacity)} fans · ${v.status}` : v.run.replaces ? "replacement show" : undefined,
+    detail: `${fans(v.sold)} of ${fans(v.capacity)} fans · ${v.status}${v.run.replaces ? " · smaller room, same night" : ""}`,
   }));
   const waitingRoute = views.length === 0 && routeItem && !routeItem.decision && routeItem.request.payload.step === "route" ? routeItem.request.payload : null;
 
@@ -269,7 +305,7 @@ export default function DashboardPage() {
           <p className="muted">
             {run.brief ? `${run.brief.wantedShows}-show tour · ${run.brief.countries.join("/")} · ${run.brief.windowDays}-day window` : `Central Europe tour · ${cities.size} cities`}
             {" · "}
-            {live ? (isWalletBand ? "booked by you" : "live on devnet") : run.approvals === "dashboard" ? "you approve every step" : "auto-pilot approves"}
+            {live ? (isWalletBand ? "booked by you" : "live on devnet") : run.approvals === "dashboard" ? "you approve every step" : "in this recording the auto-pilot answered for the band; on your tour you decide"}
             {run.tour ? (
               <>
                 {" · "}
@@ -303,17 +339,14 @@ export default function DashboardPage() {
           {rpcError} Showing the last known state; the page retries by itself.
         </p>
       ) : null}
-      {inFans ? (
-        <p className="small muted" style={{ marginTop: 8 }}>
-          A devnet demo at small scale: each ticket on chain stands for {FANS_PER_TICKET} fans, money is play money shown in euros, and a tour runs in about an
-          hour instead of months (one tour day is {DEMO_DAY_SEC} seconds).
-        </p>
-      ) : null}
-      {isStaticMode() && !live ? (
-        <p className="small muted" style={{ marginTop: 8 }}>
-          Recorded run. Show states are read live from {run.cluster.includes("devnet") ? "devnet" : "the chain"}; decisions are off here.
-        </p>
-      ) : null}
+      <p className="small muted" style={{ marginTop: 8 }}>
+        A devnet demo at small scale: each ticket on chain stands for {FANS_PER_TICKET} fans, money is play money{inFans ? " shown in euros" : " in devnet SOL"}, and a tour
+        runs in about an hour instead of months (one tour day is {DEMO_DAY_SEC} seconds). Greenroom&apos;s 10% fee
+        {live
+          ? " is taken out of your share on every show that is played."
+          : " came in after this recording; tours booked now pay it out of the band's share. This is a recorded tour: show states are read live from devnet, decisions are off here."}
+      </p>
+
 
       <div className="attention" aria-label="Needs your attention">
         {attention.length === 0 ? (
@@ -326,7 +359,9 @@ export default function DashboardPage() {
           attention.map((a) => (
             <div key={`${a.tone}-${a.key}`} className="item">
               <div className="what small">
-                <span className={`dot ${a.tone}`} />
+                {/* the colour and a word: never colour alone */}
+                <span className={`dot ${a.tone}`} aria-hidden />
+                {a.key === "story" ? null : <span className={`tone-tag ${a.tone}`}>{TONE_WORD[a.tone]}</span>}
                 <span>{a.text}</span>
               </div>
               {a.cta}
@@ -346,22 +381,12 @@ export default function DashboardPage() {
 
       {views.length > 0 ? (
         <div className="stats">
-          {inFans ? (
-            <>
-              <Stat label="Fans so far" value={fans(sold)} />
-              <Stat label="Ticket money held" value={euros(escrow)} hint="back to fans if a show is cancelled" />
-              <Stat label="Your share" value={euros(take)} hint="from shows that go ahead" />
-            </>
-          ) : (
-            <>
-              <Stat label="Tickets sold" value={sold} />
-              <Stat label="Ticket money held" value={sol(escrow, 2)} hint="refunded if a show is cancelled" />
-              <Stat label="Your share" value={sol(take, 2)} hint="confirmed shows" />
-            </>
-          )}
+          <Stat label="Fans so far" value={fans(sold)} />
+          <Stat label="Ticket money held" value={money(escrow)} hint="back to fans if a show misses its ticket target" />
+          <Stat label="Your share" value={money(take)} hint={count.settled === count.confirmed && count.settled ? "from played shows" : "from shows that go ahead"} />
           {/* only news: a zero here is noise */}
           {count.atRisk ? <Stat label="At risk" value={count.atRisk} tone="warn" /> : null}
-          {count.cancelled ? <Stat label="Cancelled" value={count.cancelled} tone="bad" /> : null}
+          {count.cancelled ? <Stat label="Missed the target" value={count.cancelled} tone="bad" hint="every fan refunded automatically" /> : null}
         </div>
       ) : null}
 
@@ -447,6 +472,8 @@ export default function DashboardPage() {
   );
 }
 
+const TONE_WORD = { wait: "Your turn", risk: "At risk", bad: "Missed", info: "Note" } as const;
+
 function Stat({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: string; tone?: "warn" | "bad" }) {
   return (
     <div className="stat">
@@ -507,5 +534,7 @@ function describeRpcError(e: unknown): string {
   const msg = String((e as Error)?.message ?? e);
   if (isRateLimit(msg)) return `${CLUSTER === "devnet" ? "The public devnet RPC" : "The RPC"} is rate-limiting this page (too many requests).`;
   if (CLUSTER === "localnet") return `Local validator unreachable (${msg.slice(0, 80)}). Is it running?`;
-  return `Could not reach ${CLUSTER} (${msg.slice(0, 80)}).`;
+  // the technical reason goes to the console, the band reads a sentence
+  console.warn("devnet read failed:", msg);
+  return `${CLUSTER === "devnet" ? "Devnet" : "The network"} is not answering right now.`;
 }

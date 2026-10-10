@@ -37,6 +37,24 @@ const NAV: { href: string; label: string; icon: ReactNode }[] = [
 
 const VENUE_ICON = <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />;
 
+/** The browser tab says where you are: "Approvals · Greenroom". */
+const TITLES: Record<string, string> = {
+  "/": "Dashboard",
+  "/home": "AI agents book your tour",
+  "/approvals": "Approvals",
+  "/venues": "Venues",
+  "/planner": "Route planner",
+  "/band": "Band record",
+  "/feed": "Agent feed",
+  "/agents": "Your agents",
+  "/agents/new": "Create your agent",
+  "/tour/new": "Plan your tour",
+  "/venue-demo": "Venue demo",
+  "/venue": "Your venue",
+  "/setup": "Set up",
+  "/show": "Show",
+};
+
 function NavIcon({ children }: { children: ReactNode }) {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -53,6 +71,11 @@ export function Shell({ children }: { children: ReactNode }) {
   const [waiting, setWaiting] = useState(0);
   const [demoName, setDemoName] = useState<string | null>(null);
   const demo = session.guest && !session.wallet;
+  useEffect(() => {
+    const visitorHome = path === "/" && !session.wallet && !session.guest;
+    const t = visitorHome ? TITLES["/home"] : TITLES[path];
+    document.title = t ? `${t} · Greenroom` : "Greenroom";
+  }, [path, session.wallet, session.guest]);
   useEffect(() => {
     let alive = true;
     if (demo) void getRun().then((r) => alive && setDemoName(r?.band.name ?? null));
@@ -120,17 +143,39 @@ export function Shell({ children }: { children: ReactNode }) {
               <Link href="/" className="btn primary small">
                 {session.wallet ? "Your dashboard" : "Back to the demo"}
               </Link>
-            ) : session.reconnecting ? null : (
+            ) : session.reconnecting || path.startsWith("/tour") ? null : (
+              // the connect screen on /tour has its own button: one call to action at a time
               <WalletButton>Connect wallet</WalletButton>
             )}
           </nav>
         </header>
-        <main className="public-main">{home ? <Landing /> : !bandPage ? children : session.reconnecting ? <Reconnecting /> : <Landing />}</main>
+        <main className="public-main">
+          {home ? (
+            <Landing />
+          ) : !bandPage ? (
+            children
+          ) : session.reconnecting ? (
+            <Reconnecting />
+          ) : path.startsWith("/tour") ? (
+            // a visitor who wants to plan (e.g. "Plan a tour with it" on a new agent): say what it takes, never drop them on the pitch
+            <ConnectScreen />
+          ) : (
+            <Landing />
+          )}
+        </main>
       </div>
     );
   // the demo band cannot create tours: that takes your own wallet
   const gated = path.startsWith("/tour") && !session.wallet && !session.guest;
   const who = session.wallet ? (session.profile ? session.profile.name : session.venue ? session.venue.name : short(session.wallet)) : null;
+  // only items that lead somewhere: no band pages for a venue-only wallet or during setup;
+  // Approvals while something waits (or in the demo, where the decisions are the story)
+  const venueOnly = !!session.venue && session.profile === null;
+  const navItems = (path === SETUP ? [] : session.venue ? [{ href: VENUE, label: "Your venue", icon: VENUE_ICON }, ...NAV] : NAV).filter((n) => {
+    if (venueOnly && BAND_PAGES.includes(n.href)) return false;
+    if (n.href === "/approvals") return demo || ownRun || waiting > 0 || path === "/approvals";
+    return true;
+  });
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -138,7 +183,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="dot" /> Greenroom
         </Link>
         <nav className="nav">
-          {(session.venue ? [{ href: VENUE, label: "Your venue", icon: VENUE_ICON }, ...NAV] : NAV).map((n) => (
+          {navItems.map((n) => (
             <Link key={n.href} href={n.href} className={path === n.href || (n.href !== "/" && path.startsWith(n.href)) ? "active" : ""}>
               <NavIcon>{n.icon}</NavIcon>
               {n.label}
@@ -161,8 +206,8 @@ export function Shell({ children }: { children: ReactNode }) {
               <span className="net-badge">Solana {CLUSTER}</span>
             </div>
             <p>
-              <b>You are exploring the demo band{demoName ? `, ${demoName}` : ""}.</b> A real tour the agents booked on Solana {CLUSTER}. No wallet needed: look
-              around freely.
+              <b>You are exploring the demo band{demoName ? `, ${demoName}` : ""}.</b>{" "}
+              <span className="banner-detail">A real tour the agents booked on Solana {CLUSTER}. No wallet needed: look around freely.</span>
             </p>
             <div className="demo-actions">
               <Link href={`${HOME}#signup`} className="btn primary small">

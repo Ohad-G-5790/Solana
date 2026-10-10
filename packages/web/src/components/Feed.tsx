@@ -22,7 +22,7 @@ export function showsFeed(shows: { show: string; state: string; ticketsSold: num
   const line: Record<string, [string, (s: { ticketsSold: number }) => string]> = {
     proposed: ["show.proposed", () => "Booked; waiting for the venue to sign."],
     onSale: ["fan.bought", (s) => `On sale: ${count(s.ticketsSold)} so far.`],
-    confirmed: ["crank.confirmed", (s) => `Goes ahead: ${count(s.ticketsSold)} so far.`],
+    confirmed: ["crank.confirmed", (s) => `Reached its ticket target: ${count(s.ticketsSold)} so far, the show goes ahead.`],
     cancelled: ["crank.cancelled", () => "Cancelled; every fan is refunded automatically."],
     settled: ["crank.settled", () => "Played and paid out."],
   };

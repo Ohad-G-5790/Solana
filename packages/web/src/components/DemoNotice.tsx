@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SIGNUP_URL } from "@/lib/config";
+import { BASE_PATH, SIGNUP_URL } from "@/lib/config";
 import { SignupForm } from "./Signup";
 
 const KEY = "greenroom.demo-notice";
@@ -34,9 +34,14 @@ export function DemoNotice() {
   return (
     <div className="demo-notice" role="region" aria-label="Demo version">
       <span className="small">
-        <b>This is a demo version.</b> {SIGNUP_URL ? "Want the full version once it is out? Leave your email and we will let you know." : "The full version is on its way."}
+        <b>This is a demo version.</b>{" "}
+        <span className="notice-detail">{SIGNUP_URL ? "Want the full version once it is out? Leave your email and we will let you know." : "The full version is on its way."}</span>
       </span>
       <SignupForm />
+      {/* on a phone the form folds away: one line and a link to the sign-up */}
+      <a className="demo-notice-link" href={`${BASE_PATH}/home#signup`}>
+        Get updates
+      </a>
       <button className="icon-btn" onClick={close} aria-label="Close the demo notice" title="Close">
         ✕
       </button>

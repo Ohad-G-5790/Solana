@@ -85,10 +85,11 @@ p {
   color: var(--text-muted);
 }
 .small {
-  font-size: 12px;
+  font-size: 13px;
 }
+/* the smallest text still carries information (dates, the fee note): never under 12px */
 .micro {
-  font-size: 10px;
+  font-size: 12px;
 }
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -174,6 +175,12 @@ p {
 
 /* ---------- buttons ---------- */
 .btn {
+  /* links and buttons alike: centred label, so a minimum height works on both */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
   background: var(--surface-mid);
   color: var(--text);
   border: 0;
@@ -287,9 +294,9 @@ p {
   display: inline-block;
   border-radius: 2px;
   padding: 2px 6px;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
-  text-transform: capitalize;
+  
   background: var(--surface-mid);
   color: var(--text-soft);
 }
@@ -693,8 +700,11 @@ p {
   font-size: 11px;
   font-weight: 700;
 }
-.itinerary .stop.off {
-  opacity: 0.45;
+/* a stop that is off: struck through and muted, still readable (no opacity on text) */
+.itinerary .stop.off,
+.itinerary .stop.off .city,
+.itinerary .stop.off .badge {
+  color: var(--text-muted);
 }
 .itinerary .stop.off .city {
   text-decoration: line-through;
@@ -856,8 +866,21 @@ input[type="checkbox"] {
   max-width: 100%;
 }
 .btn.small {
-  padding: 6px 12px;
-  font-size: 11px;
+  padding: 6px 14px;
+  font-size: 12px;
+  min-height: 32px;
+}
+/* fingers need room: 44px tap targets on touch screens */
+@media (pointer: coarse) {
+  .btn,
+  .btn.small,
+  .chip,
+  .icon-btn {
+    min-height: 44px;
+  }
+  .icon-btn {
+    min-width: 44px;
+  }
 }
 .icon-btn {
   background: var(--surface-mid);
@@ -1265,17 +1288,18 @@ input[type="checkbox"] {
 .public-top .top-links a:hover {
   text-decoration: none;
 }
+/* the section links are quiet; a button in the bar keeps its own colours */
 .public-top .top-links {
   display: flex;
   align-items: center;
   gap: 22px;
 }
-.public-top .top-links a {
+.public-top .top-links a:not(.btn) {
   color: var(--text-muted);
   font-size: 13px;
   font-weight: 700;
 }
-.public-top .top-links a:hover {
+.public-top .top-links a:not(.btn):hover {
   color: var(--text);
 }
 .public-main {
@@ -1621,7 +1645,7 @@ input[type="checkbox"] {
   text-align: center;
 }
 .eyebrow {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 1.6px;
   text-transform: uppercase;
@@ -1890,7 +1914,7 @@ img.monogram {
   .public-top {
     padding: 12px 16px;
   }
-  .public-top .top-links a {
+  .public-top .top-links a:not(.btn) {
     display: none;
   }
   .public-main {
@@ -2643,4 +2667,159 @@ a.brand:hover {
 }
 .role-card b {
   font-size: 18px;
+}
+
+/* a failed booking, under the Book button */
+.book-error {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(243, 114, 127, 0.1);
+  box-shadow: 0 0 0 1px rgba(243, 114, 127, 0.45) inset;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+  max-width: 720px;
+}
+
+/* attention rows: a word with every colour */
+.tone-tag {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--surface-mid);
+  color: var(--text-soft);
+}
+.tone-tag.wait {
+  color: var(--accent);
+}
+.tone-tag.risk {
+  color: var(--warning);
+}
+.tone-tag.bad {
+  color: var(--negative);
+}
+.tone-tag.info {
+  color: #8fbfff;
+}
+.story-line {
+  line-height: 1.5;
+}
+.story-details {
+  margin-top: 6px;
+}
+.story-details summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.story-details ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* badges in sentence case: "Waiting for venue", not "Waiting For Venue" */
+.badge::first-letter {
+  text-transform: uppercase;
+}
+
+/* ---------- phones: the app's chrome stays out of the way ---------- */
+.demo-notice-link {
+  display: none;
+}
+@media (max-width: 560px) {
+  /* one row of menu items that scrolls sideways inside itself */
+  .nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px 2px;
+  }
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+  .nav a {
+    flex: none;
+  }
+  .sidebar .brand {
+    padding-bottom: 6px;
+  }
+  /* the demo banner: badges and one line */
+  .demo-banner {
+    gap: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .demo-banner .banner-detail {
+    display: none;
+  }
+  .demo-banner p b {
+    font-size: 15px;
+  }
+  .live-badge {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  .demo-banner .net-badge {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  /* the demo notice: one line, the form behind a link */
+  .demo-notice {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .demo-notice > span {
+    flex: 1 1 auto;
+  }
+  .demo-notice .signup,
+  .demo-notice .notice-detail {
+    display: none;
+  }
+  .demo-notice-link {
+    display: inline;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .topbar {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+}
+
+/* ---------- 404 ---------- */
+.not-found {
+  max-width: 640px;
+  margin: 80px auto 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.not-found h1 {
+  font-size: clamp(30px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* the main page's three ways in: full width and equal on a phone */
+@media (max-width: 560px) {
+  .hero-ctas {
+    flex-direction: column;
+    align-self: stretch;
+  }
+  .hero-ctas .btn {
+    width: 100%;
+  }
 }

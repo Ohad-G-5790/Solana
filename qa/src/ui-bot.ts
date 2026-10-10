@@ -464,11 +464,16 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       const compared = (await page.locator("#your-route").textContent())?.includes("Your order") ?? false;
       // Book: the tour is packed into transactions and handed to the wallet (the test wallet refuses to sign)
       await page.getByRole("button", { name: /book this tour/i }).click();
-      const bookError = await page
-        .locator("p.bad")
-        .first()
-        .textContent({ timeout: 15_000 })
-        .catch(() => "no answer");
+      const alert = page.locator("#book-status [role=alert]");
+      const bookError = await alert.textContent({ timeout: 15_000 }).catch(() => "no answer");
+      // the answer sits right under the button, not somewhere up the page
+      const gap = await page
+        .evaluate(() => {
+          const b = Array.from(document.querySelectorAll("button")).find((x) => /book this tour/i.test(x.textContent ?? ""));
+          const a = document.querySelector("#book-status [role=alert]");
+          return b && a ? a.getBoundingClientRect().top - b.getBoundingClientRect().bottom : 9999;
+        })
+        .catch(() => 9999);
       await page.close();
       if (questions !== 4) return `${questions} questions instead of 4`;
       if (primaries !== 1) return `${primaries} primary buttons on the questions step (want exactly one: Plan my tour)`;
@@ -478,6 +483,7 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (!homeLine) return "the route preview does not say how far the last stop is from home";
       if (before === after || !compared) return `moving a stop does not change the route or compare it (${before} / ${after})`;
       if (!/cannot sign|cancelled/i.test(bookError ?? "")) return `booking did not reach the wallet: ${bookError}`;
+      if (gap < 0 || gap > 200) return `the booking answer is ${Math.round(gap)} px away from the Book button`;
       return null;
     });
 
@@ -701,6 +707,19 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       })().catch(() => false);
       await page.goto(url("/planner/"), { waitUntil: "domcontentloaded" });
       const planner = (await page.locator("h1").first().textContent()) ?? "";
+      // a visitor who goes to plan a tour (e.g. from a new agent) learns what it takes, not the pitch again
+      const visitor = await newPage(browser, { band: false, delay: 0 });
+      await visitor.goto(url("/tour/new/"), { waitUntil: "domcontentloaded" });
+      const planHeading = await visitor.locator("h1").first().textContent({ timeout: 8000 }).catch(() => "");
+      const planAsDemo = await visitor
+        .getByRole("button", { name: /plan as the demo band/i })
+        .waitFor({ timeout: 8000 })
+        .then(() => 1, () => 0);
+      // a link that leads nowhere: the brand's 404 with a way on
+      await visitor.goto(url("/no-such-page/"), { waitUntil: "domcontentloaded" });
+      const lost = await visitor.locator("h1").first().textContent({ timeout: 8000 }).catch(() => "");
+      const wayOn = await visitor.getByRole("link", { name: /main page/i }).count();
+      await visitor.close();
       await shot(page, "6-planner");
       await page.close();
       if (/booked by agents/i.test(h1)) return "Explore the demo band did not open the demo";
@@ -709,6 +728,8 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (!home || !back) return `the logo does not lead back to the main page (landing: ${home}, way back: ${back})`;
       if (!venues) return "Venues does not lead from a country to a city to its rooms";
       if (!/route planner/i.test(planner)) return "the Route planner is not reachable without a wallet";
+      if (!/plan your tour/i.test(planHeading ?? "") || !planAsDemo) return `a visitor planning a tour gets "${planHeading}" without a way to plan as the demo band`;
+      if (!/not on the tour/i.test(lost ?? "") || !wayOn) return `a dead link shows "${lost}" without a way on`;
       return null;
     });
   } finally {

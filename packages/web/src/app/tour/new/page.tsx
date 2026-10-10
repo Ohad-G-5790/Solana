@@ -28,6 +28,8 @@ export default function NewTourPage() {
   const [priceText, setPriceText] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Where the error belongs: under the questions (planning) or under the Book button (booking). */
+  const [errorAt, setErrorAt] = useState<"plan" | "book">("plan");
   const [booked, setBooked] = useState<BookedTour | null>(null);
   const { tour: current } = useBandTour();
   const running = !!current?.shows.some((s) => s.state === "proposed" || s.state === "onSale" || s.state === "confirmed");
@@ -111,6 +113,7 @@ export default function NewTourPage() {
     );
 
   const makePlan = async () => {
+    setErrorAt("plan");
     setBusy("Asking the venues…");
     setError(null);
     try {
@@ -130,6 +133,7 @@ export default function NewTourPage() {
   const book = async () => {
     if (!plan || busy || !wallet || !profile) return;
     setError(null);
+    setErrorAt("book");
     setBusy("Preparing your booking…"); // disables the button at once: no double booking
     const { bookTour, bookingErrorText, PartialBooking } = await import("@/lib/book");
     try {
@@ -137,7 +141,12 @@ export default function NewTourPage() {
       remember(null);
     } catch (e) {
       if (e instanceof PartialBooking) remember({ tourId: e.tourId, message: e.message });
-      else setError(bookingErrorText(e));
+      else {
+        setErrorAt("book");
+        setError(bookingErrorText(e));
+      }
+      // the answer sits right under the Book button: bring it into view
+      setTimeout(() => document.getElementById("book-status")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
     } finally {
       setBusy(null);
     }
@@ -284,7 +293,11 @@ export default function NewTourPage() {
           </button>
         </div>
       ) : null}
-      {error ? <p className="small bad" style={{ marginTop: 12 }}>{error}</p> : null}
+      {error && (errorAt === "plan" || !plan) ? (
+        <p className="small bad" role="alert" style={{ marginTop: 12 }}>
+          {error}
+        </p>
+      ) : null}
 
       {plan && stops.length ? (
         <section className="question" id="your-route">
@@ -331,11 +344,6 @@ export default function NewTourPage() {
             </div>
           </div>
           <Money plan={plan} />
-          {partial ? (
-            <p className="small warn" style={{ marginTop: 12 }}>
-              Your tour is open, but not every show went through ({partial.message}) Press Finish booking to add the missing shows to the same tour.
-            </p>
-          ) : null}
           <div className="row" style={{ marginTop: 16 }}>
             {demo ? (
               <WalletButton>Connect a wallet to book</WalletButton>
@@ -356,6 +364,19 @@ export default function NewTourPage() {
                 Change answers
               </button>
             )}
+          </div>
+          {/* what happened when the band pressed Book: right under the button, read out by screen readers */}
+          <div id="book-status" aria-live="polite">
+            {error && errorAt === "book" ? (
+              <p className="book-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {partial ? (
+              <p className="small warn" role="status" style={{ marginTop: 12 }}>
+                Your tour is open, but not every show went through ({partial.message}) Press Finish booking to add the missing shows to the same tour.
+              </p>
+            ) : null}
           </div>
           <p className="micro muted" style={{ marginTop: 10, maxWidth: 720 }}>
             {demo

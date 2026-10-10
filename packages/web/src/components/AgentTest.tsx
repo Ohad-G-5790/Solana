@@ -28,19 +28,31 @@ export function BandAgentTest({ rules }: { rules: BandRules }) {
     const venues = world.venues.filter((v) => COUNTRIES.includes(v.country));
     const decisions = venues.map((v) => ({ v, d: venueOfferHeuristic(v as never, req) }));
     const offers = decisions.filter((x) => x.d.offer).map((x) => toVenueOffer(x.v as never, x.v.id, x.d, 14));
-    const plan = planTour({
-      band: { genre: rules.genre as never, draw: rules.draw, targetPriceLamports: req.targetPriceLamports, homeCity: rules.homeCity },
-      offers,
-      cities: world.cities as City[],
-      wantedShows: 8,
-      windowDays: 14,
-      startCity: rules.homeCity,
-      roundTrip: rules.roundTrip,
-    });
     const byId = new Map(venues.map((v) => [v.id, v]));
-    const stops = plan.map((p) => byId.get(p.venueId)!).filter(Boolean);
-    const longest = stops.slice(1).reduce((m, s, i) => Math.max(m, drive(stops[i], s).minutes), 0);
-    return { offers: offers.length, declined: decisions.length - offers.length, stops, longest };
+    const limit = rules.maxDriveHours * 60;
+    // the agent keeps its own rule: a city that needs a longer drive than the limit is left out and the route planned again
+    const left: string[] = [];
+    let stops: WorldVenue[] = [];
+    let longest = 0;
+    for (let round = 0; round < 6; round++) {
+      const plan = planTour({
+        band: { genre: rules.genre as never, draw: rules.draw, targetPriceLamports: req.targetPriceLamports, homeCity: rules.homeCity },
+        offers: offers.filter((o) => !left.includes(o.city)),
+        cities: world.cities as City[],
+        wantedShows: 8,
+        windowDays: 14,
+        startCity: rules.homeCity,
+        roundTrip: rules.roundTrip,
+      });
+      stops = plan.map((p) => byId.get(p.venueId)!).filter(Boolean);
+      const legs = stops.slice(1).map((s, i) => drive(stops[i], s).minutes);
+      longest = legs.reduce((m, x) => Math.max(m, x), 0);
+      const far = legs.findIndex((x) => x > limit);
+      if (far === -1) break;
+      // drop the far end of the leg (never the first city, where the tour starts)
+      left.push(stops[far + 1].city);
+    }
+    return { offers: offers.length, declined: decisions.length - offers.length, stops, longest, left };
   }, [world, rules]);
 
   if (!result) return <p className="muted small">Your agent is asking the venues…</p>;
@@ -57,6 +69,7 @@ export function BandAgentTest({ rules }: { rules: BandRules }) {
       <p className={`small ${tooLong ? "warn" : "muted"}`}>
         Longest drive {formatMinutes(result.longest)}
         {tooLong ? `: over your ${rules.maxDriveHours} h limit, so your agent would ask you before booking it.` : `, inside your ${rules.maxDriveHours} h limit.`}
+        {result.left.length ? ` It left out ${result.left.join(", ")} to keep every drive under ${rules.maxDriveHours} h.` : ""}
       </p>
       <RouteMap stops={map} height={360} />
     </div>
@@ -87,7 +100,12 @@ export function VenueInbox({ rules, requests = SAMPLE_REQUESTS, limit }: { rules
               </span>
               <span className="small">{d.reasoning}</span>
             </div>
-            {d.offer ? <span className="inbox-money">≈ €{d.venueEuro.toLocaleString()}</span> : null}
+            {d.offer ? (
+              <span className="inbox-money" title="Your share of the ticket money if the night sells out">
+                ≈ €{d.venueEuro.toLocaleString()}
+                <span className="micro muted"> for you at a full house</span>
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>
