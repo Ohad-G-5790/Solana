@@ -32,6 +32,7 @@ export interface UiCheck {
 export const UI_CHECKS: { id: string; title: string }[] = [
   { id: "ux-public-first", title: "the first screen is a short pitch with the email sign-up; no app menu or band data until a wallet connects or the visitor explores the demo" },
   { id: "ux-connect-shows-mine", title: "connecting a wallet shows that wallet's own data right away" },
+  { id: "ux-new-wallet-setup", title: "a wallet with no band profile is sent to the band setup page from every band page, and a fan can still open a show" },
   { id: "ux-next-step", title: "a band without a tour sees one obvious next step" },
   { id: "ux-create-tour", title: "creating a tour takes four answers, shows the route, the drive home and the money (Greenroom fee included) before anything is booked, and lets the band reorder it" },
   { id: "ux-booked-tour", title: "after booking, the dashboard shows your own tour in fans and euros: planned days, booked by you, what waits on whom, your show pages, your activity only, also on a phone" },
@@ -386,6 +387,31 @@ export async function runUiBot(root: string, opts: { build?: boolean; log?: (l: 
       if (!panel.includes(ADDRESS.slice(0, 6))) return `the wallet panel does not show the connected address (${panel.slice(0, 80)})`;
       if (!/Son of a Pigeon/.test(h1)) return `the heading does not name the wallet's band (h1: ${h1})`;
       if (!button.includes(ADDRESS.slice(0, 4))) return `the wallet button changes the address's case ("${button}")`;
+      return null;
+    });
+
+    await check("ux-new-wallet-setup", async () => {
+      const page = await newPage(browser, { band: false, delay: 0 });
+      await page.goto(url("/"), { waitUntil: "domcontentloaded" });
+      await connect(page);
+      const landed = await page.waitForURL(/\/setup\/?$/, { timeout: 8000 }).then(() => true, () => false);
+      const form = await page.getByRole("heading", { name: /set up your band/i }).waitFor({ timeout: 8000 }).then(() => true, () => false);
+      await shot(page, "2b-new-wallet-setup");
+      // every band page sends it back to the setup until the band exists
+      const missed: string[] = [];
+      for (const p of ["/approvals/", "/feed/", "/band/", "/tour/new/"]) {
+        await page.goto(url(p), { waitUntil: "domcontentloaded" });
+        if (!(await page.waitForURL(/\/setup\/?$/, { timeout: 8000 }).then(() => true, () => false))) missed.push(p);
+      }
+      // a fan's wallet has no band either: a show page stays open to it
+      await page.goto(url("/show/?address=11111111111111111111111111111111"), { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1500);
+      const fan = !/\/setup\/?$/.test(page.url());
+      await page.close();
+      if (!landed) return "connecting a wallet with no band profile does not open the band setup page";
+      if (!form) return "the setup page does not show the band form";
+      if (missed.length) return `band pages that do not send a wallet without a band to the setup: ${missed.join(", ")}`;
+      if (!fan) return "a show page sends a fan's wallet to the band setup";
       return null;
     });
 

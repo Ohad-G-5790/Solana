@@ -40,7 +40,7 @@ npm run dev -w @greenroom/web         # dashboard (reads devnet by default; see 
 No command line needed. On the [live dashboard](https://ohad-g-5790.github.io/Solana/):
 
 1. In Phantom (or Solflare), create an account for the band, switch it to Solana devnet (Phantom: Settings → Developer settings → Testnet mode) and give it a little devnet SOL.
-2. **Connect wallet.** Before that the site shows nothing personal; after it, the dashboard is that wallet's band. A wallet without a band profile gets a **Set up your band** form (name and genre, one approval of about 0.002 SOL).
+2. **Connect wallet.** Before that the site shows nothing personal; after it, the dashboard is that wallet's band. A wallet without a band profile is sent to the **Set up your band** page (`/setup`: name and genre, one approval of about 0.002 SOL), from every band page, and goes on to its dashboard once the profile is on-chain.
 3. **Create your first tour.** Four answers: how many people you bring (100, 200, 500, 1,000, 2,500 or 5,000), the ticket price, the first city, and how long the tour is (7 to 30 days).
 4. **Plan my tour.** The venue agents' offers are computed in the browser and the route appears on the map with dates, drive per leg and days off. Nothing is booked yet; change any answer and plan again.
 5. **Book this tour.** Your wallet asks once and creates the tour and every show on devnet.

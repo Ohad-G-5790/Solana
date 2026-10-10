@@ -18,6 +18,8 @@ const BAND_PAGES = ["/", "/approvals", "/band", "/feed"];
 
 /** The main page (the pitch): "/" for visitors, "/home" for anyone already inside the app. */
 const HOME = "/home";
+/** Where a connected wallet without a band profile registers its band. */
+const SETUP = "/setup";
 /** Pages that look the same for everyone, wallet or demo band: no app menu, no band banner. */
 const ALWAYS_PUBLIC = ["/venue-demo"];
 
@@ -74,6 +76,19 @@ export function Shell({ children }: { children: ReactNode }) {
     };
   }, [ownRun]);
   const bandPage = BAND_PAGES.includes(path) || path.startsWith("/tour");
+  // A wallet with no band profile sets one up before any band page; another band's
+  // page (?band= / ?authority=) can still be looked at. profile is only null after
+  // the chain answered, on the client, so reading the URL here cannot break hydration.
+  const otherBand = (() => {
+    if (typeof window === "undefined") return false;
+    const q = new URLSearchParams(window.location.search);
+    const other = q.get("band") ?? q.get("authority");
+    return !!other && other !== session.wallet;
+  })();
+  const needsSetup = !!session.wallet && session.profile === null && bandPage && !otherBand;
+  useEffect(() => {
+    if (needsSetup) router.replace(SETUP);
+  }, [needsSetup, router]);
   const home = path === HOME;
   const inApp = !!session.wallet || session.guest;
   // Visitors see the pitch, not the app: the menu appears once a wallet connects or they explore the demo band.
@@ -169,7 +184,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
           </>
         )}
-        {gated ? session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <ConnectScreen /> : children}
+        {gated ? session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <ConnectScreen /> : needsSetup ? <p className="muted">Opening your band setup…</p> : children}
       </main>
     </div>
   );

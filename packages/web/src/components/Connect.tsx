@@ -99,7 +99,8 @@ export function RegisterBand() {
       const { registerBand } = await import("@/lib/greenroom");
       const tx = await registerBand(wallet, name.trim(), genre);
       setMsg({ ok: true, text: `${name.trim()} is registered on-chain.`, tx });
-      setTimeout(refreshProfile, 1500);
+      // the RPC can lag the confirmed transaction: ask again until the profile shows up
+      for (const ms of [1500, 4000, 8000, 15000]) setTimeout(refreshProfile, ms);
     } catch (e) {
       setMsg({ ok: false, text: (e as Error).message.slice(0, 200) });
     } finally {
