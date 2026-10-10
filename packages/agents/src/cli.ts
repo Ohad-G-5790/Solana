@@ -30,6 +30,9 @@ if (existsSync(envFile)) {
  *   [--genre indie] [--draw 400] [--home-city Berlin]
  * The key file is the Solana CLI's JSON array or a wallet's base58 export.
  * The band's wallet signs the band's transactions; --wallet still pays fees and fans.
+ *
+ * --platform-wallet <address> (or GREENROOM_PLATFORM_WALLET): where the 10%
+ * platform fee of every show goes; without it shows are booked without the fee.
  */
 function arg(name: string, def?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -72,5 +75,6 @@ const summary = await runDemo({
   fansPerCity: Number(arg("fans", "60")),
   approvals: arg("approve") === "true" ? "dashboard" : "auto",
   replacementTimeoutSec: Number(arg("replacement-timeout", "300")),
+  platformWallet: arg("platform-wallet", process.env.GREENROOM_PLATFORM_WALLET || undefined),
 });
 console.log(JSON.stringify(summary.stats));

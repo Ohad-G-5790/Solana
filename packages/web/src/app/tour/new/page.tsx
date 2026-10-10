@@ -12,6 +12,7 @@ import { RouteMap } from "@/components/RouteMap";
 import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, replan, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
 import { explorerUrl, FANS_PER_TICKET } from "@/lib/config";
 import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
+import { latestBandAgent } from "@/lib/agents";
 
 export default function NewTourPage() {
   const wallet = useAnchorWallet();
@@ -41,6 +42,10 @@ export default function NewTourPage() {
       if (saved) {
         setPartial({ tourId: saved.tourId, message: saved.message });
         setA(saved.answers);
+      } else {
+        // a band agent made on the Agents page: its rules are the first answers
+        const agent = latestBandAgent()?.band;
+        if (agent) setA((cur) => ({ ...cur, draw: agent.draw, priceEuro: agent.priceEuro, startCity: agent.homeCity, roundTrip: agent.roundTrip }));
       }
     } catch {
       /* storage blocked: the banner lasts for this page view */
@@ -335,7 +340,7 @@ function Money({ plan }: { plan: TourPlan }) {
         <span className="label">Full house</span>
         <b>about {euro(m.selloutEuro)}</b>
         <span className="micro muted">
-          for you, after the venues&apos; share (you keep about {m.bandPct}%)
+          for you, after the venues&apos; share{m.feePct ? ` and the ${m.feePct}% Greenroom fee` : ""} (you keep about {m.bandPct}%)
           {plan.answers.draw > Math.max(...plan.plan.map((s) => s.capacity)) * FANS_PER_TICKET
             ? `; on devnet a show sells at most ${(Math.max(...plan.plan.map((s) => s.capacity)) * FANS_PER_TICKET).toLocaleString()} fans' worth`
             : ""}

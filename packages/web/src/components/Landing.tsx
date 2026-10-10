@@ -35,7 +35,7 @@ const STEPS: { title: string; text: string; icon: ReactNode }[] = [
   },
   {
     title: "Get paid",
-    text: "After the show the ticket money is split between band, venue and crew, automatically.",
+    text: "After the show the ticket money is split between band, venue and crew, automatically. Greenroom takes 10%, only from shows that are played.",
     icon: <path d="M3 7h18v10H3zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 10v4M18 10v4" />,
   },
 ];
@@ -123,16 +123,24 @@ export function Landing() {
           <SignupForm big />
           {SIGNUP_URL ? <p className="micro muted">One email when the full version opens. Nothing else.</p> : null}
         </div>
-        {wallet || guest ? (
-          // already inside the app (the logo leads here): straight back to it
-          <Link href="/" className="btn outline big rise d3">
-            {wallet ? "Open your dashboard →" : "Back to the demo band →"}
+        <div className="hero-ctas rise d3">
+          {wallet || guest ? (
+            // already inside the app (the logo leads here): straight back to it
+            <Link href="/" className="btn outline big">
+              {wallet ? "Open your dashboard →" : "Back to the demo band →"}
+            </Link>
+          ) : runAuthority ? (
+            <button className="btn outline big" onClick={explore}>
+              Explore the demo band →
+            </button>
+          ) : null}
+          <Link href="/venue-demo" className="btn outline big">
+            Explore as a venue →
           </Link>
-        ) : runAuthority ? (
-          <button className="btn outline big rise d3" onClick={explore}>
-            Explore the demo band →
-          </button>
-        ) : null}
+          <Link href="/agents/new" className="btn outline big">
+            Create your agent
+          </Link>
+        </div>
 
         <div className="window rise d4" aria-label="A sample tour, planned by the agents">
           <div className="window-bar" aria-hidden>

@@ -18,6 +18,8 @@ const BAND_PAGES = ["/", "/approvals", "/band", "/feed"];
 
 /** The main page (the pitch): "/" for visitors, "/home" for anyone already inside the app. */
 const HOME = "/home";
+/** Pages that look the same for everyone, wallet or demo band: no app menu, no band banner. */
+const ALWAYS_PUBLIC = ["/venue-demo"];
 
 const NAV: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/", label: "Dashboard", icon: <path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" /> },
@@ -26,6 +28,7 @@ const NAV: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/planner", label: "Route planner", icon: <path d="M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h5a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h5" /> },
   { href: "/band", label: "Band record", icon: <path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z" /> },
   { href: "/feed", label: "Agent feed", icon: <path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" /> },
+  { href: "/agents", label: "Your agents", icon: <path d="M12 3v3M7 8h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3zM9.5 13h.01M14.5 13h.01M9 16.5h6" /> },
 ];
 
 function NavIcon({ children }: { children: ReactNode }) {
@@ -75,7 +78,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const inApp = !!session.wallet || session.guest;
   // Visitors see the pitch, not the app: the menu appears once a wallet connects or they explore the demo band.
   // Anyone can come back to the pitch at /home (the logo), wallet or not.
-  if (home || !inApp)
+  if (home || !inApp || ALWAYS_PUBLIC.includes(path))
     return (
       <div className="public">
         <header className="public-top">

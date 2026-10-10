@@ -13,6 +13,7 @@ import type { VenueOffer } from "./planner.ts";
 import { MessageBus } from "./bus.ts";
 import { Crank } from "./crank.ts";
 import { FanSim } from "./fan-sim.ts";
+import { PLATFORM_FEE_BPS, PLATFORM_LABEL } from "./platform.ts";
 import { VenueAgent } from "./venue-agent.ts";
 import { formatSol } from "./sol.ts";
 
@@ -58,6 +59,8 @@ export interface RunOptions {
   approvals?: ApprovalMode;
   /** Seconds the band has to pick a replacement before the offer lapses (dashboard mode). */
   replacementTimeoutSec?: number;
+  /** Where the 10% platform fee of every show goes; without it shows are booked without the fee. */
+  platformWallet?: string;
   log?: (line: string) => void;
 }
 
@@ -196,7 +199,8 @@ export async function runDemo(opts: RunOptions): Promise<RunSummary> {
   // ---------- agents ----------
   const venueAgents = venues.map((v) => new VenueAgent(v, venueKps.get(v.id)!, venuePda(venueKps.get(v.id)!.publicKey, client.programId), client, bus, brain));
   for (const a of venueAgents) a.start();
-  const bandAgent = new BandAgent(band, bandKp, client, bus, brain, world.cities);
+  const platform = opts.platformWallet ? { address: new PublicKey(opts.platformWallet), bps: PLATFORM_FEE_BPS, label: PLATFORM_LABEL } : undefined;
+  const bandAgent = new BandAgent(band, bandKp, client, bus, brain, world.cities, platform);
   const crank = new Crank(client, bus);
   const fans = new FanSim(band, world.fans, world.cities, client, bus, {
     maxBuysPerTick: opts.maxBuysPerTick ?? (isLocal ? 40 : 12),

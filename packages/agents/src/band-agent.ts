@@ -66,7 +66,9 @@ export class BandAgent {
     private readonly client: GreenroomClient,
     private readonly bus: MessageBus,
     private readonly brain: Brain,
-    private readonly cities: City[]
+    private readonly cities: City[],
+    /** The platform fee every proposed show carries (10% to Greenroom); none in tests that leave it out. */
+    private readonly platform?: { address: PublicKey; bps: number; label: string }
   ) {
     this.id = `band:${band.id}`;
     this.bandProfile = bandPda(keypair.publicKey, client.programId);
@@ -174,14 +176,29 @@ export class BandAgent {
           bandBps: p.bandBps,
           venueBps: p.venueBps,
         });
+        await this.addPlatformFee(show, p.city);
         const booked: BookedShow = { ...p, show, date, thresholdDeadline, salesOpenAt };
         this.booked.push(booked);
-        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${lamportsToSol(p.ticketPriceLamports)}, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold.`);
+        this.announce(booked, psig, `Proposed ${p.city} on day ${p.day}: ${p.capacity} tickets at ${lamportsToSol(p.ticketPriceLamports)}, ${p.venueBps / 100}% to the venue, ${p.thresholdBps / 100}% threshold${this.feeNote()}.`);
       } catch (e) {
         this.bus.publish({ kind: "note", from: this.id, text: `could not propose ${p.city}: ${(e as Error).message.slice(0, 160)}` });
       }
     }
     return { tour, tourId };
+  }
+
+  /** Every show pays the platform fee at settlement: a payee added right after the proposal. */
+  private async addPlatformFee(show: PublicKey, city: string): Promise<void> {
+    if (!this.platform) return;
+    try {
+      await this.client.addPayee(this.keypair, show, this.platform.address, this.platform.bps, this.platform.label);
+    } catch (e) {
+      this.bus.publish({ kind: "note", from: this.id, text: `could not add the platform fee to ${city}: ${(e as Error).message.slice(0, 160)}` });
+    }
+  }
+
+  private feeNote(): string {
+    return this.platform ? `, ${this.platform.bps / 100}% platform fee` : "";
   }
 
   private announce(b: BookedShow, tx: string, text: string): void {
@@ -308,6 +325,7 @@ export class BandAgent {
         bandBps: o.bandBps,
         venueBps: o.venueBps,
       });
+      await this.addPlatformFee(show, o.city);
       const booked: BookedShow = {
         city: o.city,
         country: o.country,

@@ -10,7 +10,8 @@
     "./planner": "./src/planner.ts",
     "./approvals": "./src/approvals.ts",
     "./alternatives": "./src/alternatives.ts",
-    "./offers": "./src/offers.ts"
+    "./offers": "./src/offers.ts",
+    "./platform": "./src/platform.ts"
   },
   "scripts": {
     "demo": "tsx src/cli.ts",
