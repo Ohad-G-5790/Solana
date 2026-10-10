@@ -157,3 +157,34 @@ export async function fetchTicketsOfWallet(owner: PublicKey): Promise<{ publicKe
   ticketCache.set(key, { at: Date.now(), value });
   return value;
 }
+
+export const venuePda = (authority: PublicKey) => PublicKey.findProgramAddressSync([enc("venue"), authority.toBuffer()], programId)[0];
+
+/** Create the venue's on-chain profile, signed and paid by the connected wallet. */
+export async function registerVenue(wallet: WalletLike, name: string, city: string, lat: number, lng: number, capacity: number): Promise<string> {
+  return walletProgram(wallet)
+    .methods.registerVenue(name, city, Math.round(lat * 1e6), Math.round(lng * 1e6), capacity)
+    .accountsPartial({ authority: wallet.publicKey, venueProfile: venuePda(wallet.publicKey), systemProgram: SystemProgram.programId })
+    .rpc();
+}
+
+/**
+ * Shows proposed to (or played at) a venue. Show layout: discriminator (8) |
+ * tour (32) | band_profile (32) | venue_profile (32) ...
+ */
+export async function fetchShowsAtVenue(venueProfile: PublicKey): Promise<{ publicKey: PublicKey; account: ShowAccount }[]> {
+  return readProgram().account.show.all([{ memcmp: { offset: 72, bytes: venueProfile.toBase58() } }]);
+}
+
+/** The venue signs a proposed show: tickets go on sale. */
+export async function acceptShow(wallet: WalletLike, show: PublicKey): Promise<string> {
+  return walletProgram(wallet).methods.acceptShow().accountsPartial({ venueAuthority: wallet.publicKey, show }).rpc();
+}
+
+/** The venue declines a proposed show; its deposit goes back to the band. */
+export async function rejectShow(wallet: WalletLike, show: PublicKey, bandAuthority: PublicKey): Promise<string> {
+  return walletProgram(wallet)
+    .methods.rejectShow()
+    .accountsPartial({ venueAuthority: wallet.publicKey, bandAuthority, show, vault: vaultPda(show), systemProgram: SystemProgram.programId })
+    .rpc();
+}

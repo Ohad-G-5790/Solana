@@ -84,7 +84,7 @@ export const showsFor = (days: number) => Math.max(2, Math.min(15, Math.round((d
  * Ask every seed venue that is on-chain (the same rules its agent uses) and
  * plan the route with the band agent's planner. Nothing is sent anywhere.
  */
-export async function planFromAnswers(a: TourAnswers, band: Pick<BandAccount, "genre" | "showsCompleted" | "ticketsSoldTotal">, world: { venues: WorldVenue[]; cities: WorldCity[] }): Promise<TourPlan> {
+export async function planFromAnswers(a: TourAnswers, band: Pick<BandAccount, "genre" | "showsCompleted"> & { ticketsSoldTotal: number | { toString(): string } }, world: { venues: WorldVenue[]; cities: WorldCity[] }): Promise<TourPlan> {
   const { byId } = await venueKeys();
   const candidates = world.venues.filter((v) => COUNTRIES.includes(v.country) && byId.has(v.id));
   // only venues whose profile exists on-chain can sign a show

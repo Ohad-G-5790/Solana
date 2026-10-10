@@ -7,16 +7,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useBandSession } from "@/components/BandSession";
 import { useBandTour } from "@/components/useBandTour";
 import { RegisterBand } from "@/components/Connect";
+import { WalletButton } from "@/components/WalletButton";
 import { DriveNote, Itinerary } from "@/components/Itinerary";
 import { RouteMap } from "@/components/RouteMap";
 import { DRAWS, LAMPORTS_PER_EURO, LENGTHS, planMoney, PRICES, replan, SALES_MINUTES, showsFor, type BookedTour, type TourAnswers, type TourPlan } from "@/lib/book";
 import { explorerUrl, FANS_PER_TICKET } from "@/lib/config";
-import { getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
+import { getRun, getWorld, type WorldCity, type WorldVenue } from "@/lib/run";
+import type { BandAccount } from "@/lib/greenroom";
 import { latestBandAgent } from "@/lib/agents";
 
 export default function NewTourPage() {
   const wallet = useAnchorWallet();
-  const { profile, profileError } = useBandSession();
+  const { profile, profileError, guest } = useBandSession();
+  // The demo band plans with the very same planner; only booking needs your own wallet.
+  const demo = !wallet && guest;
+  const [demoBand, setDemoBand] = useState<DemoBand | null>(null);
   const [world, setWorld] = useState<{ cities: WorldCity[]; venues: WorldVenue[] }>({ cities: [], venues: [] });
   const [a, setA] = useState<TourAnswers>({ draw: 500, priceEuro: 20, startCity: "Berlin", days: 14, roundTrip: true });
   const [plan, setPlan] = useState<TourPlan | null>(null);
@@ -32,6 +37,32 @@ export default function NewTourPage() {
   useEffect(() => {
     void getWorld().then(setWorld);
   }, []);
+
+  // the demo band's own numbers: its on-chain profile, or what the recorded tour says
+  useEffect(() => {
+    if (!demo) return;
+    let alive = true;
+    void getRun().then(async (r) => {
+      if (!r || !alive) return;
+      const played = r.shows.filter((x) => x.state === "settled");
+      const recorded: DemoBand = {
+        name: r.band.name,
+        genre: r.band.genre ?? "rock",
+        showsCompleted: played.length,
+        ticketsSoldTotal: played.reduce((n, x) => n + x.ticketsSold, 0),
+      };
+      try {
+        const { fetchBand } = await import("@/lib/greenroom");
+        const onChain = r.band.profile ? await fetchBand(r.band.profile) : null;
+        if (alive) setDemoBand(onChain ? { name: onChain.name, genre: onChain.genre, showsCompleted: onChain.showsCompleted, ticketsSoldTotal: Number(onChain.ticketsSoldTotal) } : recorded);
+      } catch {
+        if (alive) setDemoBand(recorded);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [demo]);
 
   // an unfinished booking survives a reload: same answers, Finish booking adds the missing shows
   const key = wallet ? `greenroom.partial.${wallet.publicKey.toBase58()}` : null;
@@ -70,11 +101,12 @@ export default function NewTourPage() {
     setError(null);
   };
 
-  if (profile === null) return <RegisterBand />;
-  if (!profile || !wallet)
+  if (!demo && profile === null) return <RegisterBand />;
+  const band: DemoBand | null = demo ? demoBand : profile ? { name: profile.name, genre: profile.genre, showsCompleted: profile.showsCompleted, ticketsSoldTotal: Number(profile.ticketsSoldTotal) } : null;
+  if (!band || (!demo && (!profile || !wallet)))
     return (
       <p className="muted">
-        {profileError ? "Devnet is busy, so your band takes a moment to load. This page keeps trying by itself." : "Reading your band…"}
+        {profileError ? "Devnet is busy, so your band takes a moment to load. This page keeps trying by itself." : demo ? "Reading the demo band…" : "Reading your band…"}
       </p>
     );
 
@@ -83,7 +115,7 @@ export default function NewTourPage() {
     setError(null);
     try {
       const { planFromAnswers } = await import("@/lib/book");
-      const p = await planFromAnswers(a, profile, world);
+      const p = await planFromAnswers(a, band, world);
       setPlan(p);
       // the answer sits below the questions: bring it into view
       if (p.plan.length) setTimeout(() => document.getElementById("your-route")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -96,7 +128,7 @@ export default function NewTourPage() {
   };
 
   const book = async () => {
-    if (!plan || busy) return;
+    if (!plan || busy || !wallet || !profile) return;
     setError(null);
     setBusy("Preparing your booking…"); // disables the button at once: no double booking
     const { bookTour, bookingErrorText, PartialBooking } = await import("@/lib/book");
@@ -149,11 +181,16 @@ export default function NewTourPage() {
   const reset = () => plan && reorder(plan.suggested);
   return (
     <div style={{ maxWidth: 980 }}>
-      <h1>Create your tour</h1>
+      <h1>{demo ? `Plan a tour for ${band.name}` : "Create your tour"}</h1>
       <p className="muted" style={{ marginTop: 6 }}>
-        Four answers. Your agent asks the venues, plans the route and shows it to you before anything is booked.
+        Four answers. {demo ? "The band's" : "Your"} agent asks the venues, plans the route and shows it {demo ? "here" : "to you"} before anything is booked.
       </p>
-      {running ? (
+      {demo ? (
+        <p className="small muted" style={{ marginTop: 10 }}>
+          This is the same planner a band uses with its own wallet: real venues answer with the demo band&apos;s track record. Booking needs your own wallet.
+        </p>
+      ) : null}
+      {running && !demo ? (
         <p className="small muted" style={{ marginTop: 10 }}>
           Your current tour still has shows selling. You can book another one; the dashboard then follows the new tour, and the current shows carry on by
           themselves.
@@ -170,7 +207,7 @@ export default function NewTourPage() {
 
       <section className="question">
         <h2>How many people can you bring?</h2>
-        <p className="small muted">A typical night for {profile.name}. Venues offer rooms that fit.</p>
+        <p className="small muted">A typical night for {band.name}. Venues offer rooms that fit.</p>
         <div className="choices">
           {DRAWS.map((d) => (
             <button key={d} className={`choice ${a.draw === d ? "on" : ""}`} onClick={() => set({ draw: d })} aria-pressed={a.draw === d}>
@@ -300,9 +337,13 @@ export default function NewTourPage() {
             </p>
           ) : null}
           <div className="row" style={{ marginTop: 16 }}>
-            <button className="btn primary big" disabled={!!busy} onClick={book}>
-              {busy ?? (partial ? "Finish booking" : "Book this tour")}
-            </button>
+            {demo ? (
+              <WalletButton>Connect a wallet to book</WalletButton>
+            ) : (
+              <button className="btn primary big" disabled={!!busy} onClick={book}>
+                {busy ?? (partial ? "Finish booking" : "Book this tour")}
+              </button>
+            )}
             {partial ? null : (
               <button
                 className="btn outline"
@@ -317,7 +358,9 @@ export default function NewTourPage() {
             )}
           </div>
           <p className="micro muted" style={{ marginTop: 10, maxWidth: 720 }}>
-            Your wallet asks you once and keeps a small deposit with each show. Nothing else is charged.
+            {demo
+              ? "This is a preview with the demo band. Connect your own wallet to set up your band and book a tour like this one."
+              : "Your wallet asks you once and keeps a small deposit with each show. Nothing else is charged."}
           </p>
           <details className="micro muted" style={{ marginTop: 4, maxWidth: 720 }}>
             <summary>How the devnet demo works</summary>
@@ -398,3 +441,6 @@ function RouteCheck({ plan, home, onReset }: { plan: TourPlan; home?: { name: st
     </div>
   );
 }
+
+/** What the planner needs to know about the band. */
+type DemoBand = Pick<BandAccount, "name" | "genre" | "showsCompleted"> & { ticketsSoldTotal: number };

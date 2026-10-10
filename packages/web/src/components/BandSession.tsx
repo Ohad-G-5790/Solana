@@ -2,7 +2,7 @@
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import type { BandAccount } from "@/lib/greenroom";
+import type { BandAccount, VenueAccount } from "@/lib/greenroom";
 import { getRun } from "@/lib/run";
 
 /**
@@ -21,6 +21,8 @@ export interface BandSession {
   /** The connected wallet's band profile: undefined while loading (or the RPC is unreachable), null when it has none. */
   profile: BandAccount | null | undefined;
   profileError: string | null;
+  /** The connected wallet's venue profile: undefined while loading, null when it has none. */
+  venue: VenueAccount | null | undefined;
   refreshProfile: () => void;
   /** The band of the run the dashboard bundle or local agents recorded. */
   runAuthority: string | null;
@@ -76,6 +78,7 @@ export function BandSessionProvider({ children }: { children: ReactNode }) {
   const wallet = publicKey?.toBase58() ?? null;
   const [guest, setGuestState] = useState(false);
   const [profile, setProfile] = useState<BandAccount | null | undefined>(undefined);
+  const [venue, setVenue] = useState<VenueAccount | null | undefined>(undefined);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [runAuthority, setRunAuthority] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -111,14 +114,19 @@ export function BandSessionProvider({ children }: { children: ReactNode }) {
     let retry: ReturnType<typeof setTimeout> | undefined;
     if (!publicKey) {
       setProfile(undefined);
+      setVenue(undefined);
       return;
     }
     // The Anchor client loads in the browser only: its CommonJS build cannot be
     // evaluated while the shell renders on the server.
     import("@/lib/greenroom")
-      .then(({ bandPda, fetchBand }) => fetchBand(bandPda(publicKey).toBase58()))
-      .then((p) => {
+      .then(({ bandPda, venuePda, fetchBand, fetchVenue }) =>
+        Promise.all([fetchBand(bandPda(publicKey).toBase58()), fetchVenue(venuePda(publicKey).toBase58())])
+      )
+      .then(([p, v]) => {
         if (!alive) return;
+        // a wallet is a band, a venue, or new (both null): set together so pages never see a half answer
+        setVenue(v);
         setProfile(p);
         setProfileError(null);
       })
@@ -137,12 +145,13 @@ export function BandSessionProvider({ children }: { children: ReactNode }) {
   // A different wallet starts from scratch.
   useEffect(() => {
     setProfile(undefined);
+    setVenue(undefined);
     setProfileError(null);
   }, [publicKey]);
 
   const authority = wallet ?? (guest ? runAuthority : null);
   return (
-    <Ctx.Provider value={{ wallet, guest, setGuest, authority, profile, profileError, refreshProfile: () => setTick((n) => n + 1), runAuthority, reconnecting: !wallet && !connectStalled && (connecting || (grace && !!remembered)), connectStalled, cancelConnect }}>
+    <Ctx.Provider value={{ wallet, guest, setGuest, authority, profile, profileError, venue, refreshProfile: () => setTick((n) => n + 1), runAuthority, reconnecting: !wallet && !connectStalled && (connecting || (grace && !!remembered)), connectStalled, cancelConnect }}>
       {children}
     </Ctx.Provider>
   );

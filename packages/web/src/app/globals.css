@@ -2597,3 +2597,34 @@ a.brand:hover {
 .public-main > :not(.landing):first-child {
   margin-top: 28px;
 }
+
+/* ---------- artist or venue ---------- */
+.role-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.role-card {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 18px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.role-card:hover,
+.role-card:focus-visible {
+  background: var(--surface-mid);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-medium);
+  outline: none;
+}
+.role-card b {
+  font-size: 18px;
+}

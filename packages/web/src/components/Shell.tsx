@@ -18,8 +18,10 @@ const BAND_PAGES = ["/", "/approvals", "/band", "/feed"];
 
 /** The main page (the pitch): "/" for visitors, "/home" for anyone already inside the app. */
 const HOME = "/home";
-/** Where a connected wallet without a band profile registers its band. */
+/** Where a new wallet says whether it is an artist or a venue and registers. */
 const SETUP = "/setup";
+/** A venue wallet's own page. */
+const VENUE = "/venue";
 /** Pages that look the same for everyone, wallet or demo band: no app menu, no band banner. */
 const ALWAYS_PUBLIC = ["/venue-demo"];
 
@@ -32,6 +34,8 @@ const NAV: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/feed", label: "Agent feed", icon: <path d="M4 5h16v11H9l-5 4zM8 9h8M8 12h5" /> },
   { href: "/agents", label: "Your agents", icon: <path d="M12 3v3M7 8h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3zM9.5 13h.01M14.5 13h.01M9 16.5h6" /> },
 ];
+
+const VENUE_ICON = <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />;
 
 function NavIcon({ children }: { children: ReactNode }) {
   return (
@@ -85,10 +89,14 @@ export function Shell({ children }: { children: ReactNode }) {
     const other = q.get("band") ?? q.get("authority");
     return !!other && other !== session.wallet;
   })();
-  const needsSetup = !!session.wallet && session.profile === null && bandPage && !otherBand;
+  // a wallet that is a venue (and not a band) goes to its venue page instead
+  const isVenue = !!session.wallet && session.profile === null && !!session.venue;
+  const needsSetup = !!session.wallet && session.profile === null && session.venue === null && bandPage && !otherBand;
+  const toVenue = isVenue && bandPage && !otherBand;
   useEffect(() => {
     if (needsSetup) router.replace(SETUP);
-  }, [needsSetup, router]);
+    else if (toVenue) router.replace(VENUE);
+  }, [needsSetup, toVenue, router]);
   const home = path === HOME;
   const inApp = !!session.wallet || session.guest;
   // Visitors see the pitch, not the app: the menu appears once a wallet connects or they explore the demo band.
@@ -121,8 +129,8 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
     );
   // the demo band cannot create tours: that takes your own wallet
-  const gated = path.startsWith("/tour") && !session.wallet;
-  const who = session.wallet ? (session.profile ? session.profile.name : short(session.wallet)) : null;
+  const gated = path.startsWith("/tour") && !session.wallet && !session.guest;
+  const who = session.wallet ? (session.profile ? session.profile.name : session.venue ? session.venue.name : short(session.wallet)) : null;
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -130,7 +138,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="dot" /> Greenroom
         </Link>
         <nav className="nav">
-          {NAV.map((n) => (
+          {(session.venue ? [{ href: VENUE, label: "Your venue", icon: VENUE_ICON }, ...NAV] : NAV).map((n) => (
             <Link key={n.href} href={n.href} className={path === n.href || (n.href !== "/" && path.startsWith(n.href)) ? "active" : ""}>
               <NavIcon>{n.icon}</NavIcon>
               {n.label}
@@ -184,7 +192,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
           </>
         )}
-        {gated ? session.reconnecting ? <Reconnecting /> : <ConnectScreen /> : needsSetup ? <p className="muted">Opening your band setup…</p> : children}
+        {gated ? session.reconnecting ? <Reconnecting /> : <ConnectScreen /> : needsSetup ? <p className="muted">Opening your setup…</p> : toVenue ? <p className="muted">Opening your venue…</p> : children}
       </main>
     </div>
   );
