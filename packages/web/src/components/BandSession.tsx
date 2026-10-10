@@ -26,19 +26,53 @@ export interface BandSession {
   runAuthority: string | null;
   /** A wallet used here before is reconnecting: do not flash the connect screen. */
   reconnecting: boolean;
+  /** The last connection attempt never finished (popup closed, wallet missing or locked). */
+  connectStalled: boolean;
+  /** Abandon a hanging connection attempt and forget the remembered wallet. */
+  cancelConnect: () => void;
 }
+
+/** How long a connection attempt may hang before the page stops waiting for it. */
+const CONNECT_TIMEOUT_MS = 8000;
 
 const Ctx = createContext<BandSession | null>(null);
 const GUEST_KEY = "greenroom.guest";
 
 export function BandSessionProvider({ children }: { children: ReactNode }) {
-  const { publicKey, wallet: remembered, connecting } = useWallet();
+  const { publicKey, wallet: remembered, connecting, disconnect, select } = useWallet();
   // auto-connect takes a moment after load; give a remembered wallet that long
   const [grace, setGrace] = useState(true);
   useEffect(() => {
     const t = setTimeout(() => setGrace(false), 2500);
     return () => clearTimeout(t);
   }, []);
+
+  // A connection attempt that never resolves (the wallet's popup was closed or
+  // blocked, the wallet is locked or not installed, the page is not secure)
+  // must not hold the page hostage: after a few seconds stop waiting, forget
+  // the remembered wallet so auto-connect does not retry it, and show the
+  // connect screen again with a note.
+  const [connectStalled, setConnectStalled] = useState(false);
+  const cancelConnect = useCallback(() => {
+    setConnectStalled(true);
+    setGrace(false);
+    void disconnect().catch(() => undefined);
+    select(null);
+    try {
+      window.localStorage.removeItem("walletName");
+    } catch {
+      /* storage blocked */
+    }
+  }, [disconnect, select]);
+  useEffect(() => {
+    if (!connecting) return;
+    setConnectStalled(false);
+    const t = setTimeout(cancelConnect, CONNECT_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [connecting, cancelConnect]);
+  useEffect(() => {
+    if (publicKey) setConnectStalled(false);
+  }, [publicKey]);
   const wallet = publicKey?.toBase58() ?? null;
   const [guest, setGuestState] = useState(false);
   const [profile, setProfile] = useState<BandAccount | null | undefined>(undefined);
@@ -108,7 +142,7 @@ export function BandSessionProvider({ children }: { children: ReactNode }) {
 
   const authority = wallet ?? (guest ? runAuthority : null);
   return (
-    <Ctx.Provider value={{ wallet, guest, setGuest, authority, profile, profileError, refreshProfile: () => setTick((n) => n + 1), runAuthority, reconnecting: !wallet && (connecting || (grace && !!remembered)) }}>
+    <Ctx.Provider value={{ wallet, guest, setGuest, authority, profile, profileError, refreshProfile: () => setTick((n) => n + 1), runAuthority, reconnecting: !wallet && !connectStalled && (connecting || (grace && !!remembered)), connectStalled, cancelConnect }}>
       {children}
     </Ctx.Provider>
   );
@@ -118,4 +152,17 @@ export function useBandSession(): BandSession {
   const s = useContext(Ctx);
   if (!s) throw new Error("useBandSession outside BandSessionProvider");
   return s;
+}
+
+/** Shown while a remembered wallet reconnects; never a dead end. */
+export function Reconnecting() {
+  const { cancelConnect } = useBandSession();
+  return (
+    <div className="card" style={{ maxWidth: 520 }}>
+      <p className="muted">Reconnecting your wallet… If your wallet asks you to approve or unlock, do that now.</p>
+      <button className="btn outline" style={{ marginTop: 12 }} onClick={cancelConnect}>
+        Cancel and choose a wallet
+      </button>
+    </div>
+  );
 }

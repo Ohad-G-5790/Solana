@@ -9,7 +9,7 @@ import { pendingItems } from "@/lib/approvals";
 import { CLUSTER } from "@/lib/config";
 import { short } from "@/lib/format";
 import { getApprovals, getRun } from "@/lib/run";
-import { useBandSession } from "./BandSession";
+import { Reconnecting, useBandSession } from "./BandSession";
 import { ConnectScreen } from "./Connect";
 import { Landing } from "./Landing";
 
@@ -117,7 +117,7 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
           </nav>
         </header>
-        <main className="public-main">{home ? <Landing /> : !bandPage ? children : session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <Landing />}</main>
+        <main className="public-main">{home ? <Landing /> : !bandPage ? children : session.reconnecting ? <Reconnecting /> : <Landing />}</main>
       </div>
     );
   // the demo band cannot create tours: that takes your own wallet
@@ -184,7 +184,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
           </>
         )}
-        {gated ? session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <ConnectScreen /> : needsSetup ? <p className="muted">Opening your band setup…</p> : children}
+        {gated ? session.reconnecting ? <Reconnecting /> : <ConnectScreen /> : needsSetup ? <p className="muted">Opening your band setup…</p> : children}
       </main>
     </div>
   );

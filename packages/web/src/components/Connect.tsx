@@ -12,7 +12,7 @@ const GENRES = ["rock", "metal", "punk", "indie", "electronic", "hiphop", "jazz"
 
 /** First screen of the band pages when no wallet is connected. */
 export function ConnectScreen() {
-  const { setGuest, runAuthority } = useBandSession();
+  const { setGuest, runAuthority, connectStalled } = useBandSession();
   const path = usePathname();
   const router = useRouter();
   // creating a tour needs your own wallet; the demo band lives on the dashboard
@@ -30,6 +30,12 @@ export function ConnectScreen() {
         Connect your band&apos;s wallet. It is your login and your signature: the dashboard shows your band, your tours and your money, and asks you before
         anything is booked.
       </p>
+      {connectStalled ? (
+        <p className="small" style={{ marginTop: 16, color: "var(--warning)" }}>
+          The wallet did not finish connecting. Open your wallet extension, unlock it and approve the request, then try again. Make sure the address bar shows
+          https://.
+        </p>
+      ) : null}
       <div className="row" style={{ marginTop: 20 }}>
         <WalletButton>Connect wallet</WalletButton>
         {runAuthority ? (

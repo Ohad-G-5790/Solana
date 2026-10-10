@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useBandSession } from "@/components/BandSession";
+import { Reconnecting, useBandSession } from "@/components/BandSession";
 import { ConnectScreen, RegisterBand } from "@/components/Connect";
 import { WalletPanel } from "@/components/WalletPanel";
 import { CLUSTER } from "@/lib/config";
@@ -19,7 +19,7 @@ export default function SetupPage() {
     if (ready) router.replace("/");
   }, [ready, router]);
 
-  if (!session.wallet) return session.reconnecting ? <p className="muted">Reconnecting your wallet…</p> : <ConnectScreen />;
+  if (!session.wallet) return session.reconnecting ? <Reconnecting /> : <ConnectScreen />;
   if (session.profile === undefined)
     return (
       <p className="muted">

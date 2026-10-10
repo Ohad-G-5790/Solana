@@ -12,6 +12,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* Wallet extensions need a secure page: send http:// visitors to https:// before anything loads. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: String.raw`if(location.protocol==='http:'&&!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)&&!/\.(localhost|test)$/.test(location.hostname)){location.replace('https://'+location.host+location.pathname+location.search+location.hash)}`,
+          }}
+        />
+      </head>
       <body>
         <Providers>
           <Shell>{children}</Shell>
