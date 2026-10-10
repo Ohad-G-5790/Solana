@@ -41,7 +41,7 @@ on:
         default: demo
       band_profile:
         description: "With band = mine: name|genre|draw|home city"
-        default: "The Running Pigeons|indie|400|Berlin"
+        default: "Son of a Pigeon|indie|400|Berlin"
 
 permissions:
   contents: write

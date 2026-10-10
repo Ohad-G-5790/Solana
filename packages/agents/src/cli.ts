@@ -26,7 +26,7 @@ if (existsSync(envFile)) {
  * --approve: the band decides in the dashboard (venues, route, replacement
  * shows) instead of auto-pilot; the run waits on the Approvals page.
  *
- * Your own band: [--band-keypair ~/band.json] [--band-name "The Running Pigeons"]
+ * Your own band: [--band-keypair ~/band.json] [--band-name "Son of a Pigeon"]
  *   [--genre indie] [--draw 400] [--home-city Berlin]
  * The key file is the Solana CLI's JSON array or a wallet's base58 export.
  * The band's wallet signs the band's transactions; --wallet still pays fees and fans.
