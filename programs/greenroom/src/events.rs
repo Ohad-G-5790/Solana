@@ -8,6 +8,13 @@ pub struct BandRegistered {
 }
 
 #[event]
+pub struct BandRenamed {
+    pub band_profile: Pubkey,
+    pub old_name: String,
+    pub name: String,
+}
+
+#[event]
 pub struct VenueRegistered {
     pub venue_profile: Pubkey,
     pub authority: Pubkey,

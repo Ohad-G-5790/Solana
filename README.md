@@ -59,6 +59,8 @@ Developers can still run the agents as their own band from a terminal (`npm run 
 - **Create an agent in a few clicks** (`/agents/new`): a band agent (genre, home city, draw, price, longest drive) or a venue agent (city, capacity, genres, minimum price, share). It tries its first deals right away with the same rules the agents use on devnet; the tour wizard starts from the newest band agent. In the demo, agents live in the browser.
 - **Venue demo** (`/venue-demo`): the venue that played the recorded tour's best-selling show, from its side: its agent's inbox (sample band requests answered by its rules), the night signed on devnet with how it was agreed and who got the money, and its next four weeks.
 
+**Renaming a band.** `rename_band` changes a band's name on-chain and keeps its record. The **program-upgrade** workflow (Actions) builds and tests the program, upgrades it on devnet with the upgrade authority's key (repository secret `GREENROOM_UPGRADE_AUTHORITY`; it stops before spending anything if that key is not the authority or its balance cannot cover the temporary upgrade buffer), then renames the band in `GREENROOM_BAND_WALLET` to its `rename_to` input. Locally: `npm run rename-band -w @greenroom/agents -- --wallet <band key> --name "Son of a Pigeon"`.
+
 ### Approving the tour yourself
 
 `npm run demo:fast` runs on auto-pilot: the band agent approves its own recommendations. To make the band's decisions yourself, start the agents in approval mode and keep the dashboard open on **Approvals**:

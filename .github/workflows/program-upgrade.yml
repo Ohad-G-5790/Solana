@@ -1,0 +1,102 @@
+name: program-upgrade
+
+# Upgrades the Greenroom program on devnet and, optionally, renames your band.
+#
+# 1. Builds the program from this ref and runs the integration tests on a local
+#    validator (same image as program.yml); nothing is deployed if they fail.
+# 2. Upgrades 4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8 in place with the
+#    upgrade authority's key (repository secret GREENROOM_UPGRADE_AUTHORITY:
+#    the Solana CLI JSON array or a wallet's base58 export). The upgrade needs
+#    a temporary buffer as large as the program; its rent comes back when the
+#    upgrade completes. The step stops before spending anything if the key is
+#    not the program's upgrade authority or its balance is too low.
+# 3. With "rename_to", your band (secret GREENROOM_BAND_WALLET) signs
+#    rename_band; its track record stays as it is.
+on:
+  workflow_dispatch:
+    inputs:
+      rename_to:
+        description: "New name for your band (GREENROOM_BAND_WALLET); empty: no rename"
+        default: "Son of a Pigeon"
+      upgrade:
+        description: "Upgrade the program (false: only rename, once the program has rename_band)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: program-upgrade
+  cancel-in-progress: false
+
+env:
+  PROGRAM_ID: 4KSaYomRjbnijK1yAELZEGFMPsoPE6u7unY2T6mASUT8
+  RPC_URL: ${{ secrets.GREENROOM_RPC_URL || 'https://api.devnet.solana.com' }}
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: quay.io/ottersec/anchor:v1.2.1
+      options: --user root --security-opt seccomp=unconfined
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build and test the program
+        if: ${{ inputs.upgrade }}
+        run: |
+          mkdir -p ~/.config/solana
+          solana-keygen new --no-bip39-passphrase -s -o ~/.config/solana/id.json
+          npm run build:program
+          npm run test:program
+      - name: Upgrade authority key from the repository secret
+        if: ${{ inputs.upgrade }}
+        env:
+          KEY: ${{ secrets.GREENROOM_UPGRADE_AUTHORITY }}
+        run: |
+          test -n "$KEY" || { echo "secret GREENROOM_UPGRADE_AUTHORITY is not set (the program's upgrade authority key)"; exit 1; }
+          umask 077
+          printf '%s' "$KEY" > /tmp/authority.key
+          # the Solana CLI wants a JSON array; a base58 export is converted
+          npx tsx packages/agents/src/keyfile-to-json.ts /tmp/authority.key /tmp/authority.json
+          rm -f /tmp/authority.key
+      - name: Check authority and balance
+        if: ${{ inputs.upgrade }}
+        run: |
+          set -eu
+          me=$(solana-keygen pubkey /tmp/authority.json)
+          auth=$(solana program show "$PROGRAM_ID" --url "$RPC_URL" | awk '/^Authority:/ {print $2}')
+          echo "program upgrade authority: $auth; key in the secret: $me"
+          test "$me" = "$auth" || { echo "the secret's key is not the program's upgrade authority"; exit 1; }
+          size=$(stat -c %s target/deploy/greenroom.so)
+          need=$(solana rent "$size" --url "$RPC_URL" | awk '/Rent-exempt minimum:/ {print $3}')
+          have=$(solana balance "$me" --url "$RPC_URL" | awk '{print $1}')
+          echo "program: $size bytes; buffer rent ${need} SOL (returned after the upgrade); authority balance ${have} SOL"
+          awk -v h="$have" -v n="$need" 'BEGIN { exit !(h >= n + 0.05) }' || { echo "send at least $(awk -v n="$need" 'BEGIN { print n + 0.05 }') devnet SOL to $me and run again"; exit 1; }
+      - name: Upgrade the program on devnet
+        if: ${{ inputs.upgrade }}
+        run: |
+          solana program deploy target/deploy/greenroom.so \
+            --program-id "$PROGRAM_ID" \
+            --upgrade-authority /tmp/authority.json \
+            --keypair /tmp/authority.json \
+            --url "$RPC_URL"
+          solana program show "$PROGRAM_ID" --url "$RPC_URL"
+      - name: Rename the band
+        if: ${{ inputs.rename_to != '' }}
+        env:
+          BAND_WALLET: ${{ secrets.GREENROOM_BAND_WALLET }}
+          NAME: ${{ inputs.rename_to }}
+        run: |
+          test -n "$BAND_WALLET" || { echo "secret GREENROOM_BAND_WALLET is not set"; exit 1; }
+          umask 077
+          printf '%s' "$BAND_WALLET" > /tmp/band.key
+          npm run rename-band -w @greenroom/agents -- --wallet /tmp/band.key --name "$NAME" --rpc "$RPC_URL"
+      - name: Remove the key files
+        if: always()
+        run: rm -f /tmp/authority.json /tmp/authority.key /tmp/band.key

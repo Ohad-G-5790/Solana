@@ -29,6 +29,11 @@ pub mod greenroom {
         instructions::register_band::handle_register_band(ctx, name, genre)
     }
 
+    /// Change the band's name; its track record stays as it is.
+    pub fn rename_band(ctx: Context<RenameBand>, name: String) -> Result<()> {
+        instructions::rename_band::handle_rename_band(ctx, name)
+    }
+
     /// Create a venue profile with location and standing capacity.
     pub fn register_venue(
         ctx: Context<RegisterVenue>,
